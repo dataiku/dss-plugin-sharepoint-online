@@ -13,6 +13,7 @@ class SharePointClient():
     def __init__(self, config):
         if config.get('auth_type') == AUTH_OAUTH:
             login_details = config.get('sharepoint_oauth')
+            self.assert_login_details(DSS_OAUTH_DETAILS, login_details)
             self.sharepoint_tenant = login_details['sharepoint_tenant']
             self.sharepoint_site = login_details['sharepoint_site']
             self.sharepoint_url = self.sharepoint_tenant + ".sharepoint.com"
@@ -25,8 +26,9 @@ class SharePointClient():
                 self.sharepoint_site,
                 sharepoint_access_token = self.sharepoint_access_token
             )
-        else: 
+        elif config.get('auth_type') == AUTH_LOGIN: 
             login_details = config.get('sharepoint_sharepy')
+            self.assert_login_details(DSS_LOGIN_DETAILS, login_details)
             username = login_details['sharepoint_username']
             password = login_details['sharepoint_password']
             self.sharepoint_tenant = login_details['sharepoint_tenant']
@@ -34,6 +36,8 @@ class SharePointClient():
             self.sharepoint_url = self.sharepoint_tenant + ".sharepoint.com"
             self.sharepoint_origin = "https://" + self.sharepoint_url
             self.session = sharepy.connect(self.sharepoint_url, username=username, password=password)
+        else:
+            raise Exception("The type of authentication is not selected")
         self.sharepoint_list_title = config.get("sharepoint_list_title")
 
     def get_folders(self, path):
@@ -237,6 +241,13 @@ class SharePointClient():
 
     def get_file_add_url(self, full_path, file_name):
         return self.get_folder_url(full_path) + "/Files/add(url='{}',overwrite=true)".format(file_name)
+
+    def assert_login_details(self, required_keys, login_details):
+        if login_details is None or login_details == {}:
+            raise Exception("Login details are empty")
+        for key in required_keys:
+            if key not in login_details.keys():
+                raise Exception(required_keys[key])
 
 class SharePointSession():
 
