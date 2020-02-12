@@ -1,7 +1,7 @@
 {
     "meta": {
         "label": "Lists",
-        "description": "",
+        "description": "Read/write lists from/to your SharePoint Online account",
         "icon": "icon-cloud"
     },
     "readable": true,
