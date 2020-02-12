@@ -1,0 +1,40 @@
+{
+    "meta": {
+        "label": "SharePoint Online login",
+        "description": "",
+        "icon": "icon-cloud"
+    },
+    "defaultDefinableInline": true,
+    "defaultDefinableAtProjectLevel": true,
+    "pluginParams": [],
+    "params": [
+        {
+            "name": "sharepoint_tenant",
+            "label": "Tenant",
+            "type": "STRING",
+            "description": "Your SharePoint tenant",
+            "mandatory": true
+        },
+        {
+            "name": "sharepoint_site",
+            "label": "Site",
+            "type": "STRING",
+            "description": "Your SharePoint site",
+            "mandatory": true
+        },
+        {
+            "name": "sharepoint_username",
+            "label": "Username",
+            "type": "STRING",
+            "description": "Your SharePoint user name",
+            "mandatory": true
+        },
+        {
+            "name": "sharepoint_password",
+            "label": "Password",
+            "type": "PASSWORD",
+            "description": "Your SharePoint password",
+            "mandatory": true
+        }
+    ]
+}

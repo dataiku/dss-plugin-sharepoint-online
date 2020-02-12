@@ -1,0 +1,47 @@
+{
+    "meta": {
+        "label": "Lists",
+        "description": "",
+        "icon": "icon-cloud"
+    },
+    "readable": true,
+    "writable": false,
+    "params": [
+        {
+            "name": "auth_type",
+            "label": "Type of authentication",
+            "type": "SELECT",
+            "selectChoices": [
+                {
+                    "value": "login",
+                    "label": "User name / password"
+                },
+                {
+                    "value": "oauth",
+                    "label": "Azure Single Sign On"
+                }
+            ]
+        },
+        {
+            "name": "sharepoint_oauth",
+            "label": "Azure preset",
+            "type": "PRESET",
+            "parameterSetId": "oauth-login",
+            "visibilityCondition": "model.auth_type == 'oauth'"
+        },
+        {
+            "name": "sharepoint_sharepy",
+            "label": "SharePoint preset",
+            "type": "PRESET",
+            "parameterSetId": "sharepoint-login",
+            "visibilityCondition": "model.auth_type == 'login'"
+        },
+        {
+            "name": "sharepoint_list_title",
+            "label": "List title",
+            "description": "",
+            "type": "STRING",
+            "mandatory": true
+        }
+    ]
+}

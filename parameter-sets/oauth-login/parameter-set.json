@@ -1,0 +1,46 @@
+{
+    "meta": {
+        "label": "Azure Single Sign On",
+        "description": "",
+        "icon": "icon-cloud"
+    },
+    "defaultDefinableInline": true,
+    "defaultDefinableAtProjectLevel": true,
+    "pluginParams": [],
+    "params": [
+        {
+            "name": "sharepoint_oauth",
+            "type": "CREDENTIAL_REQUEST",
+            "label": "Azure Single Sign On",
+            "credentialRequestSettings": {
+                "type": "OAUTH2",
+                "oauth2Flow": "authorization_code",
+                "oauth2Provider": "AZURE",
+                "authorizationEndpoint": "https://login.microsoftonline.com/common/oauth2/authorize",
+                "tokenEndpoint": "https://login.microsoftonline.com/common/oauth2/token",
+                "scope": "User.Read MyFiles.Read MyFiles.Write AllSites.Read AllSites.Write Web.Read Web.Write List.Read List.Write"
+            }
+        },
+        {
+            "name": "sharepoint_tenant",
+            "label": "Tenant",
+            "type": "STRING",
+            "description": "Your SharePoint tenant",
+            "mandatory": true
+        },
+        {
+            "name": "sharepoint_site",
+            "label": "Site",
+            "type": "STRING",
+            "description": "Your SharePoint site",
+            "mandatory": true
+        },
+        {
+            "name": "authorizationEndpoint",
+            "label": "Authorization endpoint",
+            "type": "STRING",
+            "description": "Your SharePoint site",
+            "mandatory": true
+        }
+    ]
+}

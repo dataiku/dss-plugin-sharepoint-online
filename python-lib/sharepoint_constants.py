@@ -1,0 +1,29 @@
+SHAREPOINT_HIDDEN_COLUMN = 'Hidden'
+SHAREPOINT_READ_ONLY_FIELD = 'ReadOnlyField'
+SHAREPOINT_TITLE_COLUMN = 'Title'
+SHAREPOINT_NAME_COLUMN = 'name'
+SHAREPOINT_TYPE_COLUMN = 'type'
+SHAREPOINT_COLUMNS = 'columns'
+SHAREPOINT_TYPE_AS_STRING = 'TypeAsString'
+SHAREPOINT_RESULTS_CONTAINER_V2 = 'd'
+SHAREPOINT_RESULTS = 'results'
+SHAREPOINT_ERROR_CONTAINER = 'error'
+SHAREPOINT_MESSAGE = 'message'
+SHAREPOINT_VALUE = 'value'
+SHAREPOINT_TIME_LAST_MODIFIED = 'TimeLastModified'
+SHAREPOINT_NEXT_PAGE = '__next'
+SHAREPOINT_LENGTH = 'Length'
+SHAREPOINT_NAME = 'Name'
+SHAREPOINT_MOVE_TO = "MoveTo"
+SHAREPOINT_FORM_DIGEST_VALUE = "FormDigestValue"
+SHAREPOINT_TYPES = {
+    "Text" : "string",
+    "Number" : "string",
+    "DateTime" : "date",
+    "Boolean" : "string",
+    "URL" : "object",
+    "Location" : "object",
+    "Computed" : None,
+    "Attachments" : None
+}
+SHAREPOINT_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
