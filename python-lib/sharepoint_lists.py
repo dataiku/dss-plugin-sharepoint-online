@@ -28,6 +28,9 @@ def matched_item(columns, item):
 def is_error(response):
     return SHAREPOINT_ERROR_CONTAINER in response and SHAREPOINT_MESSAGE in response[SHAREPOINT_ERROR_CONTAINER] and SHAREPOINT_VALUE in response[SHAREPOINT_ERROR_CONTAINER][SHAREPOINT_MESSAGE]
 
+def assert_list_title(list_title):
+    if not list_title.isalnum():
+        raise Exception("The list title contains non alphanumerical characters")
 
 class SharePointListWriter(object):
 
