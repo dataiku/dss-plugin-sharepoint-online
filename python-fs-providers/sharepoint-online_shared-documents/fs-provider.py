@@ -150,6 +150,7 @@ class SharePointFSProvider(FSProvider):
     def enumerate(self, path, first_non_empty):
         path = get_rel_path(path)
         full_path = get_lnt_path(self.get_full_path(path))
+        logger.info('enumerate:path={},fullpath={}'.format(path, full_path))
         path_to_item, item_name = os.path.split(full_path)
         ret = self.list_recursive(path, full_path, first_non_empty)
         return ret
@@ -180,7 +181,7 @@ class SharePointFSProvider(FSProvider):
         full_path = self.get_full_path(path)
         logger.info('delete_recursive:path={},fullpath={}'.format(path, full_path))
         assert_path_is_not_root(full_path)
-        path_to_item, item_name = os.path.split(full_path)
+        path_to_item, item_name = os.path.split(full_path.rstrip("/"))
         files = self.client.get_files(path_to_item)
         folders = self.client.get_folders(path_to_item)
         file = extract_item_from(item_name, files)
