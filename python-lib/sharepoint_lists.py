@@ -1,22 +1,26 @@
 import logging
 
-from sharepoint_constants import *
+from sharepoint_constants import SharePointConstants
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
                     format='sharepoint plugin %(levelname)s - %(message)s')
 
+
 def is_response_empty(response):
-    return SHAREPOINT_RESULTS_CONTAINER_V2 not in response or SHAREPOINT_RESULTS not in response[SHAREPOINT_RESULTS_CONTAINER_V2]
+    return SharePointConstants.RESULTS_CONTAINER_V2 not in response or SharePointConstants.RESULTS not in response[SharePointConstants.RESULTS_CONTAINER_V2]
+
 
 def result_loop(response):
-    return response[SHAREPOINT_RESULTS_CONTAINER_V2][SHAREPOINT_RESULTS]
+    return response[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.RESULTS]
+
 
 def get_dss_types(sharepoint_type):
-    if sharepoint_type in SHAREPOINT_TYPES:
-        return SHAREPOINT_TYPES[sharepoint_type]
+    if sharepoint_type in SharePointConstants.TYPES:
+        return SharePointConstants.TYPES[sharepoint_type]
     else:
         return "string"
+
 
 def matched_item(columns, item):
     ret = {}
@@ -25,12 +29,15 @@ def matched_item(columns, item):
             ret[key] = value
     return ret
 
+
 def is_error(response):
-    return SHAREPOINT_ERROR_CONTAINER in response and SHAREPOINT_MESSAGE in response[SHAREPOINT_ERROR_CONTAINER] and SHAREPOINT_VALUE in response[SHAREPOINT_ERROR_CONTAINER][SHAREPOINT_MESSAGE]
+    return SharePointConstants.ERROR_CONTAINER in response and SharePointConstants.MESSAGE in response[SharePointConstants.ERROR_CONTAINER] and SharePointConstants.VALUE in response[SharePointConstants.ERROR_CONTAINER][SharePointConstants.MESSAGE]
+
 
 def assert_list_title(list_title):
     if not list_title.isalnum():
         raise Exception("The list title contains non alphanumerical characters")
+
 
 class SharePointListWriter(object):
 
@@ -42,7 +49,7 @@ class SharePointListWriter(object):
         self.partition_id = partition_id
         self.buffer = []
         logger.info('init SharepointListWriter')
-        self.columns = dataset_schema[SHAREPOINT_COLUMNS]
+        self.columns = dataset_schema[SharePointConstants.COLUMNS]
 
     def write_row(self, row):
         logger.info('write_row:row={}'.format(row))
@@ -54,8 +61,8 @@ class SharePointListWriter(object):
 
         self.parent.get_read_schema()
         for column in self.columns:
-            if column[SHAREPOINT_NAME_COLUMN] not in self.parent.columns:
-                self.parent.client.create_custom_field(self.parent.sharepoint_list_title, column[SHAREPOINT_NAME_COLUMN])
+            if column[SharePointConstants.NAME_COLUMN] not in self.parent.columns:
+                self.parent.client.create_custom_field(self.parent.sharepoint_list_title, column[SharePointConstants.NAME_COLUMN])
 
         for row in self.buffer:
             item = self.build_row_dictionary(row)
@@ -64,7 +71,7 @@ class SharePointListWriter(object):
     def build_row_dictionary(self, row):
         ret = {}
         for column, structure in zip(row, self.columns):
-            ret[structure[SHAREPOINT_NAME_COLUMN].replace(" ", "_x0020_")] = column
+            ret[structure[SharePointConstants.NAME_COLUMN].replace(" ", "_x0020_")] = column
         return ret
 
     def close(self):

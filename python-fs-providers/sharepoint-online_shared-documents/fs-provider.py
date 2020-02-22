@@ -1,22 +1,25 @@
 from dataiku.fsprovider import FSProvider
 
-import os, shutil, logging
+import os
+import shutil
+import logging
 
 from sharepoint_client import SharePointClient
-import sharepoint_client
-from dss_constants import *
-from sharepoint_constants import *
-from sharepoint_items import *
-import common
+from dss_constants import DSSConstants
+from sharepoint_constants import SharePointConstants
+from sharepoint_items import loop_sharepoint_items, has_sharepoint_items, extract_item_from, get_size, get_last_modified, get_name, assert_path_is_not_root
+from sharepoint_items import create_path
+from common import get_rel_path, get_lnt_path
 
 try:
-    from BytesIO import BytesIO ## for Python 2
+    from BytesIO import BytesIO  # for Python 2
 except ImportError:
-    from io import BytesIO ## for Python 3
+    from io import BytesIO  # for Python 3
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
                     format='sharepoint-online plugin %(levelname)s - %(message)s')
+
 
 # based on https://docs.microsoft.com/fr-fr/sharepoint/dev/sp-add-ins/working-with-folders-and-files-with-rest
 
@@ -52,10 +55,9 @@ class SharePointFSProvider(FSProvider):
 
         if has_sharepoint_items(files) or has_sharepoint_items(folders):
             return {
-                DSS_PATH : get_lnt_path(path),
-                DSS_SIZE : 0,
-                DSS_LAST_MODIFIED : int(0) * 1000,
-                DSS_IS_DIRECTORY : True
+                DSSConstants.PATH: get_lnt_path(path),
+                DSSConstants.SIZE: 0,
+                DSSConstants.IS_DIRECTORY: True
             }
 
         path_to_item, item_name = os.path.split(full_path)
@@ -67,23 +69,23 @@ class SharePointFSProvider(FSProvider):
 
         if folder is not None:
             return {
-                DSS_PATH : get_lnt_path(path),
-                DSS_SIZE : 0,
-                DSS_LAST_MODIFIED : get_last_modified(folder),
-                DSS_IS_DIRECTORY : True
+                DSSConstants.PATH: get_lnt_path(path),
+                DSSConstants.SIZE: 0,
+                DSSConstants.LAST_MODIFIED: get_last_modified(folder),
+                DSSConstants.IS_DIRECTORY: True
             }
         if file is not None:
             return {
-                DSS_PATH : get_lnt_path(path),
-                DSS_SIZE : get_size(file),
-                DSS_LAST_MODIFIED : get_last_modified(file),
-                DSS_IS_DIRECTORY : False
+                DSSConstants.PATH: get_lnt_path(path),
+                DSSConstants.SIZE: get_size(file),
+                DSSConstants.LAST_MODIFIED: get_last_modified(file),
+                DSSConstants.IS_DIRECTORY: False
             }
         return None
 
     def set_last_modified(self, path, last_modified):
         full_path = self.get_full_path(path)
-        logger.indo('set_last_modified: path="{}", full_path="{}"'.format(path, full_path))
+        logger.info('set_last_modified: path="{}", full_path="{}"'.format(path, full_path))
         return False
 
     def browse(self, path):
@@ -97,27 +99,27 @@ class SharePointFSProvider(FSProvider):
 
         for file in loop_sharepoint_items(files):
             children.append({
-                DSS_FULL_PATH: get_lnt_path(os.path.join(path, get_name(file))),
-                DSS_EXISTS: True,
-                DSS_DIRECTORY: False,
-                DSS_SIZE: get_size(file),
-                DSS_LAST_MODIFIED : get_last_modified(file)
+                DSSConstants.FULL_PATH: get_lnt_path(os.path.join(path, get_name(file))),
+                DSSConstants.EXISTS: True,
+                DSSConstants.DIRECTORY: False,
+                DSSConstants.SIZE: get_size(file),
+                DSSConstants.LAST_MODIFIED: get_last_modified(file)
             })
         for folder in loop_sharepoint_items(folders):
             children.append({
-                DSS_FULL_PATH : get_lnt_path(os.path.join(path, get_name(folder))),
-                DSS_EXISTS : True,
-                DSS_DIRECTORY : True,
-                DSS_SIZE : 0,
-                DSS_LAST_MODIFIED : get_last_modified(folder)
+                DSSConstants.FULL_PATH: get_lnt_path(os.path.join(path, get_name(folder))),
+                DSSConstants.EXISTS: True,
+                DSSConstants.DIRECTORY: True,
+                DSSConstants.SIZE: 0,
+                DSSConstants.LAST_MODIFIED: get_last_modified(folder)
             })
 
         if len(children) > 0:
             return {
-                DSS_FULL_PATH : get_lnt_path(path),
-                DSS_EXISTS : True,
-                DSS_DIRECTORY : True,
-                DSS_CHILDREN : children
+                DSSConstants.FULL_PATH: get_lnt_path(path),
+                DSSConstants.EXISTS: True,
+                DSSConstants.DIRECTORY: True,
+                DSSConstants.CHILDREN: children
             }
         path_to_file, file_name = os.path.split(full_path)
 
@@ -126,10 +128,10 @@ class SharePointFSProvider(FSProvider):
         for file in loop_sharepoint_items(files):
             if get_name(file) == file_name:
                 return {
-                    DSS_FULL_PATH : get_lnt_path(path),
-                    DSS_EXISTS : True, DSS_SIZE : get_size(file),
-                    DSS_LAST_MODIFIED : get_last_modified(file),
-                    DSS_DIRECTORY : False
+                    DSSConstants.FULL_PATH: get_lnt_path(path),
+                    DSSConstants.EXISTS: True, DSSConstants.SIZE: get_size(file),
+                    DSSConstants.LAST_MODIFIED: get_last_modified(file),
+                    DSSConstants.DIRECTORY: False
                 }
 
         parent_path, item_name = os.path.split(full_path)
@@ -137,13 +139,15 @@ class SharePointFSProvider(FSProvider):
         folder = extract_item_from(item_name, folders)
         if folder is None:
             ret = {
-                DSS_FULL_PATH : None,
-                DSS_EXISTS : False
+                DSSConstants.FULL_PATH: None,
+                DSSConstants.EXISTS: False
             }
         else:
             ret = {
-                DSS_FULL_PATH : get_lnt_path(path),
-                DSS_EXISTS : True, DSS_SIZE:0
+                DSSConstants.FULL_PATH: get_lnt_path(path),
+                DSSConstants.EXISTS: True,
+                DSSConstants.DIRECTORY: True,
+                DSSConstants.SIZE: 0
             }
         return ret
 
@@ -169,9 +173,9 @@ class SharePointFSProvider(FSProvider):
         files = self.client.get_files(full_path)
         for file in loop_sharepoint_items(files):
             paths.append({
-                DSS_PATH : get_lnt_path(os.path.join(path, get_name(file))),
-                DSS_LAST_MODIFIED : get_last_modified(file),
-                DSS_SIZE : get_size(file)
+                DSSConstants.PATH: get_lnt_path(os.path.join(path, get_name(file))),
+                DSSConstants.LAST_MODIFIED: get_last_modified(file),
+                DSSConstants.SIZE: get_size(file)
             })
             if first_non_empty:
                 return paths
@@ -206,7 +210,7 @@ class SharePointFSProvider(FSProvider):
         logger.info('move:from={},to={}'.format(full_from_path, full_to_path))
 
         response = self.client.move_file(full_from_path, full_to_path)
-        return SHAREPOINT_RESULTS_CONTAINER_V2 in response and SHAREPOINT_MOVE_TO in response[SHAREPOINT_RESULTS_CONTAINER_V2]
+        return SharePointConstants.RESULTS_CONTAINER_V2 in response and SharePointConstants.MOVE_TO in response[SharePointConstants.RESULTS_CONTAINER_V2]
 
     def read(self, path, stream, limit):
         full_path = self.get_full_path(path)

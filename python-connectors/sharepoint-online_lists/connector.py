@@ -1,16 +1,17 @@
 from six.moves import xrange
 from dataiku.connector import Connector
-import sharepy, logging
+import logging
 
-from sharepoint_client import SharePointClient, SharePointSession
+from sharepoint_client import SharePointClient
 
-from sharepoint_client import *
-from dss_constants import *
-from sharepoint_lists import *
+from sharepoint_constants import SharePointConstants
+from sharepoint_lists import assert_list_title, is_response_empty, result_loop, get_dss_types, is_error, matched_item
+from sharepoint_lists import SharePointListWriter
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
                     format='sharepoint-online plugin %(levelname)s - %(message)s')
+
 
 class SharePointListsConnector(Connector):
 
@@ -20,32 +21,32 @@ class SharePointListsConnector(Connector):
         assert_list_title(self.sharepoint_list_title)
         self.auth_type = config.get('auth_type')
         logger.info('init:sharepoint_list_title={}, auth_type={}'.format(self.sharepoint_list_title, self.auth_type))
-        self.columns={}
+        self.columns = {}
         self.client = SharePointClient(config)
 
     def get_read_schema(self):
-        logger.info('get_read_schema ')
+        logger.info('get_read_schema')
         response = self.client.get_list_fields(self.sharepoint_list_title)
-        if is_response_empty(response) or len(response[SHAREPOINT_RESULTS_CONTAINER_V2][SHAREPOINT_RESULTS]) < 1:
+        if is_response_empty(response) or len(response[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.RESULTS]) < 1:
             return None
         columns = []
-        self.columns={}
+        self.columns = {}
         for column in result_loop(response):
-            if column[SHAREPOINT_HIDDEN_COLUMN] == False and column[SHAREPOINT_READ_ONLY_FIELD]==False:
-                sharepoint_type = get_dss_types(column[SHAREPOINT_TYPE_AS_STRING])
+            if (not column[SharePointConstants.HIDDEN_COLUMN]) and (not column[SharePointConstants.READ_ONLY_FIELD]):
+                sharepoint_type = get_dss_types(column[SharePointConstants.TYPE_AS_STRING])
                 if sharepoint_type is not None:
                     columns.append({
-                        SHAREPOINT_NAME_COLUMN : column[SHAREPOINT_TITLE_COLUMN],
-                        SHAREPOINT_TYPE_COLUMN : get_dss_types(column[SHAREPOINT_TYPE_AS_STRING])
+                        SharePointConstants.NAME_COLUMN: column[SharePointConstants.TITLE_COLUMN],
+                        SharePointConstants.TYPE_COLUMN: get_dss_types(column[SharePointConstants.TYPE_AS_STRING])
                     })
-                    self.columns[column[SHAREPOINT_TITLE_COLUMN]] = sharepoint_type
+                    self.columns[column[SharePointConstants.TITLE_COLUMN]] = sharepoint_type
         return {
-            SHAREPOINT_COLUMNS : columns
+            SharePointConstants.COLUMNS: columns
         }
 
     def generate_rows(self, dataset_schema=None, dataset_partitioning=None,
-                            partition_id=None, records_limit = -1):
-        if self.columns=={}:
+                      partition_id=None, records_limit=-1):
+        if self.columns == {}:
             self.get_read_schema()
 
         logger.info('generate_row:dataset_schema={}, dataset_partitioning={}, partition_id={}'.format(
@@ -55,7 +56,7 @@ class SharePointListsConnector(Connector):
         response = self.client.get_list_all_items(self.sharepoint_list_title)
         if is_response_empty(response):
             if is_error(response):
-                raise Exception ("Error: {}".format(response[SHAREPOINT_ERROR_CONTAINER][SHAREPOINT_MESSAGE][SHAREPOINT_VALUE]))
+                raise Exception("Error: {}".format(response[SharePointConstants.ERROR_CONTAINER][SharePointConstants.MESSAGE][SharePointConstants.VALUE]))
             else:
                 raise Exception("Error when interacting with SharePoint")
 
@@ -63,24 +64,20 @@ class SharePointListsConnector(Connector):
             yield matched_item(self.columns, item)
 
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
-                         partition_id=None):
+                   partition_id=None):
         return SharePointListWriter(self.config, self, dataset_schema, dataset_partitioning, partition_id)
-
 
     def get_partitioning(self):
         logger.info('get_partitioning')
         raise Exception("Unimplemented")
 
-
     def list_partitions(self, partitioning):
         logger.info('list_partitions:partitioning={}'.format(partitioning))
         return []
 
-
     def partition_exists(self, partitioning, partition_id):
         logger.info('partition_exists:partitioning={}, partition_id={}'.format(partitioning, partition_id))
         raise Exception("unimplemented")
-
 
     def get_records_count(self, partitioning=None, partition_id=None):
         logger.info('get_records_count:partitioning={}, partition_id={}'.format(partitioning, partition_id))
