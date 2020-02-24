@@ -16,11 +16,43 @@
             "mandatory": true
         },
         {
+            "name": "sharepoint_type",
+            "label": "Type of SharePoint",
+            "type": "SELECT",
+            "defaultValue": "sites",
+            "selectChoices": [
+                {
+                    "value": "sites",
+                    "label": "Site"
+                },
+                {
+                    "value": "teams",
+                    "label": "Team"
+                }
+            ]
+        },
+        {
             "name": "sharepoint_site",
             "label": "Site",
             "type": "STRING",
-            "description": "Your SharePoint site",
+            "description": "site/subsite...",
+            "visibilityCondition": "model.sharepoint_type == 'sites'",
             "mandatory": true
+        },
+        {
+            "name": "sharepoint_site",
+            "label": "Team",
+            "type": "STRING",
+            "description": "",
+            "visibilityCondition": "model.sharepoint_type == 'teams'",
+            "mandatory": true
+        },
+        {
+            "name": "sharepoint_root",
+            "label": "Root directory",
+            "type": "STRING",
+            "description": "",
+            "defaultValue": "Shared Documents"
         },
         {
             "name": "sharepoint_username",

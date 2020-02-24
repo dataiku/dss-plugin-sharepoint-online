@@ -1,4 +1,3 @@
-from six.moves import xrange
 from dataiku.connector import Connector
 import logging
 

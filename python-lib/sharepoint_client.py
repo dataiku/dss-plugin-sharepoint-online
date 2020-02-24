@@ -2,11 +2,6 @@ import os
 import requests
 import sharepy
 
-try:
-    from BytesIO import BytesIO  # for Python 2
-except ImportError:
-    from io import BytesIO  # for Python 3
-
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
 
@@ -61,7 +56,7 @@ class SharePointClient():
         return response.json()
 
     def get_files(self, path):
-        response = self.session.get(self.get_sharepoint_item_url(path) + "/Files" )
+        response = self.session.get(self.get_sharepoint_item_url(path) + "/Files")
         self.assert_response_ok(response)
         return response.json()
 
@@ -112,7 +107,7 @@ class SharePointClient():
 
     def delete_file(self, full_path):
         headers = {
-            "X-HTTP-Method":"DELETE"
+            "X-HTTP-Method": "DELETE"
         }
         response = self.session.post(
             self.get_file_url(full_path),
@@ -207,7 +202,7 @@ class SharePointClient():
 
     def add_list_item(self, list_title, item):
         item["__metadata"] = {
-            "type" : "SP.Data.{}ListItem".format(list_title.capitalize())
+            "type": "SP.Data.{}ListItem".format(list_title.capitalize())
         }
         headers = {
             "Content-Type": DSSConstants.APPLICATION_JSON

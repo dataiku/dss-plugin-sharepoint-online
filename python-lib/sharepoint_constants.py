@@ -18,13 +18,13 @@ class SharePointConstants(object):
     MOVE_TO = "MoveTo"
     FORM_DIGEST_VALUE = "FormDigestValue"
     TYPES = {
-        "Text" : "string",
-        "Number" : "string",
-        "DateTime" : "date",
-        "Boolean" : "string",
-        "URL" : "object",
-        "Location" : "object",
-        "Computed" : None,
-        "Attachments" : None
+        "Text": "string",
+        "Number": "string",
+        "DateTime": "date",
+        "Boolean": "string",
+        "URL": "object",
+        "Location": "object",
+        "Computed": None,
+        "Attachments": None
     }
     TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
