@@ -31,7 +31,19 @@ def matched_item(columns, item):
 
 
 def is_error(response):
-    return SharePointConstants.ERROR_CONTAINER in response and SharePointConstants.MESSAGE in response[SharePointConstants.ERROR_CONTAINER] and SharePointConstants.VALUE in response[SharePointConstants.ERROR_CONTAINER][SharePointConstants.MESSAGE]
+    return _has_error(response) and _has_message(response) and _has_value(response)
+
+
+def _has_error(response):
+    return SharePointConstants.ERROR_CONTAINER in response
+
+
+def _has_message(response):
+    return SharePointConstants.MESSAGE in response[SharePointConstants.ERROR_CONTAINER]
+
+
+def _has_value(response):
+    return SharePointConstants.VALUE in response[SharePointConstants.ERROR_CONTAINER][SharePointConstants.MESSAGE]
 
 
 def assert_list_title(list_title):
