@@ -11,7 +11,7 @@ def is_response_empty(response):
     return SharePointConstants.RESULTS_CONTAINER_V2 not in response or SharePointConstants.RESULTS not in response[SharePointConstants.RESULTS_CONTAINER_V2]
 
 
-def result_loop(response):
+def extract_results(response):
     return response[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.RESULTS]
 
 

@@ -9,6 +9,11 @@ from dss_constants import DSSConstants
 class SharePointClient():
 
     def __init__(self, config):
+        self.sharepoint_type = None
+        self.sharepoint_root = None
+        self.sharepoint_tenant = None
+        self.sharepoint_url = None
+        self.sharepoint_origin = None
         if config.get('auth_type') == DSSConstants.AUTH_OAUTH:
             login_details = config.get('sharepoint_oauth')
             self.assert_login_details(DSSConstants.OAUTH_DETAILS, login_details)
@@ -22,7 +27,7 @@ class SharePointClient():
                 self.sharepoint_site,
                 sharepoint_access_token=self.sharepoint_access_token
             )
-        elif config.get('auth_type') == DSSConstants.AUTH_LOGIN: 
+        elif config.get('auth_type') == DSSConstants.AUTH_LOGIN:
             login_details = config.get('sharepoint_sharepy')
             self.assert_login_details(DSSConstants.LOGIN_DETAILS, login_details)
             self.setup_login_details(login_details)
@@ -61,10 +66,9 @@ class SharePointClient():
         return response.json()
 
     def get_sharepoint_item_url(self, path):
-        URL_STRUCTURE = "{0}/{3}/{1}/_api/Web/GetFolderByServerRelativeUrl('/{3}/{1}/{4}{2}')"
         if path == '/':
             path = ""
-        return URL_STRUCTURE.format(self.sharepoint_origin, self.sharepoint_site, path, self.sharepoint_type, self.sharepoint_root)
+        return SharePointConstants.URL_STRUCTURE.format(self.sharepoint_origin, self.sharepoint_site, path, self.sharepoint_type, self.sharepoint_root)
 
     def get_file_content(self, full_path):
         response = self.session.get(

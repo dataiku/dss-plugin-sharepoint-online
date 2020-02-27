@@ -28,3 +28,4 @@ class SharePointConstants(object):
         "Attachments": None
     }
     TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+    URL_STRUCTURE = "{0}/{3}/{1}/_api/Web/GetFolderByServerRelativeUrl('/{3}/{1}/{4}{2}')"

@@ -4,7 +4,7 @@ import logging
 from sharepoint_client import SharePointClient
 
 from sharepoint_constants import SharePointConstants
-from sharepoint_lists import assert_list_title, is_response_empty, result_loop, get_dss_types, is_error, matched_item
+from sharepoint_lists import assert_list_title, is_response_empty, extract_results, get_dss_types, is_error, matched_item
 from sharepoint_lists import SharePointListWriter
 
 logger = logging.getLogger(__name__)
@@ -30,13 +30,13 @@ class SharePointListsConnector(Connector):
             return None
         columns = []
         self.columns = {}
-        for column in result_loop(response):
+        for column in extract_results(response):
             if (not column[SharePointConstants.HIDDEN_COLUMN]) and (not column[SharePointConstants.READ_ONLY_FIELD]):
                 sharepoint_type = get_dss_types(column[SharePointConstants.TYPE_AS_STRING])
                 if sharepoint_type is not None:
                     columns.append({
                         SharePointConstants.NAME_COLUMN: column[SharePointConstants.TITLE_COLUMN],
-                        SharePointConstants.TYPE_COLUMN: get_dss_types(column[SharePointConstants.TYPE_AS_STRING])
+                        SharePointConstants.TYPE_COLUMN: sharepoint_type
                     })
                     self.columns[column[SharePointConstants.TITLE_COLUMN]] = sharepoint_type
         return {
@@ -59,7 +59,7 @@ class SharePointListsConnector(Connector):
             else:
                 raise Exception("Error when interacting with SharePoint")
 
-        for item in result_loop(response):
+        for item in extract_results(response):
             yield matched_item(self.columns, item)
 
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
