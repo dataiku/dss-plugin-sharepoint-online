@@ -68,7 +68,13 @@ class SharePointClient():
     def get_sharepoint_item_url(self, path):
         if path == '/':
             path = ""
-        return SharePointConstants.URL_STRUCTURE.format(self.sharepoint_origin, self.sharepoint_site, path, self.sharepoint_type, self.sharepoint_root)
+        return SharePointConstants.GET_FOLDER_URL_STRUCTURE.format(
+            self.sharepoint_origin,
+            self.sharepoint_site,
+            path,
+            self.sharepoint_type,
+            self.sharepoint_root
+        )
 
     def get_file_content(self, full_path):
         response = self.session.get(
