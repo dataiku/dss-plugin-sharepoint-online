@@ -18,33 +18,15 @@
         {
             "name": "sharepoint_type",
             "label": "Type of SharePoint",
-            "type": "SELECT",
-            "defaultValue": "sites",
-            "selectChoices": [
-                {
-                    "value": "sites",
-                    "label": "Site"
-                },
-                {
-                    "value": "team",
-                    "label": "Team"
-                }
-            ]
-        },
-        {
-            "name": "sharepoint_site",
-            "label": "Site",
             "type": "STRING",
-            "description": "site/subsite...",
-            "visibilityCondition": "model.sharepoint_type == 'sites'",
+            "defaultValue": "sites",
             "mandatory": true
         },
         {
             "name": "sharepoint_site",
-            "label": "Team",
+            "label": "Site / Team",
             "type": "STRING",
-            "description": "",
-            "visibilityCondition": "model.sharepoint_type == 'team'",
+            "description": "site/subsite...",
             "mandatory": true
         },
         {

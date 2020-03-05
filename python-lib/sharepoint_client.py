@@ -80,7 +80,7 @@ class SharePointClient():
         response = self.session.get(
             self.get_file_content_url(full_path)
         )
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, no_json=True)
         return response
 
     def write_file_content(self, full_path, data):
@@ -286,12 +286,21 @@ class SharePointClient():
             if key not in login_details.keys():
                 raise Exception(required_keys[key])
 
-    def assert_response_ok(self, response):
+    def assert_response_ok(self, response, no_json=False):
         status_code = response.status_code
         if status_code == 404:
             raise Exception("Not found. Please check tenant, site type or site name.")
         if status_code == 403:
             raise Exception("Forbidden. Please check your account credentials.")
+        if not no_json:
+            if len(response.content) == 0:
+                raise Exception("Empty response from SharePoint. Please check user credentials.")
+            json_response = response.json()
+            if "error" in json_response:
+                if "message" in json_response["error"] and "value" in json_response["error"]["message"]:
+                    raise Exception("Error: {}".format(json_response["error"]["message"]["value"]))
+                else:
+                    raise Exception("Error")
 
 
 class SharePointSession():
