@@ -1,0 +1,59 @@
+{
+    "meta": {
+        "label": "Azure Single Sign On",
+        "description": "",
+        "icon": "icon-cloud"
+    },
+    "defaultDefinableInline": false,
+    "defaultDefinableAtProjectLevel": true,
+    "pluginParams": [],
+    "params": [
+        {
+            "name": "sharepoint_oauth",
+            "type": "CREDENTIAL_REQUEST",
+            "label": "Azure Single Sign On",
+            "credentialRequestSettings": {
+                "type": "OAUTH2",
+                "authorizationEndpoint": "https://login.microsoftonline.com/common/oauth2/authorize",
+                "tokenEndpoint": "https://login.microsoftonline.com/common/oauth2/token",
+                "scope": "User.Read MyFiles.Read MyFiles.Write AllSites.Read AllSites.Write Web.Read Web.Write List.Read List.Write"
+            },
+            "mandatory": true
+        },
+        {
+            "name": "sharepoint_tenant",
+            "label": "Tenant",
+            "type": "STRING",
+            "description": "Your SharePoint tenant",
+            "mandatory": true
+        },
+        {
+            "name": "sharepoint_type",
+            "label": "Type of SharePoint",
+            "type": "STRING",
+            "defaultValue": "sites",
+            "mandatory": true
+        },
+        {
+            "name": "sharepoint_site",
+            "label": "Site / Team",
+            "type": "STRING",
+            "description": "site/subsite...",
+            "mandatory": true
+        },
+        {
+            "name": "sharepoint_root",
+            "label": "Root directory",
+            "type": "STRING",
+            "description": "",
+            "defaultValue": "Shared Documents"
+        },
+        {
+            "name": "authorizationEndpoint",
+            "label": "Authorization endpoint",
+            "type": "STRING",
+            "description": "See documentation",
+            "mandatory": true
+        }
+    ]
+}

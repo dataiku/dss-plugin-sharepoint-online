@@ -1,0 +1,38 @@
+{
+    "meta": {
+        "label": "Shared Documents",
+        "description": "Read/write shared documents from/to your SharePoint Online account",
+        "icon": "icon-cloud"
+    },
+    "params": [
+        {
+            "name": "auth_type",
+            "label": "Type of authentication",
+            "type": "SELECT",
+            "selectChoices": [
+                {
+                    "value": "login",
+                    "label": "User name / password"
+                },
+                {
+                    "value": "oauth",
+                    "label": "Azure Single Sign On"
+                }
+            ]
+        },
+        {
+            "name": "sharepoint_oauth",
+            "label": "Azure preset",
+            "type": "PRESET",
+            "parameterSetId": "oauth-login",
+            "visibilityCondition": "model.auth_type == 'oauth'"
+        },
+        {
+            "name": "sharepoint_sharepy",
+            "label": "SharePoint preset",
+            "type": "PRESET",
+            "parameterSetId": "sharepoint-login",
+            "visibilityCondition": "model.auth_type == 'login'"
+        }
+    ]
+}
