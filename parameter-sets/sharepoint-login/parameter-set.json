@@ -26,7 +26,7 @@
                     "label": "Site"
                 },
                 {
-                    "value": "teams",
+                    "value": "team",
                     "label": "Team"
                 }
             ]
@@ -44,7 +44,7 @@
             "label": "Team",
             "type": "STRING",
             "description": "",
-            "visibilityCondition": "model.sharepoint_type == 'teams'",
+            "visibilityCondition": "model.sharepoint_type == 'team'",
             "mandatory": true
         },
         {
