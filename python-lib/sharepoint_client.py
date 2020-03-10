@@ -9,7 +9,6 @@ from dss_constants import DSSConstants
 class SharePointClient():
 
     def __init__(self, config):
-        self.sharepoint_type = None
         self.sharepoint_root = None
         self.sharepoint_tenant = None
         self.sharepoint_url = None
@@ -40,10 +39,6 @@ class SharePointClient():
         self.sharepoint_list_title = config.get("sharepoint_list_title")
 
     def setup_login_details(self, login_details):
-        if 'sharepoint_type' in login_details:
-            self.sharepoint_type = login_details['sharepoint_type']
-        else:
-            self.sharepoint_type = "sites"
         self.sharepoint_site = login_details['sharepoint_site']
         if 'sharepoint_root' in login_details:
             self.sharepoint_root = login_details['sharepoint_root'].strip("/")
@@ -71,9 +66,8 @@ class SharePointClient():
         return SharePointConstants.GET_FOLDER_URL_STRUCTURE.format(
             self.sharepoint_origin,
             self.sharepoint_site,
-            path,
-            self.sharepoint_type,
-            self.sharepoint_root
+            self.sharepoint_root,
+            path
         )
 
     def get_file_content(self, full_path):
@@ -226,8 +220,8 @@ class SharePointClient():
         return response
 
     def get_base_url(self):
-        return "{}/{}/{}/_api/Web".format(
-            self.sharepoint_origin, self.sharepoint_type, self.sharepoint_site
+        return "{}/{}/_api/Web".format(
+            self.sharepoint_origin, self.sharepoint_site
         )
 
     def get_lists_url(self):
@@ -243,8 +237,7 @@ class SharePointClient():
         return self.get_lists_by_title_url(list_title) + "/fields"
 
     def get_lists_add_field_url(self, list_title):
-        return self.get_base_url() + "/GetList(@a1)/Fields/CreateFieldAsXml?@a1='/{}/{}/Lists/{}'".format(
-            self.sharepoint_type,
+        return self.get_base_url() + "/GetList(@a1)/Fields/CreateFieldAsXml?@a1='/{}/Lists/{}'".format(
             self.sharepoint_site,
             list_title
         )
@@ -268,7 +261,7 @@ class SharePointClient():
         )
 
     def get_site_path(self, full_path):
-        return "'/{}/{}/{}{}'".format(self.sharepoint_type, self.sharepoint_site, self.sharepoint_root, full_path)
+        return "'/{}/{}{}'".format(self.sharepoint_site, self.sharepoint_root, full_path)
 
     def get_add_folder_url(self, full_path):
         return self.get_base_url() + "/Folders/add('{}{}')".format(

@@ -24,21 +24,14 @@
             "name": "sharepoint_tenant",
             "label": "Tenant",
             "type": "STRING",
-            "description": "Your SharePoint tenant",
-            "mandatory": true
-        },
-        {
-            "name": "sharepoint_type",
-            "label": "Type of SharePoint",
-            "type": "STRING",
-            "defaultValue": "sites",
+            "description": "Usually your company name",
             "mandatory": true
         },
         {
             "name": "sharepoint_site",
-            "label": "Site / Team",
+            "label": "Site",
             "type": "STRING",
-            "description": "site/subsite...",
+            "description": "sites/site_name/subsite...",
             "mandatory": true
         },
         {
