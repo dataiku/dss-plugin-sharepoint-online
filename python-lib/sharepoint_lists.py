@@ -47,7 +47,7 @@ def _has_value(response):
 
 
 def assert_list_title(list_title):
-    if not list_title.isalnum():
+    if not list_title.replace(" ", "").isalnum():
         raise Exception("The list title contains non alphanumerical characters")
 
 

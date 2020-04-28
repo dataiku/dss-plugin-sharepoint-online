@@ -206,7 +206,7 @@ class SharePointClient():
 
     def add_list_item(self, list_title, item):
         item["__metadata"] = {
-            "type": "SP.Data.{}ListItem".format(list_title.capitalize())
+            "type": "SP.Data.{}ListItem".format(list_title.capitalize().replace(" ", "_x0020_"))
         }
         headers = {
             "Content-Type": DSSConstants.APPLICATION_JSON

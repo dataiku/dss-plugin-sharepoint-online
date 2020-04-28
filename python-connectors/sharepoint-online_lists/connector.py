@@ -35,10 +35,11 @@ class SharePointListsConnector(Connector):
                 sharepoint_type = get_dss_types(column[SharePointConstants.TYPE_AS_STRING])
                 if sharepoint_type is not None:
                     columns.append({
-                        SharePointConstants.NAME_COLUMN: column[SharePointConstants.TITLE_COLUMN],
+                        SharePointConstants.NAME_COLUMN: column[SharePointConstants.ENTITY_PROPERTY_NAME],
+                        SharePointConstants.COMMENT_COLUMN: column[SharePointConstants.TITLE_COLUMN],
                         SharePointConstants.TYPE_COLUMN: sharepoint_type
                     })
-                    self.columns[column[SharePointConstants.TITLE_COLUMN]] = sharepoint_type
+                    self.columns[column[SharePointConstants.ENTITY_PROPERTY_NAME]] = sharepoint_type
         return {
             SharePointConstants.COLUMNS: columns
         }
