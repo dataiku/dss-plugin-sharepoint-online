@@ -47,7 +47,7 @@ def _has_value(response):
 
 
 def assert_list_title(list_title):
-    if not list_title.replace(" ", "").isalnum():
+    if not list_title.isalnum():
         raise Exception("The list title contains non alphanumerical characters")
 
 
@@ -62,6 +62,7 @@ class SharePointListWriter(object):
         self.buffer = []
         logger.info('init SharepointListWriter')
         self.columns = dataset_schema[SharePointConstants.COLUMNS]
+        self.column_internal_name = {}
 
     def write_row(self, row):
         logger.info('write_row:row={}'.format(row))
@@ -74,7 +75,8 @@ class SharePointListWriter(object):
         self.parent.get_read_schema()
         for column in self.columns:
             if column[SharePointConstants.NAME_COLUMN] not in self.parent.columns:
-                self.parent.client.create_custom_field(self.parent.sharepoint_list_title, column[SharePointConstants.NAME_COLUMN])
+                response = self.parent.client.create_custom_field(self.parent.sharepoint_list_title, column[SharePointConstants.NAME_COLUMN]).json()
+                self.column_internal_name[column[SharePointConstants.NAME_COLUMN]] = response["d"]["EntityPropertyName"]
 
         for row in self.buffer:
             item = self.build_row_dictionary(row)
@@ -83,7 +85,7 @@ class SharePointListWriter(object):
     def build_row_dictionary(self, row):
         ret = {}
         for column, structure in zip(row, self.columns):
-            ret[structure[SharePointConstants.NAME_COLUMN].replace(" ", "_x0020_")] = column
+            ret[self.column_internal_name[structure[SharePointConstants.NAME_COLUMN]]] = column
         return ret
 
     def close(self):

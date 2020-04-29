@@ -17,7 +17,7 @@ class SharePointListsConnector(Connector):
     def __init__(self, config, plugin_config):
         Connector.__init__(self, config, plugin_config)
         self.sharepoint_list_title = self.config.get("sharepoint_list_title")
-        assert_list_title(self.sharepoint_list_title)
+        #assert_list_title(self.sharepoint_list_title)
         self.auth_type = config.get('auth_type')
         logger.info('init:sharepoint_list_title={}, auth_type={}'.format(self.sharepoint_list_title, self.auth_type))
         self.columns = {}
@@ -65,6 +65,7 @@ class SharePointListsConnector(Connector):
 
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
                    partition_id=None):
+        assert_list_title(self.sharepoint_list_title)
         return SharePointListWriter(self.config, self, dataset_schema, dataset_partitioning, partition_id)
 
     def get_partitioning(self):
