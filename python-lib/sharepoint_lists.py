@@ -22,11 +22,12 @@ def get_dss_types(sharepoint_type):
         return "string"
 
 
-def matched_item(columns, item):
+def matched_item(column_ids, column_names, item):
     ret = {}
     for key, value in item.items():
-        if key in columns:
-            ret[key] = value
+        if key in column_ids:
+            name = column_names[key]
+            ret[name] = value
     return ret
 
 
@@ -74,9 +75,10 @@ class SharePointListWriter(object):
 
         self.parent.get_read_schema()
         for column in self.columns:
-            if column[SharePointConstants.NAME_COLUMN] not in self.parent.columns:
-                response = self.parent.client.create_custom_field(self.parent.sharepoint_list_title, column[SharePointConstants.NAME_COLUMN]).json()
-                self.column_internal_name[column[SharePointConstants.NAME_COLUMN]] = response["d"]["EntityPropertyName"]
+            if column[SharePointConstants.NAME_COLUMN] not in self.parent.column_ids:
+                response = self.parent.client.create_custom_field(self.parent.sharepoint_list_title, column[SharePointConstants.NAME_COLUMN])
+                json = response.json()
+                self.column_internal_name[column[SharePointConstants.NAME_COLUMN]] = json[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.ENTITY_PROPERTY_NAME]
 
         for row in self.buffer:
             item = self.build_row_dictionary(row)

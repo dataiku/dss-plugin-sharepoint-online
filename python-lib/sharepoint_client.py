@@ -188,14 +188,6 @@ class SharePointClient():
         return response
 
     def create_custom_field(self, list_title, field_title):
-        """
-        body = {
-            'parameters': {
-                '__metadata': {'type': 'SP.XmlSchemaFieldCreationInformation'},
-                'SchemaXml': "<Field DisplayName='{0}' Format='Dropdown' MaxLength='255' Name='{0}' Title='{0}' Type='Text'></Field>".format(field_title)
-            }
-        }
-        """
         body = {
             'parameters': {
                 '__metadata': {'type': 'SP.XmlSchemaFieldCreationInformation'},
