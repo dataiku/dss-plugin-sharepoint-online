@@ -237,9 +237,6 @@ class SharePointClient():
     def get_lists_by_title_url(self, list_title):
         return self.get_lists_url() + "/GetByTitle('{}')".format(urllib.parse.quote(list_title))
 
-    def get_lists_by_guid_url(self, list_title):
-        return self.get_lists_url() + "/GetByTitle('{}')".format(urllib.parse.quote(list_title))
-
     def get_list_items_url(self, list_title):
         return self.get_lists_by_title_url(list_title) + "/Items"
 
