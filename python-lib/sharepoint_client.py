@@ -191,7 +191,7 @@ class SharePointClient():
         body = {
             'parameters': {
                 '__metadata': {'type': 'SP.XmlSchemaFieldCreationInformation'},
-                'SchemaXml': "<Field DisplayName='{0}' Format='Dropdown' MaxLength='255' Type='Text'></Field>".format(self.valid_xml(field_title))
+                'SchemaXml': "<Field DisplayName='{0}' Format='Dropdown' MaxLength='255' Type='Text'></Field>".format(self.amp_escape(field_title))
             }
         }
         headers = {
@@ -205,8 +205,8 @@ class SharePointClient():
         self.assert_response_ok(response)
         return response
 
-    def valid_xml(self, to_format):
-        to_convert = {'"': '&quot;', "'": "&apos;", "<": "&lt;", ">": "&gt;", "&": "&amp;"}
+    def amp_escape(self, to_format):
+        to_convert = {'"': '&quot;', "'": "&apos;", "<": "&lt;", ">": "&gt;", "&": "&amp;", "/": "&#x2F;"}
         for key in to_convert:
             to_format = to_format.replace(key, to_convert[key])
         return to_format
