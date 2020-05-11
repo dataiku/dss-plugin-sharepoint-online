@@ -22,11 +22,12 @@ def get_dss_types(sharepoint_type):
         return "string"
 
 
-def matched_item(columns, item):
+def matched_item(column_ids, column_names, item):
     ret = {}
     for key, value in item.items():
-        if key in columns:
-            ret[key] = value
+        if key in column_ids:
+            name = column_names[key]
+            ret[name] = value
     return ret
 
 
@@ -62,6 +63,7 @@ class SharePointListWriter(object):
         self.buffer = []
         logger.info('init SharepointListWriter')
         self.columns = dataset_schema[SharePointConstants.COLUMNS]
+        self.column_internal_name = {}
 
     def write_row(self, row):
         logger.info('write_row:row={}'.format(row))
@@ -73,8 +75,10 @@ class SharePointListWriter(object):
 
         self.parent.get_read_schema()
         for column in self.columns:
-            if column[SharePointConstants.NAME_COLUMN] not in self.parent.columns:
-                self.parent.client.create_custom_field(self.parent.sharepoint_list_title, column[SharePointConstants.NAME_COLUMN])
+            if column[SharePointConstants.NAME_COLUMN] not in self.parent.column_ids:
+                response = self.parent.client.create_custom_field(self.parent.sharepoint_list_title, column[SharePointConstants.NAME_COLUMN])
+                json = response.json()
+                self.column_internal_name[column[SharePointConstants.NAME_COLUMN]] = json[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.ENTITY_PROPERTY_NAME]
 
         for row in self.buffer:
             item = self.build_row_dictionary(row)
@@ -83,7 +87,7 @@ class SharePointListWriter(object):
     def build_row_dictionary(self, row):
         ret = {}
         for column, structure in zip(row, self.columns):
-            ret[structure[SharePointConstants.NAME_COLUMN].replace(" ", "_x0020_")] = column
+            ret[self.column_internal_name[structure[SharePointConstants.NAME_COLUMN]]] = column
         return ret
 
     def close(self):

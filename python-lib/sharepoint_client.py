@@ -1,6 +1,7 @@
 import os
 import requests
 import sharepy
+import urllib.parse
 
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
@@ -130,10 +131,10 @@ class SharePointClient():
         self.assert_response_ok(response)
 
     def get_list_fields(self, list_title):
-        url = self.get_list_fields_url(list_title)
         response = self.session.get(
-            url
+            self.get_list_fields_url(list_title)
         )
+        self.assert_response_ok(response)
         return response.json()
 
     def get_list_all_items(self, list_title):
@@ -190,7 +191,7 @@ class SharePointClient():
         body = {
             'parameters': {
                 '__metadata': {'type': 'SP.XmlSchemaFieldCreationInformation'},
-                'SchemaXml': "<Field DisplayName='{0}' Format='Dropdown' MaxLength='255' Name='{0}' Title='{0}' Type='Text'></Field>".format(field_title)
+                'SchemaXml': "<Field DisplayName='{0}' Format='Dropdown' MaxLength='255' Type='Text'></Field>".format(self.amp_escape(field_title))
             }
         }
         headers = {
@@ -204,9 +205,15 @@ class SharePointClient():
         self.assert_response_ok(response)
         return response
 
+    def amp_escape(self, to_format):
+        to_convert = {'"': '&quot;', "'": "&apos;", "<": "&lt;", ">": "&gt;", "&": "&amp;", "/": "&#x2F;"}
+        for key in to_convert:
+            to_format = to_format.replace(key, to_convert[key])
+        return to_format
+
     def add_list_item(self, list_title, item):
         item["__metadata"] = {
-            "type": "SP.Data.{}ListItem".format(list_title.capitalize())
+            "type": "SP.Data.{}ListItem".format(list_title.capitalize().replace(" ", "_x0020_"))
         }
         headers = {
             "Content-Type": DSSConstants.APPLICATION_JSON
@@ -228,7 +235,7 @@ class SharePointClient():
         return self.get_base_url() + "/lists"
 
     def get_lists_by_title_url(self, list_title):
-        return self.get_lists_url() + "/GetByTitle('{}')".format(list_title)
+        return self.get_lists_url() + "/GetByTitle('{}')".format(urllib.parse.quote(list_title))
 
     def get_list_items_url(self, list_title):
         return self.get_lists_by_title_url(list_title) + "/Items"
@@ -281,6 +288,8 @@ class SharePointClient():
 
     def assert_response_ok(self, response, no_json=False):
         status_code = response.status_code
+        if status_code == 400:
+            raise Exception("{}".format(response.text))
         if status_code == 404:
             raise Exception("Not found. Please check tenant, site type or site name.")
         if status_code == 403:
