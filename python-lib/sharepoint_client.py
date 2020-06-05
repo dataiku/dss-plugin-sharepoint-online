@@ -2,9 +2,16 @@ import os
 import requests
 import sharepy
 import urllib.parse
+import logging
 
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
+from common import is_email_address
+
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO,
+                    format='sharepoint-online plugin %(levelname)s - %(message)s')
 
 
 class SharePointClient():
@@ -33,11 +40,16 @@ class SharePointClient():
             self.setup_login_details(login_details)
             username = login_details['sharepoint_username']
             password = login_details['sharepoint_password']
+            self.assert_email_address(username)
             self.setup_sharepoint_online_url(login_details)
             self.session = sharepy.connect(self.sharepoint_url, username=username, password=password)
         else:
             raise Exception("The type of authentication is not selected")
         self.sharepoint_list_title = config.get("sharepoint_list_title")
+
+    def assert_email_address(self, username):
+        if not is_email_address(username):
+            raise Exception("Sharepoint-Online's username should be an email address")
 
     def setup_login_details(self, login_details):
         self.sharepoint_site = login_details['sharepoint_site']
@@ -288,6 +300,10 @@ class SharePointClient():
 
     def assert_response_ok(self, response, no_json=False):
         status_code = response.status_code
+        if status_code >= 400:
+            enriched_error_message = self.get_enriched_error_message(response)
+            if enriched_error_message is not None:
+                raise Exception("Error: {}".format(enriched_error_message))
         if status_code == 400:
             raise Exception("{}".format(response.text))
         if status_code == 404:
@@ -295,14 +311,26 @@ class SharePointClient():
         if status_code == 403:
             raise Exception("Forbidden. Please check your account credentials.")
         if not no_json:
-            if len(response.content) == 0:
-                raise Exception("Empty response from SharePoint. Please check user credentials.")
+            self.assert_no_error_in_json(response)
+
+    def get_enriched_error_message(self, response):
+        try:
             json_response = response.json()
-            if "error" in json_response:
-                if "message" in json_response["error"] and "value" in json_response["error"]["message"]:
-                    raise Exception("Error: {}".format(json_response["error"]["message"]["value"]))
-                else:
-                    raise Exception("Error")
+            enriched_error_message = json_response.get("error").get("message").get("value")
+            return enriched_error_message
+        except Exception as error:
+            logger.info("Error trying to extract error message :{}".format(error))
+            return None
+
+    def assert_no_error_in_json(self, response):
+        if len(response.content) == 0:
+            raise Exception("Empty response from SharePoint. Please check user credentials.")
+        json_response = response.json()
+        if "error" in json_response:
+            if "message" in json_response["error"] and "value" in json_response["error"]["message"]:
+                raise Exception("Error: {}".format(json_response["error"]["message"]["value"]))
+            else:
+                raise Exception("Error")
 
 
 class SharePointSession():

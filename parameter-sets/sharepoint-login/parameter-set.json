@@ -33,7 +33,7 @@
             "name": "sharepoint_username",
             "label": "Username",
             "type": "STRING",
-            "description": "",
+            "description": "john.doe@my-corp.com",
             "mandatory": true
         },
         {
