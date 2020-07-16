@@ -8,3 +8,6 @@
 .htmlcov
 .DS_Store
 .idea
+setup.cfg
+.vscode
+dist

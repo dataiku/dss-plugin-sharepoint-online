@@ -31,3 +31,5 @@ class SharePointConstants(object):
     }
     TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
     GET_FOLDER_URL_STRUCTURE = "{0}/{1}/_api/Web/GetFolderByServerRelativeUrl('/{1}/{2}{3}')"
+    GET_SITE_APP_TOKEN_URL = "https://accounts.accesscontrol.windows.net/{tenant_id}/tokens/OAuth/2"
+    SHAREPOINT_ONLINE_RESSOURCE = "00000003-0000-0ff1-ce00-000000000000"

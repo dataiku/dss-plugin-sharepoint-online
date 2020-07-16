@@ -1,0 +1,54 @@
+{
+    "meta": {
+        "label": "SharePoint Online Site App Permissions",
+        "description": "",
+        "icon": "icon-cloud"
+    },
+    "defaultDefinableInline": true,
+    "defaultDefinableAtProjectLevel": true,
+    "pluginParams": [],
+    "params": [
+        {
+            "name": "sharepoint_tenant",
+            "label": "Tenant",
+            "type": "STRING",
+            "description": "Usually your company name",
+            "mandatory": true
+        },
+        {
+            "name": "sharepoint_site",
+            "label": "Site path",
+            "type": "STRING",
+            "description": "sites/site_name/subsite...",
+            "mandatory": true
+        },
+        {
+            "name": "sharepoint_root",
+            "label": "Root directory",
+            "type": "STRING",
+            "description": "",
+            "defaultValue": "Shared Documents"
+        },
+        {
+            "name": "tenant_id",
+            "label": "Tenant ID",
+            "type": "STRING",
+            "description": "",
+            "mandatory": true
+        },
+        {
+            "name": "client_id",
+            "label": "Client ID",
+            "type": "STRING",
+            "description": "",
+            "mandatory": true
+        },
+        {
+            "name": "client_secret",
+            "label": "Client secret",
+            "type": "PASSWORD",
+            "description": "",
+            "mandatory": true
+        }
+    ]
+}

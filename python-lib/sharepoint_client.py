@@ -43,6 +43,23 @@ class SharePointClient():
             self.assert_email_address(username)
             self.setup_sharepoint_online_url(login_details)
             self.session = sharepy.connect(self.sharepoint_url, username=username, password=password)
+        elif config.get('auth_type') == DSSConstants.AUTH_SITE_APP:
+            login_details = config.get('site_app_permissions')
+            self.assert_login_details(DSSConstants.SITE_APP_DETAILS, login_details)
+            self.setup_sharepoint_online_url(login_details)
+            self.setup_login_details(login_details)
+            self.tenant_id = login_details.get("tenant_id")
+            self.client_secret = login_details.get("client_secret")
+            self.client_id = login_details.get("client_id")
+            self.sharepoint_tenant = login_details.get('sharepoint_tenant')
+            self.sharepoint_access_token = self.get_site_app_access_token()
+            self.session = SharePointSession(
+                None,
+                None,
+                self.sharepoint_tenant,
+                self.sharepoint_site,
+                sharepoint_access_token=self.sharepoint_access_token
+            )
         else:
             raise Exception("The type of authentication is not selected")
         self.sharepoint_list_title = config.get("sharepoint_list_title")
@@ -331,6 +348,29 @@ class SharePointClient():
                 raise Exception("Error: {}".format(json_response["error"]["message"]["value"]))
             else:
                 raise Exception("Error")
+
+    def get_site_app_access_token(self):
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        data = {
+            "grant_type": "client_credentials",
+            "client_id": "{client_id}@{tenant_id}".format(client_id=self.client_id, tenant_id=self.tenant_id),
+            "client_secret": self.client_secret,
+            "resource": "{resource}/{sharepoint_tenant}.sharepoint.com@{tenant_id}".format(
+                resource=SharePointConstants.SHAREPOINT_ONLINE_RESSOURCE,
+                sharepoint_tenant=self.sharepoint_tenant,
+                tenant_id=self.tenant_id
+            )
+        }
+        response = requests.post(
+            SharePointConstants.GET_SITE_APP_TOKEN_URL.format(tenant_id=self.tenant_id),
+            headers=headers,
+            data=data
+        )
+        self.assert_response_ok(response)
+        json_response = response.json()
+        return json_response.get("access_token")
 
 
 class SharePointSession():
