@@ -166,8 +166,8 @@ class SharePointClient():
         self.assert_response_ok(response)
         return response.json()
 
-    def get_list_all_items(self, list_title):
-        items = self.get_list_items(list_title)
+    def get_list_all_items(self, list_title, column_to_expand=None):
+        items = self.get_list_items(list_title, column_to_expand)
         buffer = items
         while SharePointConstants.RESULTS_CONTAINER_V2 in items and SharePointConstants.NEXT_PAGE in items[SharePointConstants.RESULTS_CONTAINER_V2]:
             items = self.session.get(items[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.NEXT_PAGE]).json()
@@ -176,9 +176,25 @@ class SharePointClient():
             )
         return buffer
 
-    def get_list_items(self, list_title):
+    def get_list_items(self, list_title, columns_to_expand=None):
+        if columns_to_expand is not None:
+            select = []
+            expand = []
+            for column_to_expand in columns_to_expand:
+                if columns_to_expand.get(column_to_expand) is None:
+                    select.append("{}".format(column_to_expand))
+                else:
+                    select.append("{}/{}".format(column_to_expand, columns_to_expand.get(column_to_expand)))
+                    expand.append(column_to_expand)
+            params = {
+                "$select": ",".join(select),
+                "$expand": ",".join(expand)
+            }
+        else:
+            params = None
         response = self.session.get(
-            self.get_list_items_url(list_title)
+            self.get_list_items_url(list_title),
+            params=params
         )
         self.assert_response_ok(response)
         return response.json()
@@ -380,12 +396,14 @@ class SharePointSession():
         self.sharepoint_site = sharepoint_site
         self.sharepoint_access_token = sharepoint_access_token
 
-    def get(self, url, headers={}):
+    def get(self, url, headers=None, params=None):
+        headers = {} if headers is None else headers
         headers["accept"] = DSSConstants.APPLICATION_JSON
         headers["Authorization"] = self.get_authorization_bearer()
-        return requests.get(url, headers=headers)
+        return requests.get(url, headers=headers, params=params)
 
-    def post(self, url, headers={}, json=None, data=None):
+    def post(self, url, headers=None, json=None, data=None):
+        headers = {} if headers is None else headers
         headers["accept"] = DSSConstants.APPLICATION_JSON
         headers["Authorization"] = self.get_authorization_bearer()
         return requests.post(url, headers=headers, json=json, data=data)

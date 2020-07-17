@@ -22,12 +22,25 @@ def get_dss_types(sharepoint_type):
         return "string"
 
 
-def matched_item(column_ids, column_names, item):
+def matched_item(column_ids, column_names, item, column_to_expand=None):
     ret = {}
     for key, value in item.items():
         if key in column_ids:
             name = column_names[key]
             ret[name] = value
+    return ret
+
+
+def expand_matched_item(column_ids, column_names, item, column_to_expand=None):
+    ret = {}
+    for key, value in item.items():
+        if key in column_ids:
+            name = column_names[key]
+            key_to_return = column_to_expand.get(key)
+            if key_to_return:
+                ret[name] = value.get(key_to_return)
+            else:
+                ret[name] = value
     return ret
 
 

@@ -4,8 +4,8 @@ import logging
 from sharepoint_client import SharePointClient
 
 from sharepoint_constants import SharePointConstants
-from sharepoint_lists import assert_list_title, is_response_empty, extract_results, get_dss_types, is_error, matched_item
-from sharepoint_lists import SharePointListWriter
+from sharepoint_lists import assert_list_title, is_response_empty, extract_results, get_dss_types, is_error
+from sharepoint_lists import SharePointListWriter, matched_item, expand_matched_item
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
@@ -21,6 +21,8 @@ class SharePointListsConnector(Connector):
         logger.info('init:sharepoint_list_title={}, auth_type={}'.format(self.sharepoint_list_title, self.auth_type))
         self.column_ids = {}
         self.column_names = {}
+        self.expand_lookup = config.get("expand_lookup", False)
+        self.column_to_expand = {}
         self.client = SharePointClient(config)
 
     def get_read_schema(self):
@@ -31,6 +33,7 @@ class SharePointListsConnector(Connector):
         columns = []
         self.column_ids = {}
         self.column_names = {}
+        has_expandable_columns = False
         for column in extract_results(response):
             if (not column[SharePointConstants.HIDDEN_COLUMN]) and (not column[SharePointConstants.READ_ONLY_FIELD]):
                 sharepoint_type = get_dss_types(column[SharePointConstants.TYPE_AS_STRING])
@@ -41,6 +44,14 @@ class SharePointListsConnector(Connector):
                     })
                     self.column_ids[column[SharePointConstants.ENTITY_PROPERTY_NAME]] = sharepoint_type
                     self.column_names[column[SharePointConstants.ENTITY_PROPERTY_NAME]] = column[SharePointConstants.TITLE_COLUMN]
+                if self.expand_lookup:
+                    if column[SharePointConstants.TYPE_AS_STRING] == "Lookup":
+                        self.column_to_expand.update({column[SharePointConstants.STATIC_NAME]: column[SharePointConstants.LOOKUP_FIELD]})
+                        has_expandable_columns = True
+                    else:
+                        self.column_to_expand.update({column[SharePointConstants.STATIC_NAME]: None})
+        if not has_expandable_columns:
+            self.column_to_expand = {}
         return {
             SharePointConstants.COLUMNS: columns
         }
@@ -54,15 +65,18 @@ class SharePointListsConnector(Connector):
             dataset_schema, dataset_partitioning, partition_id
         ))
 
-        response = self.client.get_list_all_items(self.sharepoint_list_title)
+        response = self.client.get_list_all_items(self.sharepoint_list_title, self.column_to_expand)
         if is_response_empty(response):
             if is_error(response):
                 raise Exception("Error: {}".format(response[SharePointConstants.ERROR_CONTAINER][SharePointConstants.MESSAGE][SharePointConstants.VALUE]))
             else:
                 raise Exception("Error when interacting with SharePoint")
-
-        for item in extract_results(response):
-            yield matched_item(self.column_ids, self.column_names, item)
+        if self.column_to_expand is None:
+            for item in extract_results(response):
+                yield matched_item(self.column_ids, self.column_names, item)
+        else:
+            for item in extract_results(response):
+                yield expand_matched_item(self.column_ids, self.column_names, item, column_to_expand=self.column_to_expand)
 
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
                    partition_id=None):

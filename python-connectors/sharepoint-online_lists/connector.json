@@ -53,6 +53,14 @@
             "description": "(A-Z, a-z, 0-9)",
             "type": "STRING",
             "mandatory": true
+        },
+        {
+            "name": "expand_lookup",
+            "label": "Expand lookup fields",
+            "description": "",
+            "type": "BOOLEAN",
+            "defaultValue": false,
+            "mandatory": true
         }
     ]
 }

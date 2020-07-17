@@ -5,6 +5,8 @@ class SharePointConstants(object):
     ENTITY_PROPERTY_NAME = 'EntityPropertyName'
     NAME_COLUMN = 'name'
     TYPE_COLUMN = 'type'
+    STATIC_NAME = 'StaticName'
+    LOOKUP_FIELD = 'LookupField'
     COMMENT_COLUMN = 'comment'
     COLUMNS = 'columns'
     TYPE_AS_STRING = 'TypeAsString'
