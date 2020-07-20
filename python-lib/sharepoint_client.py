@@ -232,11 +232,12 @@ class SharePointClient():
         )
         return response
 
-    def create_custom_field(self, list_title, field_title):
+    def create_custom_field(self, list_title, field_title, field_type=None):
+        field_type = SharePointConstants.FALLBACK_TYPE if field_type is None else field_type
         body = {
             'parameters': {
                 '__metadata': {'type': 'SP.XmlSchemaFieldCreationInformation'},
-                'SchemaXml': "<Field DisplayName='{0}' Format='Dropdown' MaxLength='255' Type='Text'></Field>".format(self.amp_escape(field_title))
+                'SchemaXml': "<Field DisplayName='{0}' Format='Dropdown' MaxLength='255' Type='{1}'></Field>".format(self.amp_escape(field_title), field_type)
             }
         }
         headers = {

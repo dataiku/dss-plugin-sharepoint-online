@@ -30,3 +30,14 @@ class DSSConstants(object):
         "client_id": "The client ID is missing",
         "client_secret": "The client secret is missing"
     }
+    TYPES = {
+        "string": "Text",
+        "double": "Number",
+        "float": "Number",
+        "int": "Integer",
+        "bigint": "Integer",
+        "smallint": "Integer",
+        "tinyint": "Integer",
+        "date": "DateTime"
+    }
+    FALLBACK_TYPE = "string"

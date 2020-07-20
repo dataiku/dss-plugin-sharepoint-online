@@ -4,7 +4,7 @@ import logging
 from sharepoint_client import SharePointClient
 
 from sharepoint_constants import SharePointConstants
-from sharepoint_lists import assert_list_title, is_response_empty, extract_results, get_dss_types, is_error
+from sharepoint_lists import assert_list_title, is_response_empty, extract_results, get_dss_type, is_error
 from sharepoint_lists import SharePointListWriter, matched_item, expand_matched_item
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ class SharePointListsConnector(Connector):
         has_expandable_columns = False
         for column in extract_results(response):
             if (not column[SharePointConstants.HIDDEN_COLUMN]) and (not column[SharePointConstants.READ_ONLY_FIELD]):
-                sharepoint_type = get_dss_types(column[SharePointConstants.TYPE_AS_STRING])
+                sharepoint_type = get_dss_type(column[SharePointConstants.TYPE_AS_STRING])
                 if sharepoint_type is not None:
                     columns.append({
                         SharePointConstants.NAME_COLUMN: column[SharePointConstants.TITLE_COLUMN],

@@ -1,6 +1,7 @@
 import logging
 
 from sharepoint_constants import SharePointConstants
+from dss_constants import DSSConstants
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
@@ -15,11 +16,12 @@ def extract_results(response):
     return response[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.RESULTS]
 
 
-def get_dss_types(sharepoint_type):
-    if sharepoint_type in SharePointConstants.TYPES:
-        return SharePointConstants.TYPES[sharepoint_type]
-    else:
-        return "string"
+def get_dss_type(sharepoint_type):
+    return SharePointConstants.TYPES.get(sharepoint_type, DSSConstants.FALLBACK_TYPE)
+
+
+def get_sharepoint_type(dss_type):
+    return DSSConstants.TYPES.get(dss_type, SharePointConstants.FALLBACK_TYPE)
 
 
 def matched_item(column_ids, column_names, item, column_to_expand=None):
@@ -88,8 +90,14 @@ class SharePointListWriter(object):
 
         self.parent.get_read_schema()
         for column in self.columns:
+            dss_type = column.get(SharePointConstants.TYPE_COLUMN, DSSConstants.FALLBACK_TYPE)
+            sharepoint_type = get_sharepoint_type(dss_type)
             if column[SharePointConstants.NAME_COLUMN] not in self.parent.column_ids:
-                response = self.parent.client.create_custom_field(self.parent.sharepoint_list_title, column[SharePointConstants.NAME_COLUMN])
+                response = self.parent.client.create_custom_field(
+                    self.parent.sharepoint_list_title,
+                    column[SharePointConstants.NAME_COLUMN],
+                    field_type=sharepoint_type
+                )
                 json = response.json()
                 self.column_internal_name[column[SharePointConstants.NAME_COLUMN]] = json[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.ENTITY_PROPERTY_NAME]
 

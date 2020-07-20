@@ -31,6 +31,7 @@ class SharePointConstants(object):
         "Computed": None,
         "Attachments": None
     }
+    FALLBACK_TYPE = "Text"
     TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
     GET_FOLDER_URL_STRUCTURE = "{0}/{1}/_api/Web/GetFolderByServerRelativeUrl('/{1}/{2}{3}')"
     GET_SITE_APP_TOKEN_URL = "https://accounts.accesscontrol.windows.net/{tenant_id}/tokens/OAuth/2"
