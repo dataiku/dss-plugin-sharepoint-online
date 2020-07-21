@@ -2,9 +2,16 @@ import os
 import requests
 import sharepy
 import urllib.parse
+import logging
 
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
+from common import is_email_address
+
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO,
+                    format='sharepoint-online plugin %(levelname)s - %(message)s')
 
 
 class SharePointClient():
@@ -33,11 +40,33 @@ class SharePointClient():
             self.setup_login_details(login_details)
             username = login_details['sharepoint_username']
             password = login_details['sharepoint_password']
+            self.assert_email_address(username)
             self.setup_sharepoint_online_url(login_details)
             self.session = sharepy.connect(self.sharepoint_url, username=username, password=password)
+        elif config.get('auth_type') == DSSConstants.AUTH_SITE_APP:
+            login_details = config.get('site_app_permissions')
+            self.assert_login_details(DSSConstants.SITE_APP_DETAILS, login_details)
+            self.setup_sharepoint_online_url(login_details)
+            self.setup_login_details(login_details)
+            self.tenant_id = login_details.get("tenant_id")
+            self.client_secret = login_details.get("client_secret")
+            self.client_id = login_details.get("client_id")
+            self.sharepoint_tenant = login_details.get('sharepoint_tenant')
+            self.sharepoint_access_token = self.get_site_app_access_token()
+            self.session = SharePointSession(
+                None,
+                None,
+                self.sharepoint_tenant,
+                self.sharepoint_site,
+                sharepoint_access_token=self.sharepoint_access_token
+            )
         else:
             raise Exception("The type of authentication is not selected")
         self.sharepoint_list_title = config.get("sharepoint_list_title")
+
+    def assert_email_address(self, username):
+        if not is_email_address(username):
+            raise Exception("Sharepoint-Online's username should be an email address")
 
     def setup_login_details(self, login_details):
         self.sharepoint_site = login_details['sharepoint_site']
@@ -137,8 +166,8 @@ class SharePointClient():
         self.assert_response_ok(response)
         return response.json()
 
-    def get_list_all_items(self, list_title):
-        items = self.get_list_items(list_title)
+    def get_list_all_items(self, list_title, column_to_expand=None):
+        items = self.get_list_items(list_title, column_to_expand)
         buffer = items
         while SharePointConstants.RESULTS_CONTAINER_V2 in items and SharePointConstants.NEXT_PAGE in items[SharePointConstants.RESULTS_CONTAINER_V2]:
             items = self.session.get(items[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.NEXT_PAGE]).json()
@@ -147,9 +176,25 @@ class SharePointClient():
             )
         return buffer
 
-    def get_list_items(self, list_title):
+    def get_list_items(self, list_title, columns_to_expand=None):
+        if columns_to_expand is not None:
+            select = []
+            expand = []
+            for column_to_expand in columns_to_expand:
+                if columns_to_expand.get(column_to_expand) is None:
+                    select.append("{}".format(column_to_expand))
+                else:
+                    select.append("{}/{}".format(column_to_expand, columns_to_expand.get(column_to_expand)))
+                    expand.append(column_to_expand)
+            params = {
+                "$select": ",".join(select),
+                "$expand": ",".join(expand)
+            }
+        else:
+            params = None
         response = self.session.get(
-            self.get_list_items_url(list_title)
+            self.get_list_items_url(list_title),
+            params=params
         )
         self.assert_response_ok(response)
         return response.json()
@@ -187,11 +232,12 @@ class SharePointClient():
         )
         return response
 
-    def create_custom_field(self, list_title, field_title):
+    def create_custom_field(self, list_title, field_title, field_type=None):
+        field_type = SharePointConstants.FALLBACK_TYPE if field_type is None else field_type
         body = {
             'parameters': {
                 '__metadata': {'type': 'SP.XmlSchemaFieldCreationInformation'},
-                'SchemaXml': "<Field DisplayName='{0}' Format='Dropdown' MaxLength='255' Type='Text'></Field>".format(self.amp_escape(field_title))
+                'SchemaXml': "<Field DisplayName='{0}' Format='Dropdown' MaxLength='255' Type='{1}'></Field>".format(self.amp_escape(field_title), field_type)
             }
         }
         headers = {
@@ -288,6 +334,10 @@ class SharePointClient():
 
     def assert_response_ok(self, response, no_json=False):
         status_code = response.status_code
+        if status_code >= 400:
+            enriched_error_message = self.get_enriched_error_message(response)
+            if enriched_error_message is not None:
+                raise Exception("Error: {}".format(enriched_error_message))
         if status_code == 400:
             raise Exception("{}".format(response.text))
         if status_code == 404:
@@ -295,14 +345,49 @@ class SharePointClient():
         if status_code == 403:
             raise Exception("Forbidden. Please check your account credentials.")
         if not no_json:
-            if len(response.content) == 0:
-                raise Exception("Empty response from SharePoint. Please check user credentials.")
+            self.assert_no_error_in_json(response)
+
+    def get_enriched_error_message(self, response):
+        try:
             json_response = response.json()
-            if "error" in json_response:
-                if "message" in json_response["error"] and "value" in json_response["error"]["message"]:
-                    raise Exception("Error: {}".format(json_response["error"]["message"]["value"]))
-                else:
-                    raise Exception("Error")
+            enriched_error_message = json_response.get("error").get("message").get("value")
+            return enriched_error_message
+        except Exception as error:
+            logger.info("Error trying to extract error message :{}".format(error))
+            return None
+
+    def assert_no_error_in_json(self, response):
+        if len(response.content) == 0:
+            raise Exception("Empty response from SharePoint. Please check user credentials.")
+        json_response = response.json()
+        if "error" in json_response:
+            if "message" in json_response["error"] and "value" in json_response["error"]["message"]:
+                raise Exception("Error: {}".format(json_response["error"]["message"]["value"]))
+            else:
+                raise Exception("Error")
+
+    def get_site_app_access_token(self):
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        data = {
+            "grant_type": "client_credentials",
+            "client_id": "{client_id}@{tenant_id}".format(client_id=self.client_id, tenant_id=self.tenant_id),
+            "client_secret": self.client_secret,
+            "resource": "{resource}/{sharepoint_tenant}.sharepoint.com@{tenant_id}".format(
+                resource=SharePointConstants.SHAREPOINT_ONLINE_RESSOURCE,
+                sharepoint_tenant=self.sharepoint_tenant,
+                tenant_id=self.tenant_id
+            )
+        }
+        response = requests.post(
+            SharePointConstants.GET_SITE_APP_TOKEN_URL.format(tenant_id=self.tenant_id),
+            headers=headers,
+            data=data
+        )
+        self.assert_response_ok(response)
+        json_response = response.json()
+        return json_response.get("access_token")
 
 
 class SharePointSession():
@@ -312,12 +397,14 @@ class SharePointSession():
         self.sharepoint_site = sharepoint_site
         self.sharepoint_access_token = sharepoint_access_token
 
-    def get(self, url, headers={}):
+    def get(self, url, headers=None, params=None):
+        headers = {} if headers is None else headers
         headers["accept"] = DSSConstants.APPLICATION_JSON
         headers["Authorization"] = self.get_authorization_bearer()
-        return requests.get(url, headers=headers)
+        return requests.get(url, headers=headers, params=params)
 
-    def post(self, url, headers={}, json=None, data=None):
+    def post(self, url, headers=None, json=None, data=None):
+        headers = {} if headers is None else headers
         headers["accept"] = DSSConstants.APPLICATION_JSON
         headers["Authorization"] = self.get_authorization_bearer()
         return requests.post(url, headers=headers, json=json, data=data)

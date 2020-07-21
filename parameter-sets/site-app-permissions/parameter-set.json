@@ -1,6 +1,6 @@
 {
     "meta": {
-        "label": "SharePoint Online login",
+        "label": "SharePoint Online Site App Permissions",
         "description": "",
         "icon": "icon-cloud"
     },
@@ -30,15 +30,22 @@
             "defaultValue": "Shared Documents"
         },
         {
-            "name": "sharepoint_username",
-            "label": "Username",
+            "name": "tenant_id",
+            "label": "Tenant ID",
             "type": "STRING",
-            "description": "john.doe@my-corp.com",
+            "description": "",
             "mandatory": true
         },
         {
-            "name": "sharepoint_password",
-            "label": "Password",
+            "name": "client_id",
+            "label": "Client ID",
+            "type": "STRING",
+            "description": "",
+            "mandatory": true
+        },
+        {
+            "name": "client_secret",
+            "label": "Client secret",
             "type": "PASSWORD",
             "description": "",
             "mandatory": true

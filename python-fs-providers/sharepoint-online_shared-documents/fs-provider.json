@@ -17,6 +17,10 @@
                 {
                     "value": "oauth",
                     "label": "Azure Single Sign On"
+                },
+                {
+                    "value": "site-app-permissions",
+                    "label": "Site App Permissions"
                 }
             ]
         },
@@ -33,6 +37,13 @@
             "type": "PRESET",
             "parameterSetId": "sharepoint-login",
             "visibilityCondition": "model.auth_type == 'login'"
+        },
+        {
+            "name": "site_app_permissions",
+            "label": "Site App preset",
+            "type": "PRESET",
+            "parameterSetId": "site-app-permissions",
+            "visibilityCondition": "model.auth_type == 'site-app-permissions'"
         }
     ]
 }

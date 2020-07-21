@@ -19,6 +19,10 @@
                 {
                     "value": "oauth",
                     "label": "Azure Single Sign On"
+                },
+                {
+                    "value": "site-app-permissions",
+                    "label": "Site App Permissions"
                 }
             ]
         },
@@ -37,10 +41,25 @@
             "visibilityCondition": "model.auth_type == 'login'"
         },
         {
+            "name": "site_app_permissions",
+            "label": "Site App preset",
+            "type": "PRESET",
+            "parameterSetId": "site-app-permissions",
+            "visibilityCondition": "model.auth_type == 'site-app-permissions'"
+        },
+        {
             "name": "sharepoint_list_title",
             "label": "List title",
             "description": "(A-Z, a-z, 0-9)",
             "type": "STRING",
+            "mandatory": true
+        },
+        {
+            "name": "expand_lookup",
+            "label": "Expand lookup fields",
+            "description": "",
+            "type": "BOOLEAN",
+            "defaultValue": false,
             "mandatory": true
         }
     ]
