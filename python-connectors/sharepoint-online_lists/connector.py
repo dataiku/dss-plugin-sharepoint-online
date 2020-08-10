@@ -23,6 +23,8 @@ class SharePointListsConnector(Connector):
         self.column_names = {}
         self.expand_lookup = config.get("expand_lookup", False)
         self.column_to_expand = {}
+        self.metadata_to_retrieve = config.get("metadata_to_retrieve", [])
+        self.display_metadata = len(self.metadata_to_retrieve) > 0
         self.client = SharePointClient(config)
 
     def get_read_schema(self):
@@ -35,7 +37,7 @@ class SharePointListsConnector(Connector):
         self.column_names = {}
         has_expandable_columns = False
         for column in extract_results(response):
-            if (not column[SharePointConstants.HIDDEN_COLUMN]) and (not column[SharePointConstants.READ_ONLY_FIELD]):
+            if self.is_column_displayable(column):
                 sharepoint_type = get_dss_type(column[SharePointConstants.TYPE_AS_STRING])
                 if sharepoint_type is not None:
                     columns.append({
@@ -56,6 +58,12 @@ class SharePointListsConnector(Connector):
             SharePointConstants.COLUMNS: columns
         }
 
+    def is_column_displayable(self, column):
+        if self.display_metadata and (column['StaticName'] in self.metadata_to_retrieve):
+            return True
+        return (not column[SharePointConstants.HIDDEN_COLUMN]) \
+            and (not column[SharePointConstants.READ_ONLY_FIELD])
+
     def generate_rows(self, dataset_schema=None, dataset_partitioning=None,
                       partition_id=None, records_limit=-1):
         if self.column_ids == {}:
@@ -71,7 +79,7 @@ class SharePointListsConnector(Connector):
                 raise Exception("Error: {}".format(response[SharePointConstants.ERROR_CONTAINER][SharePointConstants.MESSAGE][SharePointConstants.VALUE]))
             else:
                 raise Exception("Error when interacting with SharePoint")
-        if self.column_to_expand is None:
+        if self.column_to_expand == {}:
             for item in extract_results(response):
                 yield matched_item(self.column_ids, self.column_names, item)
         else:

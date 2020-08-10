@@ -61,6 +61,25 @@
             "type": "BOOLEAN",
             "defaultValue": false,
             "mandatory": true
+        },
+        {
+            "name": "metadata_to_retrieve",
+            "label": "Metadata to retrieve",
+            "type": "MULTISELECT",
+            "selectChoices": [
+                {
+                    "value": "ID",
+                    "label": "Item's ID"
+                },
+                {
+                    "value": "Created",
+                    "label": "Creation date"
+                },
+                {
+                    "value": "Modified",
+                    "label": "Modification date"
+                }
+            ]
         }
     ]
 }
