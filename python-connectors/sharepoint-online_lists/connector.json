@@ -78,6 +78,14 @@
                 {
                     "value": "Modified",
                     "label": "Modification date"
+                },
+                {
+                    "value": "Author",
+                    "label": "Created by"
+                },
+                {
+                    "value": "Editor",
+                    "label": "Modified by"
                 }
             ]
         }

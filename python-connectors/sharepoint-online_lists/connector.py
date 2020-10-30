@@ -51,12 +51,20 @@ class SharePointListsConnector(Connector):
                         self.column_to_expand.update({column[SharePointConstants.STATIC_NAME]: column[SharePointConstants.LOOKUP_FIELD]})
                         has_expandable_columns = True
                     else:
-                        self.column_to_expand.update({column[SharePointConstants.STATIC_NAME]: None})
+                        self.column_to_expand.update({
+                            column[SharePointConstants.STATIC_NAME]: self.get_column_lookup_field(column[SharePointConstants.STATIC_NAME])
+                        })
         if not has_expandable_columns:
             self.column_to_expand = {}
         return {
             SharePointConstants.COLUMNS: columns
         }
+
+    @staticmethod
+    def get_column_lookup_field(column_static_name):
+        if column_static_name in SharePointConstants.EXPENDABLES_FIELDS:
+            return SharePointConstants.EXPENDABLES_FIELDS.get(column_static_name)
+        return None
 
     def is_column_displayable(self, column):
         if self.display_metadata and (column['StaticName'] in self.metadata_to_retrieve):
