@@ -35,6 +35,7 @@ def matched_item(column_ids, column_names, item, column_to_expand=None):
 
 def expand_matched_item(column_ids, column_names, item, column_to_expand=None):
     ret = {}
+    column_to_expand = {} if column_to_expand is None else column_to_expand
     for key, value in item.items():
         if key in column_ids:
             name = column_names[key]
