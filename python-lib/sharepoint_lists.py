@@ -101,6 +101,8 @@ class SharePointListWriter(object):
                 )
                 json = response.json()
                 self.column_internal_name[column[SharePointConstants.NAME_COLUMN]] = json[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.ENTITY_PROPERTY_NAME]
+            else:
+                self.column_internal_name[SharePointConstants.TITLE_COLUMN] = SharePointConstants.TITLE_COLUMN
 
         for row in self.buffer:
             item = self.build_row_dictionary(row)
