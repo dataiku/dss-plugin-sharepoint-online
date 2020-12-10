@@ -103,17 +103,18 @@ class SharePointListWriter(object):
         for column in self.columns:
             dss_type = column.get(SharePointConstants.TYPE_COLUMN, DSSConstants.FALLBACK_TYPE)
             sharepoint_type = get_sharepoint_type(dss_type)
-            if column[SharePointConstants.NAME_COLUMN] not in self.parent.column_ids:
+            dss_column_name = column[SharePointConstants.NAME_COLUMN]
+            if dss_column_name not in self.parent.column_ids:
                 response = self.parent.client.create_custom_field(
                     self.parent.sharepoint_list_title,
-                    column[SharePointConstants.NAME_COLUMN],
+                    dss_column_name,
                     field_type=sharepoint_type
                 )
                 json = response.json()
-                self.sharepoint_column_ids[column[SharePointConstants.NAME_COLUMN]] = \
+                self.sharepoint_column_ids[dss_column_name] = \
                     json[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.ENTITY_PROPERTY_NAME]
             else:
-                self.sharepoint_column_ids[column[SharePointConstants.NAME_COLUMN]] = column[SharePointConstants.NAME_COLUMN]
+                self.sharepoint_column_ids[dss_column_name] = dss_column_name
 
     def build_row_dictionary(self, row):
         ret = {}
