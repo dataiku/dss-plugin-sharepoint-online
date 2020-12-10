@@ -14,6 +14,10 @@ logging.basicConfig(level=logging.INFO,
                     format='sharepoint-online plugin %(levelname)s - %(message)s')
 
 
+class SharePointClientError(ValueError):
+    pass
+
+
 class SharePointClient():
 
     def __init__(self, config):
@@ -61,12 +65,12 @@ class SharePointClient():
                 sharepoint_access_token=self.sharepoint_access_token
             )
         else:
-            raise Exception("The type of authentication is not selected")
+            raise SharePointClientError("The type of authentication is not selected")
         self.sharepoint_list_title = config.get("sharepoint_list_title")
 
     def assert_email_address(self, username):
         if not is_email_address(username):
-            raise Exception("Sharepoint-Online's username should be an email address")
+            raise SharePointClientError("Sharepoint-Online's username should be an email address")
 
     def setup_login_details(self, login_details):
         self.sharepoint_site = login_details['sharepoint_site']
@@ -251,7 +255,8 @@ class SharePointClient():
         self.assert_response_ok(response)
         return response
 
-    def amp_escape(self, to_format):
+    @staticmethod
+    def amp_escape(to_format):
         to_convert = {'"': '&quot;', "'": "&apos;", "<": "&lt;", ">": "&gt;", "&": "&amp;", "/": "&#x2F;"}
         for key in to_convert:
             to_format = to_format.replace(key, to_convert[key])
@@ -325,46 +330,49 @@ class SharePointClient():
     def get_file_add_url(self, full_path, file_name):
         return self.get_folder_url(full_path) + "/Files/add(url='{}',overwrite=true)".format(file_name)
 
-    def assert_login_details(self, required_keys, login_details):
+    @staticmethod
+    def assert_login_details(required_keys, login_details):
         if login_details is None or login_details == {}:
-            raise Exception("Login details are empty")
+            raise SharePointClientError("Login details are empty")
         for key in required_keys:
             if key not in login_details.keys():
-                raise Exception(required_keys[key])
+                raise SharePointClientError(required_keys[key])
 
     def assert_response_ok(self, response, no_json=False):
         status_code = response.status_code
         if status_code >= 400:
             enriched_error_message = self.get_enriched_error_message(response)
             if enriched_error_message is not None:
-                raise Exception("Error: {}".format(enriched_error_message))
+                raise SharePointClientError("Error: {}".format(enriched_error_message))
         if status_code == 400:
-            raise Exception("{}".format(response.text))
+            raise SharePointClientError("{}".format(response.text))
         if status_code == 404:
-            raise Exception("Not found. Please check tenant, site type or site name.")
+            raise SharePointClientError("Not found. Please check tenant, site type or site name.")
         if status_code == 403:
-            raise Exception("Forbidden. Please check your account credentials.")
+            raise SharePointClientError("Forbidden. Please check your account credentials.")
         if not no_json:
             self.assert_no_error_in_json(response)
 
-    def get_enriched_error_message(self, response):
+    @staticmethod
+    def get_enriched_error_message(response):
         try:
             json_response = response.json()
             enriched_error_message = json_response.get("error").get("message").get("value")
             return enriched_error_message
-        except Exception as error:
+        except SharePointClientError as error:
             logger.info("Error trying to extract error message :{}".format(error))
             return None
 
-    def assert_no_error_in_json(self, response):
+    @staticmethod
+    def assert_no_error_in_json(response):
         if len(response.content) == 0:
-            raise Exception("Empty response from SharePoint. Please check user credentials.")
+            raise SharePointClientError("Empty response from SharePoint. Please check user credentials.")
         json_response = response.json()
         if "error" in json_response:
             if "message" in json_response["error"] and "value" in json_response["error"]["message"]:
-                raise Exception("Error: {}".format(json_response["error"]["message"]["value"]))
+                raise SharePointClientError("Error: {}".format(json_response["error"]["message"]["value"]))
             else:
-                raise Exception("Error")
+                raise SharePointClientError("Error: {}".format(json_response))
 
     def get_site_app_access_token(self):
         headers = {
