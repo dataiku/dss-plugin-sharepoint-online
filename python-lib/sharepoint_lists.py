@@ -82,7 +82,6 @@ class SharePointListWriter(object):
         self.sharepoint_column_ids = {}
 
     def write_row(self, row):
-        logger.info('write_row')
         self.buffer.append(row)
 
     def flush(self):
