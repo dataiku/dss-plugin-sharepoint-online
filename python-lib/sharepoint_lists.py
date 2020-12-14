@@ -65,7 +65,7 @@ def _has_value(response):
 
 def assert_list_title(list_title):
     if not list_title.isalnum():
-        raise Exception("The list title contains non alphanumerical characters")
+        raise ValueError("The list title contains non alphanumerical characters")
 
 
 class SharePointListWriter(object):
@@ -79,37 +79,46 @@ class SharePointListWriter(object):
         self.buffer = []
         logger.info('init SharepointListWriter')
         self.columns = dataset_schema[SharePointConstants.COLUMNS]
-        self.column_internal_name = {}
+        self.sharepoint_column_ids = {}
 
     def write_row(self, row):
-        logger.info('write_row:row={}'.format(row))
         self.buffer.append(row)
 
     def flush(self):
+        logger.info('flush:delete_list "{}"'.format(self.parent.sharepoint_list_title.lower()))
         self.parent.client.delete_list(self.parent.sharepoint_list_title.lower())
+        logger.info('flush:create_list "{}"'.format(self.parent.sharepoint_list_title.lower()))
         self.parent.client.create_list(self.parent.sharepoint_list_title.lower())
 
         self.parent.get_read_schema()
-        for column in self.columns:
-            dss_type = column.get(SharePointConstants.TYPE_COLUMN, DSSConstants.FALLBACK_TYPE)
-            sharepoint_type = get_sharepoint_type(dss_type)
-            if column[SharePointConstants.NAME_COLUMN] not in self.parent.column_ids:
-                response = self.parent.client.create_custom_field(
-                    self.parent.sharepoint_list_title,
-                    column[SharePointConstants.NAME_COLUMN],
-                    field_type=sharepoint_type
-                )
-                json = response.json()
-                self.column_internal_name[column[SharePointConstants.NAME_COLUMN]] = json[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.ENTITY_PROPERTY_NAME]
+        self.create_sharepoint_columns()
 
         for row in self.buffer:
             item = self.build_row_dictionary(row)
             self.parent.client.add_list_item(self.parent.sharepoint_list_title, item)
 
+    def create_sharepoint_columns(self):
+        """ Create the list's columns on SP, retrieve their SP id and map it to their DSS column name """
+        for column in self.columns:
+            dss_type = column.get(SharePointConstants.TYPE_COLUMN, DSSConstants.FALLBACK_TYPE)
+            sharepoint_type = get_sharepoint_type(dss_type)
+            dss_column_name = column[SharePointConstants.NAME_COLUMN]
+            if dss_column_name not in self.parent.column_ids:
+                response = self.parent.client.create_custom_field(
+                    self.parent.sharepoint_list_title,
+                    dss_column_name,
+                    field_type=sharepoint_type
+                )
+                json = response.json()
+                self.sharepoint_column_ids[dss_column_name] = \
+                    json[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.ENTITY_PROPERTY_NAME]
+            else:
+                self.sharepoint_column_ids[dss_column_name] = dss_column_name
+
     def build_row_dictionary(self, row):
         ret = {}
         for column, structure in zip(row, self.columns):
-            ret[self.column_internal_name[structure[SharePointConstants.NAME_COLUMN]]] = column
+            ret[self.sharepoint_column_ids[structure[SharePointConstants.NAME_COLUMN]]] = column
         return ret
 
     def close(self):

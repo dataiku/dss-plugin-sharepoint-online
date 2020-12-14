@@ -58,10 +58,10 @@ def get_name(item):
 
 def assert_path_is_not_root(path):
     if path is None:
-        raise Exception("Cannot delete root path")
+        raise ValueError("Cannot delete root path")
     path = get_rel_path(path)
     if path == "" or path == "/":
-        raise Exception("Cannot delete root path")
+        raise ValueError("Cannot delete root path")
 
 
 def create_path(client, file_full_path):
