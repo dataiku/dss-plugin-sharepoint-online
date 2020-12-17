@@ -50,6 +50,7 @@
         {
             "name": "sharepoint_list_title",
             "label": "List title",
+            "defaultValue":  "DSS_${projectKey}_",
             "description": "(A-Z, a-z, 0-9)",
             "type": "STRING",
             "mandatory": true
