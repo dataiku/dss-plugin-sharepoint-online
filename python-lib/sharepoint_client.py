@@ -312,6 +312,8 @@ class SharePointClient():
         return self.get_base_url() + "/lists"
 
     def get_lists_by_title_url(self, list_title):
+        # Sharepoint's API escapes single quotes in titles by doubling them. "McDonald's" -> 'McDonald''s'
+        # https://sharepoint.stackexchange.com/questions/246685/sharepoint-rest-api-update-metadata-document-library-item-when-value-string-in
         escaped_list_title = list_title.replace("'", "''")
         return self.get_lists_url() + "/GetByTitle('{}')".format(urllib.parse.quote(escaped_list_title))
 

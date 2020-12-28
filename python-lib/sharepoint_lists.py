@@ -64,6 +64,9 @@ def _has_value(response):
 
 
 def assert_list_title(list_title):
+    """ Asserts that the list title does not contain any character forbidden by the list creation API call """
+    """ (currently just '?') """
+
     if "?" in list_title:
         raise ValueError("The list title contains a '?' characters")
 
