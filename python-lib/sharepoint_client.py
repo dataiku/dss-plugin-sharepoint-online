@@ -4,6 +4,8 @@ import sharepy
 import urllib.parse
 import logging
 
+from xml.etree.ElementTree import Element, tostring
+from xml.dom import minidom
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
 from common import is_email_address
@@ -164,8 +166,9 @@ class SharePointClient():
         self.assert_response_ok(response)
 
     def get_list_fields(self, list_title):
+        list_fields_url = self.get_list_fields_url(list_title)
         response = self.session.get(
-            self.get_list_fields_url(list_title)
+            list_fields_url
         )
         self.assert_response_ok(response)
         return response.json()
@@ -236,19 +239,21 @@ class SharePointClient():
         )
         return response
 
-    def create_custom_field(self, list_title, field_title, field_type=None):
+    def create_custom_field_via_id(self, list_id, field_title, field_type=None):
         field_type = SharePointConstants.FALLBACK_TYPE if field_type is None else field_type
+        schema_xml = self.get_schema_xml(field_title, field_type)
         body = {
             'parameters': {
                 '__metadata': {'type': 'SP.XmlSchemaFieldCreationInformation'},
-                'SchemaXml': "<Field DisplayName='{0}' Format='Dropdown' MaxLength='255' Type='{1}'></Field>".format(self.amp_escape(field_title), field_type)
+                'SchemaXml': schema_xml
             }
         }
         headers = {
             "content-type": DSSConstants.APPLICATION_JSON
         }
+        guid_lists_add_field_url = self.get_guid_lists_add_field_url(list_id)
         response = self.session.post(
-            self.get_lists_add_field_url(list_title),
+            guid_lists_add_field_url,
             headers=headers,
             json=body
         )
@@ -256,11 +261,16 @@ class SharePointClient():
         return response
 
     @staticmethod
-    def amp_escape(to_format):
-        to_convert = {'"': '&quot;', "'": "&apos;", "<": "&lt;", ">": "&gt;", "&": "&amp;", "/": "&#x2F;"}
-        for key in to_convert:
-            to_format = to_format.replace(key, to_convert[key])
-        return to_format
+    def get_schema_xml(encoded_field_title, field_type):
+        field = Element('Field')
+        field.set('encoding', 'UTF-8')
+        field.set('DisplayName', encoded_field_title)
+        field.set('Format', 'Dropdown')
+        field.set('MaxLength', '255')
+        field.set('Type', field_type)
+        rough_string = tostring(field, 'utf-8')
+        reparsed = minidom.parseString(rough_string)
+        return reparsed.toprettyxml()
 
     def add_list_item(self, list_title, item):
         item["__metadata"] = {
@@ -277,6 +287,22 @@ class SharePointClient():
         self.assert_response_ok(response)
         return response
 
+    def add_list_item_by_id(self, list_id, list_item_full_name, item):
+        item["__metadata"] = {
+            "type": "{}".format(list_item_full_name)
+        }
+        headers = {
+            "Content-Type": DSSConstants.APPLICATION_JSON
+        }
+        list_items_url = self.get_list_items_url_by_id(list_id)
+        response = self.session.post(
+            list_items_url,
+            json=item,
+            headers=headers
+        )
+        self.assert_response_ok(response)
+        return response
+
     def get_base_url(self):
         return "{}/{}/_api/Web".format(
             self.sharepoint_origin, self.sharepoint_site
@@ -286,10 +312,19 @@ class SharePointClient():
         return self.get_base_url() + "/lists"
 
     def get_lists_by_title_url(self, list_title):
-        return self.get_lists_url() + "/GetByTitle('{}')".format(urllib.parse.quote(list_title))
+        # Sharepoint's API escapes single quotes in titles by doubling them. "McDonald's" -> 'McDonald''s'
+        # https://sharepoint.stackexchange.com/questions/246685/sharepoint-rest-api-update-metadata-document-library-item-when-value-string-in
+        escaped_list_title = list_title.replace("'", "''")
+        return self.get_lists_url() + "/GetByTitle('{}')".format(urllib.parse.quote(escaped_list_title))
+
+    def get_lists_by_id_url(self, list_id):
+        return self.get_lists_url() + "('{}')".format(list_id)
 
     def get_list_items_url(self, list_title):
         return self.get_lists_by_title_url(list_title) + "/Items"
+
+    def get_list_items_url_by_id(self, list_id):
+        return self.get_lists_by_id_url(list_id) + "/Items"
 
     def get_list_fields_url(self, list_title):
         return self.get_lists_by_title_url(list_title) + "/fields"
@@ -298,6 +333,11 @@ class SharePointClient():
         return self.get_base_url() + "/GetList(@a1)/Fields/CreateFieldAsXml?@a1='/{}/Lists/{}'".format(
             self.sharepoint_site,
             list_title
+        )
+
+    def get_guid_lists_add_field_url(self, list_id):
+        return self.get_base_url() + "/lists('{}')/Fields/CreateFieldAsXml".format(
+            list_id
         )
 
     def get_folder_url(self, full_path):
@@ -359,7 +399,7 @@ class SharePointClient():
             json_response = response.json()
             enriched_error_message = json_response.get("error").get("message").get("value")
             return enriched_error_message
-        except SharePointClientError as error:
+        except Exception as error:
             logger.info("Error trying to extract error message :{}".format(error))
             return None
 

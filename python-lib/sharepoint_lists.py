@@ -64,8 +64,11 @@ def _has_value(response):
 
 
 def assert_list_title(list_title):
-    if not list_title.isalnum():
-        raise ValueError("The list title contains non alphanumerical characters")
+    """ Asserts that the list title does not contain any character forbidden by the list creation API call """
+    """ (currently just '?') """
+
+    if "?" in list_title:
+        raise ValueError("The list title contains a '?' characters")
 
 
 class SharePointListWriter(object):
@@ -85,17 +88,20 @@ class SharePointListWriter(object):
         self.buffer.append(row)
 
     def flush(self):
-        logger.info('flush:delete_list "{}"'.format(self.parent.sharepoint_list_title.lower()))
-        self.parent.client.delete_list(self.parent.sharepoint_list_title.lower())
-        logger.info('flush:create_list "{}"'.format(self.parent.sharepoint_list_title.lower()))
-        self.parent.client.create_list(self.parent.sharepoint_list_title.lower())
+        logger.info('flush:delete_list "{}"'.format(self.parent.sharepoint_list_title))
+        self.parent.client.delete_list(self.parent.sharepoint_list_title)
+        logger.info('flush:create_list "{}"'.format(self.parent.sharepoint_list_title))
+        created_list = self.parent.client.create_list(self.parent.sharepoint_list_title).json()
+        self.entity_type_name = created_list.get("EntityTypeName")
+        self.list_item_entity_type_full_name = created_list.get("ListItemEntityTypeFullName")
+        self.list_id = created_list.get("Id")
 
         self.parent.get_read_schema()
         self.create_sharepoint_columns()
 
         for row in self.buffer:
             item = self.build_row_dictionary(row)
-            self.parent.client.add_list_item(self.parent.sharepoint_list_title, item)
+            self.parent.client.add_list_item_by_id(self.list_id, self.list_item_entity_type_full_name, item)
 
     def create_sharepoint_columns(self):
         """ Create the list's columns on SP, retrieve their SP id and map it to their DSS column name """
@@ -104,8 +110,8 @@ class SharePointListWriter(object):
             sharepoint_type = get_sharepoint_type(dss_type)
             dss_column_name = column[SharePointConstants.NAME_COLUMN]
             if dss_column_name not in self.parent.column_ids:
-                response = self.parent.client.create_custom_field(
-                    self.parent.sharepoint_list_title,
+                response = self.parent.client.create_custom_field_via_id(
+                    self.list_id,
                     dss_column_name,
                     field_type=sharepoint_type
                 )
