@@ -46,13 +46,13 @@ class SharePointListsConnector(Connector):
                     })
                     self.column_ids[column[SharePointConstants.ENTITY_PROPERTY_NAME]] = sharepoint_type
                     self.column_names[column[SharePointConstants.ENTITY_PROPERTY_NAME]] = column[SharePointConstants.TITLE_COLUMN]
-                if self.expand_lookup:
-                    if column[SharePointConstants.TYPE_AS_STRING] == "Lookup":
+                if self.expand_lookup and (self.is_column_expendable(column) or self.must_column_display_be_forced(column)):
+                    if column[SharePointConstants.TYPE_AS_STRING] == "Lookup" and self.is_column_expendable(column):
                         self.column_to_expand.update({column[SharePointConstants.STATIC_NAME]: column[SharePointConstants.LOOKUP_FIELD]})
                         has_expandable_columns = True
                     else:
                         self.column_to_expand.update({
-                            column[SharePointConstants.STATIC_NAME]: self.get_column_lookup_field(column[SharePointConstants.STATIC_NAME])
+                            column[SharePointConstants.STATIC_NAME]: None
                         })
         if not has_expandable_columns:
             self.column_to_expand = {}
@@ -69,6 +69,14 @@ class SharePointListsConnector(Connector):
     def is_column_displayable(self, column):
         if self.display_metadata and (column['StaticName'] in self.metadata_to_retrieve):
             return True
+        return (not column[SharePointConstants.HIDDEN_COLUMN])
+
+    @staticmethod
+    def must_column_display_be_forced(column):
+        return column[SharePointConstants.TYPE_AS_STRING] in ["Calculated"]
+
+    @staticmethod
+    def is_column_expendable(column):
         return (not column[SharePointConstants.HIDDEN_COLUMN]) \
             and (not column[SharePointConstants.READ_ONLY_FIELD])
 
