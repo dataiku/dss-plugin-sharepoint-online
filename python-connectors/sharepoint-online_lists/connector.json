@@ -67,7 +67,6 @@
             "name": "metadata_to_retrieve",
             "label": "Keep in place to keep flow compatibility",
             "type": "MULTISELECT",
-            "visibilityCondition": false,
             "selectChoices": [
                 {
                     "value": "ID",

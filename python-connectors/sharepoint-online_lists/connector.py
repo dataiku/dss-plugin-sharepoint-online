@@ -24,6 +24,7 @@ class SharePointListsConnector(Connector):
         self.expand_lookup = config.get("expand_lookup", False)
         self.column_to_expand = {}
         self.metadata_to_retrieve = config.get("metadata_to_retrieve", [])
+        self.metadata_to_retrieve.append("Title")
         self.display_metadata = len(self.metadata_to_retrieve) > 0
         self.client = SharePointClient(config)
 
@@ -52,8 +53,12 @@ class SharePointListsConnector(Connector):
                         has_expandable_columns = True
                     else:
                         self.column_to_expand.update({
-                            column[SharePointConstants.STATIC_NAME]: None
+                            column[SharePointConstants.STATIC_NAME]: self.get_column_lookup_field(column[SharePointConstants.STATIC_NAME])
                         })
+                if self.display_metadata and (column['StaticName'] in self.metadata_to_retrieve):
+                    self.column_to_expand.update({
+                        column[SharePointConstants.STATIC_NAME]: self.get_column_lookup_field(column[SharePointConstants.STATIC_NAME])
+                    })
         if not has_expandable_columns:
             self.column_to_expand = {}
         return {
