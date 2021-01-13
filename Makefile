@@ -25,30 +25,20 @@ unit-tests:
 		if [ ! $$PYTHON_VERSION_IS_CORRECT ]; then echo "Python version $$PYTHON_VERSION is not in acceptedPythonInterpreters"; exit 1; fi; \
 	)
 	@( \
-		rm -rf tests/python/unit/env/; \
-		python3 -m venv tests/python/unit/env/; \
-		source tests/python/unit/env/bin/activate; \
+		python3 -m venv env/; \
+		source env/bin/activate; \
 		pip3 install --upgrade pip; \
-		pip3 install --no-cache-dir -r tests/python/unit/requirements.txt; \
-		pip3 install --no-cache-dir -r code-env/python/spec/requirements.txt; \
+		pip install --no-cache-dir -r tests/python/requirements.txt; \
+		pip install --no-cache-dir -r code-env/python/spec/requirements.txt; \
 		export PYTHONPATH="$(PYTHONPATH):$(PWD)/python-lib"; \
-		export RESOURCE_FOLDER_PATH="$(PWD)/resource"; \
-		pytest tests/python/unit --alluredir=tests/allure_report; \
+                pytest -o junit_family=xunit2 --junitxml=unit.xml tests/python/unit || true; \
 		deactivate; \
 	)
 	@echo "[SUCCESS] Running unit tests: Done!"
 
 integration-tests:
 	@echo "[START] Running integration tests..."
-	@( \
-		rm -rf tests/python/integration/env/; \
-		python3 -m venv tests/python/integration/env/; \
-		source tests/python/integration/env/bin/activate; \
-		pip3 install --upgrade pip;\
-		pip3 install --no-cache-dir -r tests/python/integration/requirements.txt; \
-		pytest tests/python/integration --alluredir=tests/allure_report; \
-		deactivate; \
-	)
+	# TODO add integration tests
 	@echo "[SUCCESS] Running integration tests: Done!"
 
 tests: unit-tests integration-tests

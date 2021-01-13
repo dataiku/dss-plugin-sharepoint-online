@@ -1,3 +1,0 @@
-pytest==6.2.1
-dataiku-api-client
-git+git://github.com/dataiku/dataiku-plugin-tests-utils.git@master#egg=dataiku-plugin-tests-utils

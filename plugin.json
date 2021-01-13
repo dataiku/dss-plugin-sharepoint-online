@@ -1,6 +1,6 @@
 {
     "id": "sharepoint-online",
-    "version": "1.0.5",
+    "version": "1.0.4",
     "meta": {
         "label": "SharePoint Online",
         "description": "Read and write data from/to your SharePoint Online account",
