@@ -33,7 +33,8 @@ class SharePointConstants(object):
         "Location": "object",
         "Computed": None,
         "Attachments": None,
-        "Calculated": "string"
+        "Calculated": "string",
+        "User": "string"
     }
     TYPE_AS_STRING = 'TypeAsString'
     TYPE_COLUMN = 'type'

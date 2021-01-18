@@ -171,37 +171,31 @@ class SharePointClient():
             list_fields_url
         )
         self.assert_response_ok(response)
-        return response.json()
+        json_response = response.json()
+        if self.is_response_empty(json_response):
+            return None
+        return self.extract_results(json_response)
 
-    def get_list_all_items(self, list_title, column_to_expand=None):
-        items = self.get_list_items(list_title, column_to_expand)
-        buffer = items
-        while SharePointConstants.RESULTS_CONTAINER_V2 in items and SharePointConstants.NEXT_PAGE in items[SharePointConstants.RESULTS_CONTAINER_V2]:
-            items = self.session.get(items[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.NEXT_PAGE]).json()
-            buffer[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.RESULTS].extend(
-                items[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.RESULTS]
-            )
-        return buffer
+    @staticmethod
+    def is_response_empty(response):
+        return SharePointConstants.RESULTS_CONTAINER_V2 not in response or SharePointConstants.RESULTS not in response[SharePointConstants.RESULTS_CONTAINER_V2]
 
-    def get_list_items(self, list_title, columns_to_expand=None):
-        if columns_to_expand is not None:
-            select = []
-            expand = []
-            for column_to_expand in columns_to_expand:
-                if columns_to_expand.get(column_to_expand) is None:
-                    select.append("{}".format(column_to_expand))
-                else:
-                    select.append("{}/{}".format(column_to_expand, columns_to_expand.get(column_to_expand)))
-                    expand.append(column_to_expand)
-            params = {
-                "$select": ",".join(select),
-                "$expand": ",".join(expand)
+    @staticmethod
+    def extract_results(response):
+        return response[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.RESULTS]
+
+    def get_list_items(self, list_title, query_string=""):
+        data = {
+            "parameters": {
+                "AddRequiredFields": "true",
+                "DatesInUtc": "true",
+                "RenderOptions": 2
             }
-        else:
-            params = None
-        response = self.session.get(
-            self.get_list_items_url(list_title),
-            params=params
+        }
+        url = self.get_list_data_as_stream(list_title) + query_string
+        response = self.session.post(
+            url,
+            json=data
         )
         self.assert_response_ok(response)
         return response.json()
@@ -258,6 +252,26 @@ class SharePointClient():
             json=body
         )
         self.assert_response_ok(response)
+        return response
+
+    def get_list_default_view(self, list_name):
+        list_default_view_url = self.get_list_default_view_url(list_name)
+        response = self.session.get(
+            list_default_view_url
+        )
+        if response.status_code == 404:
+            return []
+        else:
+            self.assert_response_ok(response)
+            json_response = response.json()
+            return json_response.get('d', {"Items": {"results": []}}).get("Items", {"results": []}).get("results", [])
+
+    def add_column_to_list_default_view(self, column_name, list_name):
+        escaped_column_name = column_name.replace("'", "''")
+        list_default_view_url = self.get_list_default_view_url(list_name) + "/addviewfield('{}')".format(urllib.parse.quote(escaped_column_name))
+        response = self.session.post(
+            list_default_view_url
+        )
         return response
 
     @staticmethod
@@ -323,6 +337,9 @@ class SharePointClient():
     def get_list_items_url(self, list_title):
         return self.get_lists_by_title_url(list_title) + "/Items"
 
+    def get_list_data_as_stream(self, list_title):
+        return self.get_lists_by_title_url(list_title) + "/RenderListDataAsStream"
+
     def get_list_items_url_by_id(self, list_id):
         return self.get_lists_by_id_url(list_id) + "/Items"
 
@@ -369,6 +386,9 @@ class SharePointClient():
 
     def get_file_add_url(self, full_path, file_name):
         return self.get_folder_url(full_path) + "/Files/add(url='{}',overwrite=true)".format(file_name)
+
+    def get_list_default_view_url(self, list_title):
+        return self.get_lists_by_title_url(list_title) + "/DefaultView/ViewFields"
 
     @staticmethod
     def assert_login_details(required_keys, login_details):
@@ -453,7 +473,8 @@ class SharePointSession():
 
     def post(self, url, headers=None, json=None, data=None):
         headers = {} if headers is None else headers
-        headers["accept"] = DSSConstants.APPLICATION_JSON
+        headers["accept"] = "application/json;odata=nometadata",
+        headers["Content-Type"] = "application/json;odata=nometadata"
         headers["Authorization"] = self.get_authorization_bearer()
         return requests.post(url, headers=headers, json=json, data=data)
 
