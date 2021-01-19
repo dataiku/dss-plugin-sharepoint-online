@@ -41,8 +41,8 @@ class SharePointListsConnector(Connector):
                         SharePointConstants.NAME_COLUMN: column[SharePointConstants.TITLE_COLUMN],
                         SharePointConstants.TYPE_COLUMN: sharepoint_type
                     })
-                    self.column_ids[column[SharePointConstants.ENTITY_PROPERTY_NAME]] = sharepoint_type
-                    self.column_names[column[SharePointConstants.ENTITY_PROPERTY_NAME]] = column[SharePointConstants.TITLE_COLUMN]
+                    self.column_ids[column[SharePointConstants.STATIC_NAME]] = sharepoint_type
+                    self.column_names[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TITLE_COLUMN]
         return {
             SharePointConstants.COLUMNS: dss_columns
         }
@@ -83,6 +83,7 @@ class SharePointListsConnector(Connector):
             page = self.client.get_list_items(self.sharepoint_list_title, query_string=self.get_next_page_query_string(page))
             rows = self.get_page_rows(page)
             for row in rows:
+                print("ALX:row={}".format(row))
                 yield column_ids_to_names(self.column_ids, self.column_names, row)
 
     @staticmethod
