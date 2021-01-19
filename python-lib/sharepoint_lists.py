@@ -78,7 +78,7 @@ class SharePointListWriter(object):
         logger.info('flush:delete_list "{}"'.format(self.parent.sharepoint_list_title))
         self.parent.client.delete_list(self.parent.sharepoint_list_title)
         logger.info('flush:create_list "{}"'.format(self.parent.sharepoint_list_title))
-        created_list = self.parent.client.create_list(self.parent.sharepoint_list_title).json()
+        created_list = self.parent.client.create_list(self.parent.sharepoint_list_title)
         self.entity_type_name = created_list.get("EntityTypeName")
         self.list_item_entity_type_full_name = created_list.get("ListItemEntityTypeFullName")
         self.list_id = created_list.get("Id")

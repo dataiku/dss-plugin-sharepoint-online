@@ -202,8 +202,8 @@ class SharePointClient():
 
     def create_list(self, list_name):
         headers = {
-            "content-type": DSSConstants.APPLICATION_JSON,
-            'Accept': 'application/json; odata=nometadata'
+            "Content-Type": DSSConstants.APPLICATION_JSON,
+            'Accept': DSSConstants.APPLICATION_JSON
         }
         data = {
             '__metadata': {
@@ -220,7 +220,8 @@ class SharePointClient():
             json=data
         )
         self.assert_response_ok(response)
-        return response
+        json = response.json()
+        return json.get(SharePointConstants.RESULTS_CONTAINER_V2, {})
 
     def delete_list(self, list_name):
         headers = {
@@ -243,7 +244,8 @@ class SharePointClient():
             }
         }
         headers = {
-            "content-type": DSSConstants.APPLICATION_JSON
+            "Content-Type": DSSConstants.APPLICATION_JSON,
+            "Accept": DSSConstants.APPLICATION_JSON
         }
         guid_lists_add_field_url = self.get_guid_lists_add_field_url(list_id)
         response = self.session.post(
@@ -264,7 +266,7 @@ class SharePointClient():
         else:
             self.assert_response_ok(response)
             json_response = response.json()
-            return json_response.get('d', {"Items": {"results": []}}).get("Items", {"results": []}).get("results", [])
+            return json_response.get(SharePointConstants.RESULTS_CONTAINER_V2, {"Items": {"results": []}}).get("Items", {"results": []}).get("results", [])
 
     def add_column_to_list_default_view(self, column_name, list_name):
         escaped_column_name = column_name.replace("'", "''")
@@ -467,16 +469,17 @@ class SharePointSession():
 
     def get(self, url, headers=None, params=None):
         headers = {} if headers is None else headers
-        headers["accept"] = DSSConstants.APPLICATION_JSON
+        headers["Accept"] = DSSConstants.APPLICATION_JSON
         headers["Authorization"] = self.get_authorization_bearer()
         return requests.get(url, headers=headers, params=params)
 
-    def post(self, url, headers=None, json=None, data=None):
-        headers = {} if headers is None else headers
-        headers["accept"] = "application/json;odata=nometadata",
-        headers["Content-Type"] = "application/json;odata=nometadata"
-        headers["Authorization"] = self.get_authorization_bearer()
-        return requests.post(url, headers=headers, json=json, data=data)
+    def post(self, url, headers={}, json=None, data=None):
+        default_headers = {}
+        default_headers["Accept"] = DSSConstants.APPLICATION_JSON_NOMETADATA
+        default_headers["Content-Type"] = DSSConstants.APPLICATION_JSON_NOMETADATA
+        default_headers["Authorization"] = self.get_authorization_bearer()
+        default_headers.update(headers)
+        return requests.post(url, headers=default_headers, json=json, data=data)
 
     def get_authorization_bearer(self):
         return "Bearer {}".format(self.sharepoint_access_token)
