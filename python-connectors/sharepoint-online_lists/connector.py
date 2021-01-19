@@ -83,7 +83,6 @@ class SharePointListsConnector(Connector):
             page = self.client.get_list_items(self.sharepoint_list_title, query_string=self.get_next_page_query_string(page))
             rows = self.get_page_rows(page)
             for row in rows:
-                print("ALX:row={}".format(row))
                 yield column_ids_to_names(self.column_ids, self.column_names, row)
 
     @staticmethod
