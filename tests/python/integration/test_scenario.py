@@ -17,3 +17,15 @@ test_kwargs = {
 def test_run_sharepoint_online_regular_list_write(user_clients):
     test_kwargs["client"] = user_clients[test_kwargs["user"]]
     dss_scenario.run(scenario_id="RegularListWrite", **test_kwargs)
+
+
+def test_run_sharepoint_online_read_calculated_columns(user_clients):
+    dss_scenario.run(scenario_id="ReadCalculatedColumns", **test_kwargs)
+
+
+def test_run_sharepoint_online_read_long_list(user_clients):
+    dss_scenario.run(scenario_id="ReadLongList", **test_kwargs)
+
+
+def test_run_sharepoint_online_documents(user_clients):
+    dss_scenario.run(scenario_id="SharePointDocuments", **test_kwargs)
