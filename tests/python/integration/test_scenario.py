@@ -29,3 +29,7 @@ def test_run_sharepoint_online_read_long_list(user_clients):
 
 def test_run_sharepoint_online_documents(user_clients):
     dss_scenario.run(scenario_id="SharePointDocuments", **test_kwargs)
+
+
+def test_run_sharepoint_online_authentication_modes(user_clients):
+    dss_scenario.run(scenario_id="AuthenticationModes", **test_kwargs)
