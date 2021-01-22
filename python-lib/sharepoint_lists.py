@@ -26,12 +26,7 @@ def get_sharepoint_type(dss_type):
 
 def column_ids_to_names(column_ids, column_names, sharepoint_row):
     """ Replace the column ID used by SharePoint by their column names for use in DSS"""
-    dss_row = {}
-    for key, value in sharepoint_row.items():
-        if key in column_ids:
-            name = column_names[key]
-            dss_row[name] = value
-    return dss_row
+    return {column_names[key]: value for key, value in sharepoint_row.items() if key in column_ids}
 
 
 def is_error(response):

@@ -263,14 +263,16 @@ class SharePointClient():
         )
         if response.status_code == 404:
             return []
-        else:
-            self.assert_response_ok(response)
-            json_response = response.json()
-            return json_response.get(SharePointConstants.RESULTS_CONTAINER_V2, {"Items": {"results": []}}).get("Items", {"results": []}).get("results", [])
+        self.assert_response_ok(response)
+        json_response = response.json()
+        return json_response.get(SharePointConstants.RESULTS_CONTAINER_V2, {"Items": {"results": []}}).get("Items", {"results": []}).get("results", [])
 
     def add_column_to_list_default_view(self, column_name, list_name):
         escaped_column_name = column_name.replace("'", "''")
-        list_default_view_url = self.get_list_default_view_url(list_name) + "/addviewfield('{}')".format(urllib.parse.quote(escaped_column_name))
+        list_default_view_url = os.path.join(
+            self.get_list_default_view_url(list_name),
+            "addviewfield('{}')".format(urllib.parse.quote(escaped_column_name))
+        )
         response = self.session.post(
             list_default_view_url
         )
@@ -390,7 +392,10 @@ class SharePointClient():
         return self.get_folder_url(full_path) + "/Files/add(url='{}',overwrite=true)".format(file_name)
 
     def get_list_default_view_url(self, list_title):
-        return self.get_lists_by_title_url(list_title) + "/DefaultView/ViewFields"
+        return os.path.join(
+            self.get_lists_by_title_url(list_title),
+            SharePointConstants.DEFAULT_VIEW_ENDPOINT
+        )
 
     @staticmethod
     def assert_login_details(required_keys, login_details):
@@ -468,16 +473,18 @@ class SharePointSession():
         self.sharepoint_access_token = sharepoint_access_token
 
     def get(self, url, headers=None, params=None):
-        headers = {} if headers is None else headers
+        headers = headers or {}
         headers["Accept"] = DSSConstants.APPLICATION_JSON
         headers["Authorization"] = self.get_authorization_bearer()
         return requests.get(url, headers=headers, params=params)
 
-    def post(self, url, headers={}, json=None, data=None):
-        default_headers = {}
-        default_headers["Accept"] = DSSConstants.APPLICATION_JSON_NOMETADATA
-        default_headers["Content-Type"] = DSSConstants.APPLICATION_JSON_NOMETADATA
-        default_headers["Authorization"] = self.get_authorization_bearer()
+    def post(self, url, headers=None, json=None, data=None):
+        headers = headers or {}
+        default_headers = {
+           "Accept": DSSConstants.APPLICATION_JSON_NOMETADATA,
+           "Content-Type": DSSConstants.APPLICATION_JSON_NOMETADATA,
+           "Authorization": self.get_authorization_bearer()
+        }
         default_headers.update(headers)
         return requests.post(url, headers=default_headers, json=json, data=data)
 
