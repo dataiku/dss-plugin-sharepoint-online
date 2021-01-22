@@ -61,12 +61,14 @@
             "description": "",
             "type": "BOOLEAN",
             "defaultValue": false,
+            "visibilityCondition": false,
             "mandatory": true
         },
         {
             "name": "metadata_to_retrieve",
             "label": "Metadata to retrieve",
             "type": "MULTISELECT",
+            "visibilityCondition": false,
             "selectChoices": [
                 {
                     "value": "ID",

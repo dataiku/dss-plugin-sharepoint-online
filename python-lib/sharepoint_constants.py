@@ -1,6 +1,7 @@
 class SharePointConstants(object):
     COLUMNS = 'columns'
     COMMENT_COLUMN = 'comment'
+    DEFAULT_VIEW_ENDPOINT = "DefaultView/ViewFields"
     ENTITY_PROPERTY_NAME = 'EntityPropertyName'
     ERROR_CONTAINER = 'error'
     EXPENDABLES_FIELDS = {"Author": "Title", "Editor": "Title"}
@@ -33,7 +34,8 @@ class SharePointConstants(object):
         "Location": "object",
         "Computed": None,
         "Attachments": None,
-        "Calculated": "string"
+        "Calculated": "string",
+        "User": "string"
     }
     TYPE_AS_STRING = 'TypeAsString'
     TYPE_COLUMN = 'type'

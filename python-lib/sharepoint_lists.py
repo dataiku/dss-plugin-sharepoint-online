@@ -24,27 +24,9 @@ def get_sharepoint_type(dss_type):
     return DSSConstants.TYPES.get(dss_type, SharePointConstants.FALLBACK_TYPE)
 
 
-def matched_item(column_ids, column_names, item, column_to_expand=None):
-    ret = {}
-    for key, value in item.items():
-        if key in column_ids:
-            name = column_names[key]
-            ret[name] = value
-    return ret
-
-
-def expand_matched_item(column_ids, column_names, item, column_to_expand=None):
-    ret = {}
-    column_to_expand = {} if column_to_expand is None else column_to_expand
-    for key, value in item.items():
-        if key in column_ids:
-            name = column_names[key]
-            key_to_return = column_to_expand.get(key)
-            if key_to_return:
-                ret[name] = value.get(key_to_return)
-            else:
-                ret[name] = value
-    return ret
+def column_ids_to_names(column_ids, column_names, sharepoint_row):
+    """ Replace the column ID used by SharePoint by their column names for use in DSS"""
+    return {column_names[key]: value for key, value in sharepoint_row.items() if key in column_ids}
 
 
 def is_error(response):
@@ -91,7 +73,7 @@ class SharePointListWriter(object):
         logger.info('flush:delete_list "{}"'.format(self.parent.sharepoint_list_title))
         self.parent.client.delete_list(self.parent.sharepoint_list_title)
         logger.info('flush:create_list "{}"'.format(self.parent.sharepoint_list_title))
-        created_list = self.parent.client.create_list(self.parent.sharepoint_list_title).json()
+        created_list = self.parent.client.create_list(self.parent.sharepoint_list_title)
         self.entity_type_name = created_list.get("EntityTypeName")
         self.list_item_entity_type_full_name = created_list.get("ListItemEntityTypeFullName")
         self.list_id = created_list.get("Id")
@@ -118,6 +100,7 @@ class SharePointListWriter(object):
                 json = response.json()
                 self.sharepoint_column_ids[dss_column_name] = \
                     json[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.ENTITY_PROPERTY_NAME]
+                self.parent.client.add_column_to_list_default_view(dss_column_name, self.parent.sharepoint_list_title)
             else:
                 self.sharepoint_column_ids[dss_column_name] = dss_column_name
 
