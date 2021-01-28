@@ -1,9 +1,4 @@
-import pytest
-
 from dku_plugin_test_utils import dss_scenario
-
-
-pytestmark = pytest.mark.usefixtures("plugin", "dss_target")
 
 TEST_PROJECT_KEY = "PLUGINTESTSHAREPOINTONLINE"
 
