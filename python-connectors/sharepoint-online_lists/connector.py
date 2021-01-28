@@ -43,6 +43,7 @@ class SharePointListsConnector(Connector):
                     })
                     self.column_ids[column[SharePointConstants.STATIC_NAME]] = sharepoint_type
                     self.column_names[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TITLE_COLUMN]
+        logger.info("get_read_schema: Schema updated with {}".format(dss_columns))
         return {
             SharePointConstants.COLUMNS: dss_columns
         }

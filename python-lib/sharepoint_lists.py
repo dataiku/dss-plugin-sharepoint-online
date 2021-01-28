@@ -76,22 +76,27 @@ class SharePointListWriter(object):
         created_list = self.parent.client.create_list(self.parent.sharepoint_list_title)
         self.entity_type_name = created_list.get("EntityTypeName")
         self.list_item_entity_type_full_name = created_list.get("ListItemEntityTypeFullName")
+        logger.info('New list "{}" created, type {}'.format(self.list_item_entity_type_full_name, self.entity_type_name))
         self.list_id = created_list.get("Id")
 
         self.parent.get_read_schema()
         self.create_sharepoint_columns()
 
+        logger.info("Starting adding rows")
         for row in self.buffer:
             item = self.build_row_dictionary(row)
             self.parent.client.add_list_item_by_id(self.list_id, self.list_item_entity_type_full_name, item)
+        logger.info("All rows added")
 
     def create_sharepoint_columns(self):
         """ Create the list's columns on SP, retrieve their SP id and map it to their DSS column name """
+        logger.info("create_sharepoint_columns")
         for column in self.columns:
             dss_type = column.get(SharePointConstants.TYPE_COLUMN, DSSConstants.FALLBACK_TYPE)
             sharepoint_type = get_sharepoint_type(dss_type)
             dss_column_name = column[SharePointConstants.NAME_COLUMN]
             if dss_column_name not in self.parent.column_ids:
+                logger.info("Creating column '{}'".format(dss_column_name))
                 response = self.parent.client.create_custom_field_via_id(
                     self.list_id,
                     dss_column_name,
