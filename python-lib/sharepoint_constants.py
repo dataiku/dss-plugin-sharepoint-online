@@ -35,7 +35,8 @@ class SharePointConstants(object):
         "Computed": None,
         "Attachments": None,
         "Calculated": "string",
-        "User": "string"
+        "User": "array",
+        "Thumbnail": "object"
     }
     TYPE_AS_STRING = 'TypeAsString'
     TYPE_COLUMN = 'type'
