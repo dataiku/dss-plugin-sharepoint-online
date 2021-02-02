@@ -530,10 +530,11 @@ class SharePointClient():
 
 class SharePointSession():
 
-    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_tenant, sharepoint_site, sharepoint_access_token=None):
+    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_tenant, sharepoint_site, sharepoint_access_token=None, max_retry=5):
         self.sharepoint_tenant = sharepoint_tenant
         self.sharepoint_site = sharepoint_site
         self.sharepoint_access_token = sharepoint_access_token
+        requests.adapters.DEFAULT_RETRIES = max_retry
 
     def get(self, url, headers=None, params=None):
         headers = headers or {}
