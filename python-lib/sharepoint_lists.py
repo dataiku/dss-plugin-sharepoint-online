@@ -1,4 +1,5 @@
 import logging
+from concurrent.futures import ThreadPoolExecutor
 
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
@@ -55,21 +56,17 @@ def assert_list_title(list_title):
 
 class SharePointListWriter(object):
 
-    def __init__(self, config, parent, dataset_schema, dataset_partitioning, partition_id):
+    def __init__(self, config, parent, dataset_schema, dataset_partitioning, partition_id, max_workers=5, batch_size=100):
         self.parent = parent
         self.config = config
         self.dataset_schema = dataset_schema
         self.dataset_partitioning = dataset_partitioning
         self.partition_id = partition_id
         self.buffer = []
-        logger.info('init SharepointListWriter')
+        logger.info('init SharepointListWriter with {} workers and batch size of {}'.format(max_workers, batch_size))
         self.columns = dataset_schema[SharePointConstants.COLUMNS]
         self.sharepoint_column_ids = {}
 
-    def write_row(self, row):
-        self.buffer.append(row)
-
-    def flush(self):
         logger.info('flush:delete_list "{}"'.format(self.parent.sharepoint_list_title))
         self.parent.client.delete_list(self.parent.sharepoint_list_title)
         logger.info('flush:create_list "{}"'.format(self.parent.sharepoint_list_title))
@@ -78,14 +75,34 @@ class SharePointListWriter(object):
         self.list_item_entity_type_full_name = created_list.get("ListItemEntityTypeFullName")
         logger.info('New list "{}" created, type {}'.format(self.list_item_entity_type_full_name, self.entity_type_name))
         self.list_id = created_list.get("Id")
+        self.max_workers = max_workers
+        self.batch_size = batch_size
+        self.working_batch_size = max_workers * batch_size
 
+    def write_row(self, row):
+        self.buffer.append(row)
+        if len(self.buffer) > self.working_batch_size:
+            self.flush()
+            self.buffer = []
+
+    def flush(self):
         self.parent.get_read_schema()
         self.create_sharepoint_columns()
 
         logger.info("Starting adding rows")
-        for row in self.buffer:
-            item = self.build_row_dictionary(row)
-            self.parent.client.add_list_item_by_id(self.list_id, self.list_item_entity_type_full_name, item)
+        index = 0
+        kwargs = []
+        futures = []
+        with ThreadPoolExecutor(max_workers=self.max_workers) as thread_pool_executor:
+            for row in self.buffer:
+                item = self.build_row_dictionary(row)
+                kwargs.append(self.parent.client.get_add_list_item_kwargs(self.list_id, self.list_item_entity_type_full_name, item))
+                index = index + 1
+                if len(kwargs) >= self.batch_size:
+                    futures.append(thread_pool_executor.submit(self.parent.client.process_batch, kwargs))
+                    kwargs = []
+            if len(kwargs) > 0:
+                futures.append(thread_pool_executor.submit(self.parent.client.process_batch, kwargs))
         logger.info("All rows added")
 
     def create_sharepoint_columns(self):

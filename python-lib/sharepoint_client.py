@@ -3,7 +3,7 @@ import requests
 import sharepy
 import urllib.parse
 import logging
-import json
+import uuid
 
 from xml.etree.ElementTree import Element, tostring
 from xml.dom import minidom
@@ -329,6 +329,58 @@ class SharePointClient():
             headers=headers
         )
         self.assert_response_ok(response, calling_method="add_list_item_by_id")
+        return response
+
+    def get_add_list_item_kwargs(self, list_id, list_item_full_name, item):
+        item["__metadata"] = {
+            "type": "{}".format(list_item_full_name)
+        }
+        headers = {
+            "Content-Type": DSSConstants.APPLICATION_JSON
+        }
+        list_items_url = self.get_list_items_url_by_id(list_id)
+
+        kwargs = {
+            "verb": "post",
+            "url": list_items_url,
+            "json": item,
+            "headers": headers
+        }
+        return kwargs
+
+    def process_batch(self, kwargs_array):
+        random_guid = str(uuid.uuid4())
+        change_set_id = str(uuid.uuid4())
+
+        headers = {
+            "Content-Type": "multipart/mixed;boundary=\"batch_{}\"".format(random_guid),
+            "Accept": "multipart/mixed"
+        }
+        url = "{}/{}/_api/$batch".format(self.sharepoint_origin, self.sharepoint_site)
+        body_elements = []
+        body_elements.append("--batch_{}".format(random_guid))
+        body_elements.append("Content-Type: multipart/mixed; boundary=changeset_{}".format(change_set_id))
+        body_elements.append("")
+
+        for kwargs in kwargs_array:
+            body_elements.append("--changeset_{}".format(change_set_id))
+            body_elements.append("Content-Type: application/http")
+            body_elements.append("Content-Transfer-Encoding: binary")
+            body_elements.append("")
+            body_elements.append("{} {} HTTP/1.1".format(kwargs["verb"].upper(), kwargs["url"]))
+            for header in kwargs["headers"]:
+                body_elements.append("{}: {}".format(header, kwargs["headers"][header]))
+            body_elements.append("Accept-Charset: UTF-8")
+            body_elements.append("")
+            body_elements.append("{}".format(kwargs["json"]))
+        body_elements.append("--changeset_{}--".format(change_set_id))
+        body_elements.append('--batch_{}--'.format(random_guid))
+        body = "\r\n".join(body_elements)
+        response = self.session.post(
+            url,
+            headers=headers,
+            data=body
+        )
         return response
 
     def get_base_url(self):
