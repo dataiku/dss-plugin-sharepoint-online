@@ -2,7 +2,7 @@ pipeline {
    options { disableConcurrentBuilds() }
    agent { label 'dss-plugin-tests'}
    environment {
-        PLUGIN_INTEGRATION_TEST_INSTANCE="$HOME/instance_config.json"
+        PLUGIN_INTEGRATION_TEST_INSTANCE="/home/jenkins-agent/instance_config.json"
     }
    stages {
       stage('Run Unit Tests') {
