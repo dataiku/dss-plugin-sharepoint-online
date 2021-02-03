@@ -379,7 +379,7 @@ class SharePointClient():
         response = self.session.post(
             url,
             headers=headers,
-            data=body
+            data=body.encode('utf-8')
         )
         return response
 
