@@ -73,11 +73,12 @@ class SharePointListsConnector(Connector):
         if self.column_ids == {}:
             self.get_read_schema()
 
-        logger.info('generate_row:dataset_schema={}, dataset_partitioning={}, partition_id={}'.format(
-            dataset_schema, dataset_partitioning, partition_id
+        logger.info('generate_row:dataset_schema={}, dataset_partitioning={}, partition_id={}, records_limit={}'.format(
+            dataset_schema, dataset_partitioning, partition_id, records_limit
         ))
 
         page = {}
+        record_count = 0
         is_first_run = True
         while is_first_run or self.is_not_last_page(page):
             is_first_run = False
@@ -85,6 +86,9 @@ class SharePointListsConnector(Connector):
             rows = self.get_page_rows(page)
             for row in rows:
                 yield column_ids_to_names(self.column_ids, self.column_names, row)
+            record_count += len(rows)
+            if record_count >= records_limit:
+                break
 
     @staticmethod
     def is_not_last_page(page):
