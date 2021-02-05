@@ -350,16 +350,16 @@ class SharePointClient():
         return kwargs
 
     def process_batch(self, kwargs_array):
-        random_guid = str(uuid.uuid4())
-        change_set_id = str(uuid.uuid4())
+        batch_id = self.get_random_guid()
+        change_set_id = self.get_random_guid()
 
         headers = {
-            "Content-Type": "multipart/mixed;boundary=\"batch_{}\"".format(random_guid),
+            "Content-Type": "multipart/mixed;boundary=\"batch_{}\"".format(batch_id),
             "Accept": "multipart/mixed"
         }
         url = "{}/{}/_api/$batch".format(self.sharepoint_origin, self.sharepoint_site)
         body_elements = []
-        body_elements.append("--batch_{}".format(random_guid))
+        body_elements.append("--batch_{}".format(batch_id))
         body_elements.append("Content-Type: multipart/mixed; boundary=changeset_{}".format(change_set_id))
         body_elements.append("")
 
@@ -375,7 +375,7 @@ class SharePointClient():
             body_elements.append("")
             body_elements.append("{}".format(kwargs["json"]))
         body_elements.append("--changeset_{}--".format(change_set_id))
-        body_elements.append('--batch_{}--'.format(random_guid))
+        body_elements.append('--batch_{}--'.format(batch_id))
         body = "\r\n".join(body_elements)
         successful_post = False
         attempt_number = 0
@@ -544,6 +544,10 @@ class SharePointClient():
         self.assert_response_ok(response, calling_method="")
         json_response = response.json()
         return json_response.get("access_token")
+
+    @staticmethod
+    def get_random_guid():
+        return str(uuid.uuid4())
 
 
 class SharePointSession():
