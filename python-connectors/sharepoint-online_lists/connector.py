@@ -80,6 +80,7 @@ class SharePointListsConnector(Connector):
         page = {}
         record_count = 0
         is_first_run = True
+        is_record_limit = records_limit > 0
         while is_first_run or self.is_not_last_page(page):
             is_first_run = False
             page = self.client.get_list_items(self.sharepoint_list_title, query_string=self.get_next_page_query_string(page))
@@ -87,7 +88,7 @@ class SharePointListsConnector(Connector):
             for row in rows:
                 yield column_ids_to_names(self.column_ids, self.column_names, row)
             record_count += len(rows)
-            if record_count >= records_limit:
+            if is_record_limit and record_count >= records_limit:
                 break
 
     @staticmethod
