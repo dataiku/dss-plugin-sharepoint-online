@@ -81,7 +81,7 @@ class SharePointListWriter(object):
 
     def write_row(self, row):
         self.buffer.append(row)
-        if len(self.buffer) > self.working_batch_size:
+        if len(self.buffer) >= self.working_batch_size:
             self.flush()
             self.buffer = []
 
@@ -91,6 +91,7 @@ class SharePointListWriter(object):
 
         logger.info("Starting adding rows")
         index = 0
+        offset = 0
         kwargs = []
         futures = []
         with ThreadPoolExecutor(max_workers=self.max_workers) as thread_pool_executor:
@@ -98,11 +99,12 @@ class SharePointListWriter(object):
                 item = self.build_row_dictionary(row)
                 kwargs.append(self.parent.client.get_add_list_item_kwargs(self.list_id, self.list_item_entity_type_full_name, item))
                 index = index + 1
-                if len(kwargs) >= self.batch_size:
-                    futures.append(thread_pool_executor.submit(self.parent.client.process_batch, kwargs))
-                    kwargs = []
-            if len(kwargs) > 0:
-                futures.append(thread_pool_executor.submit(self.parent.client.process_batch, kwargs))
+                if index >= self.batch_size:
+                    futures.append(thread_pool_executor.submit(self.parent.client.process_batch, kwargs[offset:offset + index]))
+                    offset += index
+                    index = 0
+            if offset < len(kwargs):
+                futures.append(thread_pool_executor.submit(self.parent.client.process_batch, kwargs[offset:len(kwargs)]))
         logger.info("All rows added")
 
     def create_sharepoint_columns(self):

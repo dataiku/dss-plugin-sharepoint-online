@@ -4,6 +4,7 @@ import sharepy
 import urllib.parse
 import logging
 import uuid
+import time
 
 from xml.etree.ElementTree import Element, tostring
 from xml.dom import minidom
@@ -376,11 +377,26 @@ class SharePointClient():
         body_elements.append("--changeset_{}--".format(change_set_id))
         body_elements.append('--batch_{}--'.format(random_guid))
         body = "\r\n".join(body_elements)
-        response = self.session.post(
-            url,
-            headers=headers,
-            data=body.encode('utf-8')
-        )
+        successful_post = False
+        attempt_number = 0
+        while not successful_post and attempt_number < 5:
+            try:
+                attempt_number += 1
+                response = self.session.post(
+                    url,
+                    headers=headers,
+                    data=body.encode('utf-8')
+                )
+                successful_post = True
+            except Exception as err:
+                logger.warning("ERROR:{}".format(err))
+                logger.warning("on attempt #{}".format(attempt_number))
+                time.sleep(attempt_number)
+
+        nb_of_201 = str(response.content).count("HTTP/1.1 201")
+        if nb_of_201 != len(kwargs_array):
+            logger.warning("Checks indicate possible item loss ({}/{} are accounted for)".format(nb_of_201, len(kwargs_array)))
+            logger.warning("response.content={}".format(response.content))
         return response
 
     def get_base_url(self):
@@ -530,7 +546,7 @@ class SharePointClient():
 
 class SharePointSession():
 
-    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_tenant, sharepoint_site, sharepoint_access_token=None, max_retry=5):
+    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_tenant, sharepoint_site, sharepoint_access_token=None, max_retry=10):
         self.sharepoint_tenant = sharepoint_tenant
         self.sharepoint_site = sharepoint_site
         self.sharepoint_access_token = sharepoint_access_token
