@@ -379,7 +379,7 @@ class SharePointClient():
         body = "\r\n".join(body_elements)
         successful_post = False
         attempt_number = 0
-        while not successful_post and attempt_number < 5:
+        while not successful_post and attempt_number <= SharePointConstants.MAX_RETRIES:
             try:
                 attempt_number += 1
                 response = self.session.post(
@@ -391,6 +391,8 @@ class SharePointClient():
             except Exception as err:
                 logger.warning("ERROR:{}".format(err))
                 logger.warning("on attempt #{}".format(attempt_number))
+                if attempt_number == SharePointConstants.MAX_RETRIES:
+                    raise SharePointClientError("Error in batch processing on attempt #{}: {}".format(attempt_number, err))
                 time.sleep(attempt_number)
 
         nb_of_201 = str(response.content).count("HTTP/1.1 201")

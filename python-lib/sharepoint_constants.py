@@ -12,6 +12,7 @@ class SharePointConstants(object):
     HIDDEN_COLUMN = 'Hidden'
     LENGTH = 'Length'
     LOOKUP_FIELD = 'LookupField'
+    MAX_RETRIES = 5
     MESSAGE = 'message'
     MOVE_TO = "MoveTo"
     NAME = 'Name'

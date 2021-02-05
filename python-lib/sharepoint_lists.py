@@ -1,5 +1,5 @@
 import logging
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
@@ -105,7 +105,9 @@ class SharePointListWriter(object):
                     index = 0
             if offset < len(kwargs):
                 futures.append(thread_pool_executor.submit(self.parent.client.process_batch, kwargs[offset:len(kwargs)]))
-        logger.info("All rows added")
+            for future in as_completed(futures):
+                future_result = future.result()  # Necessary to raise any possible future's exception
+        logger.info("All items added")
 
     def create_sharepoint_columns(self):
         """ Create the list's columns on SP, retrieve their SP id and map it to their DSS column name """
