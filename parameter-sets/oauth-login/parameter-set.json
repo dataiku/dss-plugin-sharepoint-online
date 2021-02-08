@@ -24,7 +24,7 @@
             "name": "sharepoint_tenant",
             "label": "Tenant",
             "type": "STRING",
-            "description": "Usually your company name",
+            "description": "As in <tenant>.sharepoint.com",
             "mandatory": true
         },
         {
