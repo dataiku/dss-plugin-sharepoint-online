@@ -24,11 +24,13 @@ class SharePointClientError(ValueError):
 
 class SharePointClient():
 
-    def __init__(self, config):
+    def __init__(self, config, max_workers=1, batch_size=100):
         self.sharepoint_root = None
         self.sharepoint_tenant = None
         self.sharepoint_url = None
         self.sharepoint_origin = None
+        self.max_workers = max_workers
+        self.batch_size = batch_size
         if config.get('auth_type') == DSSConstants.AUTH_OAUTH:
             logger.info("SharePointClient:sharepoint_oauth")
             login_details = config.get('sharepoint_oauth')

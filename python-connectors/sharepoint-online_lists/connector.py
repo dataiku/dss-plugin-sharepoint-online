@@ -23,9 +23,17 @@ class SharePointListsConnector(Connector):
         self.column_names = {}
         self.expand_lookup = config.get("expand_lookup", False)
         self.metadata_to_retrieve = config.get("metadata_to_retrieve", [])
+        advanced_parameters = config.get("advanced_parameters", False)
+        if not advanced_parameters:
+            self.max_workers = 1  # no multithread per default
+            self.batch_size = 100
+        else:
+            self.max_workers = config.get("max_workers", 1)
+            self.batch_size = config.get("batch_size", 100)
+        logger.info("init:advanced_parameters={}, max_workers={}, batch_size={}".format(advanced_parameters, self.max_workers, self.batch_size))
         self.metadata_to_retrieve.append("Title")
         self.display_metadata = len(self.metadata_to_retrieve) > 0
-        self.client = SharePointClient(config)
+        self.client = SharePointClient(config, max_workers=self.max_workers, batch_size=self.batch_size)
 
     def get_read_schema(self):
         logger.info('get_read_schema')
@@ -97,7 +105,8 @@ class SharePointListsConnector(Connector):
 
     @staticmethod
     def get_next_page_query_string(page):
-        return page.get("NextHref", "")
+        ret = page.get("NextHref", "")
+        return ret
 
     @staticmethod
     def get_page_rows(page):
@@ -106,7 +115,15 @@ class SharePointListsConnector(Connector):
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
                    partition_id=None):
         assert_list_title(self.sharepoint_list_title)
-        return SharePointListWriter(self.config, self, dataset_schema, dataset_partitioning, partition_id)
+        return SharePointListWriter(
+            self.config,
+            self,
+            dataset_schema,
+            dataset_partitioning,
+            partition_id,
+            max_workers=self.max_workers,
+            batch_size=self.batch_size
+        )
 
     def get_partitioning(self):
         logger.info('get_partitioning')

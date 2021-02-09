@@ -78,6 +78,7 @@ class SharePointListWriter(object):
         self.max_workers = max_workers
         self.batch_size = batch_size
         self.working_batch_size = max_workers * batch_size
+        self.columns_already_created = False
 
     def write_row(self, row):
         self.buffer.append(row)
@@ -86,10 +87,18 @@ class SharePointListWriter(object):
             self.buffer = []
 
     def flush(self):
-        self.parent.get_read_schema()
-        self.create_sharepoint_columns()
+        if not self.columns_already_created:
+            self.parent.get_read_schema()
+            self.create_sharepoint_columns()
+            self.columns_already_created = True
 
-        logger.info("Starting adding rows")
+        if self.max_workers > 1:
+            self.upload_rows_multithreaded()
+        else:
+            self.upload_rows()
+
+    def upload_rows_multithreaded(self):
+        logger.info("Starting multithreaded rows adding")
         index = 0
         offset = 0
         kwargs = []
@@ -107,6 +116,23 @@ class SharePointListWriter(object):
                 futures.append(thread_pool_executor.submit(self.parent.client.process_batch, kwargs[offset:len(kwargs)]))
             for future in as_completed(futures):
                 future_result = future.result()  # Necessary to raise any possible future's exception
+        logger.info("All items added")
+
+    def upload_rows(self):
+        logger.info("Starting adding rows")
+        index = 0
+        offset = 0
+        kwargs = []
+        for row in self.buffer:
+            item = self.build_row_dictionary(row)
+            kwargs.append(self.parent.client.get_add_list_item_kwargs(self.list_id, self.list_item_entity_type_full_name, item))
+            index = index + 1
+            if index >= self.batch_size:
+                self.parent.client.process_batch(kwargs[offset:offset + index])
+                offset += index
+                index = 0
+        if offset < len(kwargs):
+            self.parent.client.process_batch(kwargs[offset:len(kwargs)])
         logger.info("All items added")
 
     def create_sharepoint_columns(self):
