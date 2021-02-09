@@ -42,3 +42,4 @@ class SharePointConstants(object):
     TYPE_AS_STRING = 'TypeAsString'
     TYPE_COLUMN = 'type'
     VALUE = 'value'
+    WAIT_TIME_BEFORE_RETRY = 2

@@ -33,7 +33,7 @@ class SharePointListsConnector(Connector):
         logger.info("init:advanced_parameters={}, max_workers={}, batch_size={}".format(advanced_parameters, self.max_workers, self.batch_size))
         self.metadata_to_retrieve.append("Title")
         self.display_metadata = len(self.metadata_to_retrieve) > 0
-        self.client = SharePointClient(config, max_workers=self.max_workers, batch_size=self.batch_size)
+        self.client = SharePointClient(config)
 
     def get_read_schema(self):
         logger.info('get_read_schema')

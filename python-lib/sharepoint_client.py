@@ -24,13 +24,11 @@ class SharePointClientError(ValueError):
 
 class SharePointClient():
 
-    def __init__(self, config, max_workers=1, batch_size=100):
+    def __init__(self, config):
         self.sharepoint_root = None
         self.sharepoint_tenant = None
         self.sharepoint_url = None
         self.sharepoint_origin = None
-        self.max_workers = max_workers
-        self.batch_size = batch_size
         if config.get('auth_type') == DSSConstants.AUTH_OAUTH:
             logger.info("SharePointClient:sharepoint_oauth")
             login_details = config.get('sharepoint_oauth')
@@ -395,7 +393,7 @@ class SharePointClient():
                 logger.warning("on attempt #{}".format(attempt_number))
                 if attempt_number == SharePointConstants.MAX_RETRIES:
                     raise SharePointClientError("Error in batch processing on attempt #{}: {}".format(attempt_number, err))
-                time.sleep(2)
+                time.sleep(SharePointConstants.WAIT_TIME_BEFORE_RETRY)
 
         nb_of_201 = str(response.content).count("HTTP/1.1 201")
         if nb_of_201 != len(kwargs_array):
