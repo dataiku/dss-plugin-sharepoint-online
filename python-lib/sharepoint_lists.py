@@ -78,7 +78,8 @@ class SharePointListWriter(object):
         self.max_workers = max_workers
         self.batch_size = batch_size
         self.working_batch_size = max_workers * batch_size
-        self.columns_already_created = False
+        self.parent.get_read_schema()
+        self.create_sharepoint_columns()
 
     def write_row(self, row):
         self.buffer.append(row)
@@ -87,11 +88,6 @@ class SharePointListWriter(object):
             self.buffer = []
 
     def flush(self):
-        if not self.columns_already_created:
-            self.parent.get_read_schema()
-            self.create_sharepoint_columns()
-            self.columns_already_created = True
-
         if self.max_workers > 1:
             self.upload_rows_multithreaded()
         else:
@@ -116,7 +112,7 @@ class SharePointListWriter(object):
                 futures.append(thread_pool_executor.submit(self.parent.client.process_batch, kwargs[offset:len(kwargs)]))
             for future in as_completed(futures):
                 future_result = future.result()  # Necessary to raise any possible future's exception
-        logger.info("All items added")
+        logger.info("{} items written".format(offset+index))
 
     def upload_rows(self):
         logger.info("Starting adding rows")
@@ -133,7 +129,7 @@ class SharePointListWriter(object):
                 index = 0
         if offset < len(kwargs):
             self.parent.client.process_batch(kwargs[offset:len(kwargs)])
-        logger.info("All items added")
+        logger.info("{} items written".format(offset+index))
 
     def create_sharepoint_columns(self):
         """ Create the list's columns on SP, retrieve their SP id and map it to their DSS column name """

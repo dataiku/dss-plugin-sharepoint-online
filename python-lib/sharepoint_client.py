@@ -395,7 +395,7 @@ class SharePointClient():
                 logger.warning("on attempt #{}".format(attempt_number))
                 if attempt_number == SharePointConstants.MAX_RETRIES:
                     raise SharePointClientError("Error in batch processing on attempt #{}: {}".format(attempt_number, err))
-                time.sleep(attempt_number)
+                time.sleep(2)
 
         nb_of_201 = str(response.content).count("HTTP/1.1 201")
         if nb_of_201 != len(kwargs_array):
