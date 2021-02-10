@@ -579,7 +579,7 @@ class SharePointSession():
            "Authorization": self.get_authorization_bearer()
         }
         default_headers.update(headers)
-        return requests.post(url, headers=default_headers, json=json, data=data)
+        return requests.post(url, headers=default_headers, json=json, data=data, timeout=SharePointConstants.TIMEOUT)
 
     def get_authorization_bearer(self):
         return "Bearer {}".format(self.sharepoint_access_token)
