@@ -74,6 +74,11 @@ class SharePointClient():
         else:
             raise SharePointClientError("The type of authentication is not selected")
         self.sharepoint_list_title = config.get("sharepoint_list_title")
+        try:
+            from urllib3.connectionpool import log
+            log.addFilter(SuppressFilter())
+        except Exception as err:
+            logging.error("Error while adding filter to urllib3.connectionpool logs: {}".format(err))
 
     def assert_email_address(self, username):
         if not is_email_address(username):
@@ -382,7 +387,7 @@ class SharePointClient():
         while not successful_post and attempt_number <= SharePointConstants.MAX_RETRIES:
             try:
                 attempt_number += 1
-                logger.info("Posting batch of {} lines".format(len(kwargs_array)))
+                logger.info("Posting batch of {} items".format(len(kwargs_array)))
                 response = self.session.post(
                     url,
                     headers=headers,
@@ -578,3 +583,10 @@ class SharePointSession():
 
     def get_authorization_bearer(self):
         return "Bearer {}".format(self.sharepoint_access_token)
+
+
+class SuppressFilter(logging.Filter):
+    # Avoid poluting logs with redondant warnings
+    # https://github.com/diyan/pywinrm/issues/269
+    def filter(self, record):
+        return 'Failed to parse headers' not in record.getMessage()

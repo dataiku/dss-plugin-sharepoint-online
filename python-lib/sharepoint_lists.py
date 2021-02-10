@@ -115,7 +115,7 @@ class SharePointListWriter(object):
         logger.info("{} items written".format(offset+index))
 
     def upload_rows(self):
-        logger.info("Starting adding rows")
+        logger.info("Starting adding items")
         kwargs = []
         for row in self.buffer:
             item = self.build_row_dictionary(row)
