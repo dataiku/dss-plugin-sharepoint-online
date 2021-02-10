@@ -116,20 +116,12 @@ class SharePointListWriter(object):
 
     def upload_rows(self):
         logger.info("Starting adding rows")
-        index = 0
-        offset = 0
         kwargs = []
         for row in self.buffer:
             item = self.build_row_dictionary(row)
             kwargs.append(self.parent.client.get_add_list_item_kwargs(self.list_id, self.list_item_entity_type_full_name, item))
-            index = index + 1
-            if index >= self.batch_size:
-                self.parent.client.process_batch(kwargs[offset:offset + index])
-                offset += index
-                index = 0
-        if offset < len(kwargs):
-            self.parent.client.process_batch(kwargs[offset:len(kwargs)])
-        logger.info("{} items written".format(offset+index))
+        self.parent.client.process_batch(kwargs)
+        logger.info("{} items written".format(len(kwargs)))
 
     def create_sharepoint_columns(self):
         """ Create the list's columns on SP, retrieve their SP id and map it to their DSS column name """
