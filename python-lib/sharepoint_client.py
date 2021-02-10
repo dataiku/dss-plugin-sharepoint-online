@@ -382,11 +382,13 @@ class SharePointClient():
         while not successful_post and attempt_number <= SharePointConstants.MAX_RETRIES:
             try:
                 attempt_number += 1
+                logger.info("Posting batch of {} lines".format(len(kwargs_array)))
                 response = self.session.post(
                     url,
                     headers=headers,
                     data=body.encode('utf-8')
                 )
+                logger.info("Batch post status: {}".format(response.status_code))
                 successful_post = True
             except Exception as err:
                 logger.warning("ERROR:{}".format(err))
