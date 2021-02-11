@@ -101,7 +101,7 @@
         },
         {
             "name": "max_workers",
-            "label": "Max nb of workers",
+            "label": "Max nb of workers (write mode only)",
             "description": "More workers will speed writing but also randomize items order",
             "visibilityCondition": "model.advanced_parameters == true",
             "type": "INT",
@@ -111,7 +111,7 @@
         },
         {
             "name": "batch_size",
-            "label": "Batch size",
+            "label": "Batch size (write mode only)",
             "description": "Number of items writen per batch",
             "visibilityCondition": "model.advanced_parameters == true",
             "type": "INT",
