@@ -395,6 +395,11 @@ class SharePointClient():
                 )
                 logger.info("Batch post status: {}".format(response.status_code))
                 successful_post = True
+            except requests.exceptions.Timeout as err:
+                #  Necessary to raise since timed out items may or may not be uploaded
+                #  possibly resulting in duplicated items
+                logger.error("Timeout error:{}".format(err))
+                raise SharePointClientError("Timeout error: {}".format(err))
             except Exception as err:
                 logger.warning("ERROR:{}".format(err))
                 logger.warning("on attempt #{}".format(attempt_number))
