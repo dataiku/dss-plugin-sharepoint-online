@@ -78,7 +78,7 @@ class SharePointClient():
             from urllib3.connectionpool import log
             log.addFilter(SuppressFilter())
         except Exception as err:
-            logging.error("Error while adding filter to urllib3.connectionpool logs: {}".format(err))
+            logging.warning("Error while adding filter to urllib3.connectionpool logs: {}".format(err))
 
     def assert_email_address(self, username):
         if not is_email_address(username):
@@ -405,7 +405,7 @@ class SharePointClient():
                 logger.warning("on attempt #{}".format(attempt_number))
                 if attempt_number == SharePointConstants.MAX_RETRIES:
                     raise SharePointClientError("Error in batch processing on attempt #{}: {}".format(attempt_number, err))
-                time.sleep(SharePointConstants.WAIT_TIME_BEFORE_RETRY)
+                time.sleep(SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC)
 
         nb_of_201 = str(response.content).count("HTTP/1.1 201")
         if nb_of_201 != len(kwargs_array):
@@ -584,7 +584,7 @@ class SharePointSession():
            "Authorization": self.get_authorization_bearer()
         }
         default_headers.update(headers)
-        return requests.post(url, headers=default_headers, json=json, data=data, timeout=SharePointConstants.TIMEOUT)
+        return requests.post(url, headers=default_headers, json=json, data=data, timeout=SharePointConstants.TIMEOUT_SEC)
 
     def get_authorization_bearer(self):
         return "Bearer {}".format(self.sharepoint_access_token)

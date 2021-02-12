@@ -26,7 +26,7 @@ class SharePointConstants(object):
     TIME_LAST_MODIFIED = 'TimeLastModified'
     TITLE_COLUMN = 'Title'
     TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
-    TIMEOUT = 300
+    TIMEOUT_SEC = 300
     TYPES = {
         "Text": "string",
         "Number": "string",
@@ -43,4 +43,4 @@ class SharePointConstants(object):
     TYPE_AS_STRING = 'TypeAsString'
     TYPE_COLUMN = 'type'
     VALUE = 'value'
-    WAIT_TIME_BEFORE_RETRY = 2
+    WAIT_TIME_BEFORE_RETRY_SEC = 2
