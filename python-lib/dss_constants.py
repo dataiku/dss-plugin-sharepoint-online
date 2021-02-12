@@ -32,6 +32,9 @@ class DSSConstants(object):
     }
     TYPES = {
         "string": "Text",
+        "map": "Note",
+        "array": "Note",
+        "object": "Note",
         "double": "Number",
         "float": "Number",
         "int": "Integer",

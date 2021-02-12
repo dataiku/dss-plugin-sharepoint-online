@@ -3,6 +3,8 @@ import requests
 import sharepy
 import urllib.parse
 import logging
+import uuid
+import time
 
 from xml.etree.ElementTree import Element, tostring
 from xml.dom import minidom
@@ -28,6 +30,7 @@ class SharePointClient():
         self.sharepoint_url = None
         self.sharepoint_origin = None
         if config.get('auth_type') == DSSConstants.AUTH_OAUTH:
+            logger.info("SharePointClient:sharepoint_oauth")
             login_details = config.get('sharepoint_oauth')
             self.assert_login_details(DSSConstants.OAUTH_DETAILS, login_details)
             self.setup_login_details(login_details)
@@ -41,6 +44,7 @@ class SharePointClient():
                 sharepoint_access_token=self.sharepoint_access_token
             )
         elif config.get('auth_type') == DSSConstants.AUTH_LOGIN:
+            logger.info("SharePointClient:sharepoint_sharepy")
             login_details = config.get('sharepoint_sharepy')
             self.assert_login_details(DSSConstants.LOGIN_DETAILS, login_details)
             self.setup_login_details(login_details)
@@ -50,6 +54,7 @@ class SharePointClient():
             self.setup_sharepoint_online_url(login_details)
             self.session = sharepy.connect(self.sharepoint_url, username=username, password=password)
         elif config.get('auth_type') == DSSConstants.AUTH_SITE_APP:
+            logger.info("SharePointClient:site_app_permissions")
             login_details = config.get('site_app_permissions')
             self.assert_login_details(DSSConstants.SITE_APP_DETAILS, login_details)
             self.setup_sharepoint_online_url(login_details)
@@ -69,6 +74,11 @@ class SharePointClient():
         else:
             raise SharePointClientError("The type of authentication is not selected")
         self.sharepoint_list_title = config.get("sharepoint_list_title")
+        try:
+            from urllib3.connectionpool import log
+            log.addFilter(SuppressFilter())
+        except Exception as err:
+            logging.error("Error while adding filter to urllib3.connectionpool logs: {}".format(err))
 
     def assert_email_address(self, username):
         if not is_email_address(username):
@@ -88,12 +98,12 @@ class SharePointClient():
 
     def get_folders(self, path):
         response = self.session.get(self.get_sharepoint_item_url(path) + "/Folders")
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, calling_method="get_folders")
         return response.json()
 
     def get_files(self, path):
         response = self.session.get(self.get_sharepoint_item_url(path) + "/Files")
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, calling_method="get_files")
         return response.json()
 
     def get_sharepoint_item_url(self, path):
@@ -110,7 +120,7 @@ class SharePointClient():
         response = self.session.get(
             self.get_file_content_url(full_path)
         )
-        self.assert_response_ok(response, no_json=True)
+        self.assert_response_ok(response, no_json=True, calling_method="get_file_content")
         return response
 
     def write_file_content(self, full_path, data):
@@ -126,14 +136,14 @@ class SharePointClient():
             headers=headers,
             data=data
         )
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, calling_method="write_file_content")
         return response
 
     def create_folder(self, full_path):
         response = self.session.post(
             self.get_add_folder_url(full_path)
         )
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, calling_method="create_folder")
         return response
 
     def move_file(self, full_from_path, full_to_path):
@@ -142,7 +152,7 @@ class SharePointClient():
             full_to_path
         )
         response = self.session.post(get_move_url)
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, calling_method="move_file")
         return response.json()
 
     def delete_file(self, full_path):
@@ -153,7 +163,7 @@ class SharePointClient():
             self.get_file_url(full_path),
             headers=headers
         )
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, calling_method="delete_file")
 
     def delete_folder(self, full_path):
         headers = {
@@ -163,14 +173,14 @@ class SharePointClient():
             self.get_folder_url(full_path),
             headers=headers
         )
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, calling_method="delete_folder")
 
     def get_list_fields(self, list_title):
         list_fields_url = self.get_list_fields_url(list_title)
         response = self.session.get(
             list_fields_url
         )
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, calling_method="get_list_fields")
         json_response = response.json()
         if self.is_response_empty(json_response):
             return None
@@ -192,12 +202,17 @@ class SharePointClient():
                 "RenderOptions": 2
             }
         }
+        headers = {
+            "Content-Type": DSSConstants.APPLICATION_JSON,
+            "Accept": DSSConstants.APPLICATION_JSON
+        }
         url = self.get_list_data_as_stream(list_title) + query_string
         response = self.session.post(
             url,
+            headers=headers,
             json=data
         )
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, calling_method="get_list_items")
         return response.json()
 
     def create_list(self, list_name):
@@ -219,7 +234,7 @@ class SharePointClient():
             headers=headers,
             json=data
         )
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, calling_method="create_list")
         json = response.json()
         return json.get(SharePointConstants.RESULTS_CONTAINER_V2, {})
 
@@ -253,7 +268,7 @@ class SharePointClient():
             headers=headers,
             json=body
         )
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, calling_method="create_custom_field_via_id")
         return response
 
     def get_list_default_view(self, list_name):
@@ -263,7 +278,7 @@ class SharePointClient():
         )
         if response.status_code == 404:
             return []
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, calling_method="get_list_default_view")
         json_response = response.json()
         return json_response.get(SharePointConstants.RESULTS_CONTAINER_V2, {"Items": {"results": []}}).get("Items", {"results": []}).get("results", [])
 
@@ -302,7 +317,7 @@ class SharePointClient():
             json=item,
             headers=headers
         )
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, calling_method="add_list_item")
         return response
 
     def add_list_item_by_id(self, list_id, list_item_full_name, item):
@@ -313,12 +328,89 @@ class SharePointClient():
             "Content-Type": DSSConstants.APPLICATION_JSON
         }
         list_items_url = self.get_list_items_url_by_id(list_id)
+
         response = self.session.post(
             list_items_url,
             json=item,
             headers=headers
         )
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, calling_method="add_list_item_by_id")
+        return response
+
+    def get_add_list_item_kwargs(self, list_id, list_item_full_name, item):
+        item["__metadata"] = {
+            "type": "{}".format(list_item_full_name)
+        }
+        headers = {
+            "Content-Type": DSSConstants.APPLICATION_JSON
+        }
+        list_items_url = self.get_list_items_url_by_id(list_id)
+
+        kwargs = {
+            "verb": "post",
+            "url": list_items_url,
+            "json": item,
+            "headers": headers
+        }
+        return kwargs
+
+    def process_batch(self, kwargs_array):
+        batch_id = self.get_random_guid()
+        change_set_id = self.get_random_guid()
+
+        headers = {
+            "Content-Type": "multipart/mixed;boundary=\"batch_{}\"".format(batch_id),
+            "Accept": "multipart/mixed"
+        }
+        url = "{}/{}/_api/$batch".format(self.sharepoint_origin, self.sharepoint_site)
+        body_elements = []
+        body_elements.append("--batch_{}".format(batch_id))
+        body_elements.append("Content-Type: multipart/mixed; boundary=changeset_{}".format(change_set_id))
+        body_elements.append("")
+
+        for kwargs in kwargs_array:
+            body_elements.append("--changeset_{}".format(change_set_id))
+            body_elements.append("Content-Type: application/http")
+            body_elements.append("Content-Transfer-Encoding: binary")
+            body_elements.append("")
+            body_elements.append("{} {} HTTP/1.1".format(kwargs["verb"].upper(), kwargs["url"]))
+            for header in kwargs["headers"]:
+                body_elements.append("{}: {}".format(header, kwargs["headers"][header]))
+            body_elements.append("Accept-Charset: UTF-8")
+            body_elements.append("")
+            body_elements.append("{}".format(kwargs["json"]))
+        body_elements.append("--changeset_{}--".format(change_set_id))
+        body_elements.append('--batch_{}--'.format(batch_id))
+        body = "\r\n".join(body_elements)
+        successful_post = False
+        attempt_number = 0
+        while not successful_post and attempt_number <= SharePointConstants.MAX_RETRIES:
+            try:
+                attempt_number += 1
+                logger.info("Posting batch of {} items".format(len(kwargs_array)))
+                response = self.session.post(
+                    url,
+                    headers=headers,
+                    data=body.encode('utf-8')
+                )
+                logger.info("Batch post status: {}".format(response.status_code))
+                successful_post = True
+            except requests.exceptions.Timeout as err:
+                #  Necessary to raise since timed out items may or may not be uploaded
+                #  possibly resulting in duplicated items
+                logger.error("Timeout error:{}".format(err))
+                raise SharePointClientError("Timeout error: {}".format(err))
+            except Exception as err:
+                logger.warning("ERROR:{}".format(err))
+                logger.warning("on attempt #{}".format(attempt_number))
+                if attempt_number == SharePointConstants.MAX_RETRIES:
+                    raise SharePointClientError("Error in batch processing on attempt #{}: {}".format(attempt_number, err))
+                time.sleep(SharePointConstants.WAIT_TIME_BEFORE_RETRY)
+
+        nb_of_201 = str(response.content).count("HTTP/1.1 201")
+        if nb_of_201 != len(kwargs_array):
+            logger.warning("Checks indicate possible item loss ({}/{} are accounted for)".format(nb_of_201, len(kwargs_array)))
+            logger.warning("response.content={}".format(response.content))
         return response
 
     def get_base_url(self):
@@ -405,41 +497,42 @@ class SharePointClient():
             if key not in login_details.keys():
                 raise SharePointClientError(required_keys[key])
 
-    def assert_response_ok(self, response, no_json=False):
+    def assert_response_ok(self, response, no_json=False, calling_method=""):
         status_code = response.status_code
         if status_code >= 400:
-            enriched_error_message = self.get_enriched_error_message(response)
+            enriched_error_message = self.get_enriched_error_message(response, calling_method=calling_method)
             if enriched_error_message is not None:
-                raise SharePointClientError("Error: {}".format(enriched_error_message))
+                raise SharePointClientError("Error ({}): {}".format(calling_method, enriched_error_message))
         if status_code == 400:
-            raise SharePointClientError("{}".format(response.text))
+            raise SharePointClientError("({}){}".format(calling_method, response.text))
         if status_code == 404:
-            raise SharePointClientError("Not found. Please check tenant, site type or site name.")
+            raise SharePointClientError("Not found. Please check tenant, site type or site name. ({})".format(calling_method))
         if status_code == 403:
-            raise SharePointClientError("Forbidden. Please check your account credentials.")
+            raise SharePointClientError("Forbidden. Please check your account credentials. ({})".format(calling_method))
         if not no_json:
-            self.assert_no_error_in_json(response)
+            self.assert_no_error_in_json(response, calling_method=calling_method)
 
     @staticmethod
-    def get_enriched_error_message(response):
+    def get_enriched_error_message(response, calling_method=""):
         try:
             json_response = response.json()
-            enriched_error_message = json_response.get("error").get("message").get("value")
+            enriched_error_message = "({}) {}".format(calling_method, json_response.get("error").get("message").get("value"))
             return enriched_error_message
         except Exception as error:
             logger.info("Error trying to extract error message :{}".format(error))
+            logger.info("Response.content={}".format(response.content))
             return None
 
     @staticmethod
-    def assert_no_error_in_json(response):
+    def assert_no_error_in_json(response, calling_method=""):
         if len(response.content) == 0:
-            raise SharePointClientError("Empty response from SharePoint. Please check user credentials.")
+            raise SharePointClientError("Empty response from SharePoint ({}). Please check user credentials.".format(calling_method))
         json_response = response.json()
         if "error" in json_response:
             if "message" in json_response["error"] and "value" in json_response["error"]["message"]:
-                raise SharePointClientError("Error: {}".format(json_response["error"]["message"]["value"]))
+                raise SharePointClientError("Error ({}): {}".format(calling_method, json_response["error"]["message"]["value"]))
             else:
-                raise SharePointClientError("Error: {}".format(json_response))
+                raise SharePointClientError("Error ({}): {}".format(calling_method, json_response))
 
     def get_site_app_access_token(self):
         headers = {
@@ -460,17 +553,22 @@ class SharePointClient():
             headers=headers,
             data=data
         )
-        self.assert_response_ok(response)
+        self.assert_response_ok(response, calling_method="")
         json_response = response.json()
         return json_response.get("access_token")
+
+    @staticmethod
+    def get_random_guid():
+        return str(uuid.uuid4())
 
 
 class SharePointSession():
 
-    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_tenant, sharepoint_site, sharepoint_access_token=None):
+    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_tenant, sharepoint_site, sharepoint_access_token=None, max_retry=10):
         self.sharepoint_tenant = sharepoint_tenant
         self.sharepoint_site = sharepoint_site
         self.sharepoint_access_token = sharepoint_access_token
+        requests.adapters.DEFAULT_RETRIES = max_retry
 
     def get(self, url, headers=None, params=None):
         headers = headers or {}
@@ -486,7 +584,14 @@ class SharePointSession():
            "Authorization": self.get_authorization_bearer()
         }
         default_headers.update(headers)
-        return requests.post(url, headers=default_headers, json=json, data=data)
+        return requests.post(url, headers=default_headers, json=json, data=data, timeout=SharePointConstants.TIMEOUT)
 
     def get_authorization_bearer(self):
         return "Bearer {}".format(self.sharepoint_access_token)
+
+
+class SuppressFilter(logging.Filter):
+    # Avoid poluting logs with redondant warnings
+    # https://github.com/diyan/pywinrm/issues/269
+    def filter(self, record):
+        return 'Failed to parse headers' not in record.getMessage()

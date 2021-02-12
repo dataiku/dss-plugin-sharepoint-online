@@ -12,6 +12,7 @@ class SharePointConstants(object):
     HIDDEN_COLUMN = 'Hidden'
     LENGTH = 'Length'
     LOOKUP_FIELD = 'LookupField'
+    MAX_RETRIES = 5
     MESSAGE = 'message'
     MOVE_TO = "MoveTo"
     NAME = 'Name'
@@ -25,6 +26,7 @@ class SharePointConstants(object):
     TIME_LAST_MODIFIED = 'TimeLastModified'
     TITLE_COLUMN = 'Title'
     TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+    TIMEOUT = 300
     TYPES = {
         "Text": "string",
         "Number": "string",
@@ -35,8 +37,10 @@ class SharePointConstants(object):
         "Computed": None,
         "Attachments": None,
         "Calculated": "string",
-        "User": "string"
+        "User": "array",
+        "Thumbnail": "object"
     }
     TYPE_AS_STRING = 'TypeAsString'
     TYPE_COLUMN = 'type'
     VALUE = 'value'
+    WAIT_TIME_BEFORE_RETRY = 2
