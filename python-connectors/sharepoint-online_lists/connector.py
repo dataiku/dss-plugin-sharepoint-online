@@ -16,6 +16,7 @@ class SharePointListsConnector(Connector):
 
     def __init__(self, config, plugin_config):
         Connector.__init__(self, config, plugin_config)
+        logger.info('SharePoint Online plugin connector v1.0.7')
         self.sharepoint_list_title = self.config.get("sharepoint_list_title")
         self.auth_type = config.get('auth_type')
         logger.info('init:sharepoint_list_title={}, auth_type={}'.format(self.sharepoint_list_title, self.auth_type))
@@ -23,6 +24,14 @@ class SharePointListsConnector(Connector):
         self.column_names = {}
         self.expand_lookup = config.get("expand_lookup", False)
         self.metadata_to_retrieve = config.get("metadata_to_retrieve", [])
+        advanced_parameters = config.get("advanced_parameters", False)
+        if not advanced_parameters:
+            self.max_workers = 1  # no multithread per default
+            self.batch_size = 100
+        else:
+            self.max_workers = config.get("max_workers", 1)
+            self.batch_size = config.get("batch_size", 100)
+        logger.info("init:advanced_parameters={}, max_workers={}, batch_size={}".format(advanced_parameters, self.max_workers, self.batch_size))
         self.metadata_to_retrieve.append("Title")
         self.display_metadata = len(self.metadata_to_retrieve) > 0
         self.client = SharePointClient(config)
@@ -73,18 +82,23 @@ class SharePointListsConnector(Connector):
         if self.column_ids == {}:
             self.get_read_schema()
 
-        logger.info('generate_row:dataset_schema={}, dataset_partitioning={}, partition_id={}'.format(
-            dataset_schema, dataset_partitioning, partition_id
+        logger.info('generate_row:dataset_schema={}, dataset_partitioning={}, partition_id={}, records_limit={}'.format(
+            dataset_schema, dataset_partitioning, partition_id, records_limit
         ))
 
         page = {}
+        record_count = 0
         is_first_run = True
+        is_record_limit = records_limit > 0
         while is_first_run or self.is_not_last_page(page):
             is_first_run = False
             page = self.client.get_list_items(self.sharepoint_list_title, query_string=self.get_next_page_query_string(page))
             rows = self.get_page_rows(page)
             for row in rows:
                 yield column_ids_to_names(self.column_ids, self.column_names, row)
+            record_count += len(rows)
+            if is_record_limit and record_count >= records_limit:
+                break
 
     @staticmethod
     def is_not_last_page(page):
@@ -92,7 +106,8 @@ class SharePointListsConnector(Connector):
 
     @staticmethod
     def get_next_page_query_string(page):
-        return page.get("NextHref", "")
+        ret = page.get("NextHref", "")
+        return ret
 
     @staticmethod
     def get_page_rows(page):
@@ -101,7 +116,15 @@ class SharePointListsConnector(Connector):
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
                    partition_id=None):
         assert_list_title(self.sharepoint_list_title)
-        return SharePointListWriter(self.config, self, dataset_schema, dataset_partitioning, partition_id)
+        return SharePointListWriter(
+            self.config,
+            self,
+            dataset_schema,
+            dataset_partitioning,
+            partition_id,
+            max_workers=self.max_workers,
+            batch_size=self.batch_size
+        )
 
     def get_partitioning(self):
         logger.info('get_partitioning')

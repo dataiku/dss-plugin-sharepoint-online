@@ -3,7 +3,8 @@ import requests
 import sharepy
 import urllib.parse
 import logging
-import json
+import uuid
+import time
 
 from xml.etree.ElementTree import Element, tostring
 from xml.dom import minidom
@@ -73,6 +74,11 @@ class SharePointClient():
         else:
             raise SharePointClientError("The type of authentication is not selected")
         self.sharepoint_list_title = config.get("sharepoint_list_title")
+        try:
+            from urllib3.connectionpool import log
+            log.addFilter(SuppressFilter())
+        except Exception as err:
+            logging.error("Error while adding filter to urllib3.connectionpool logs: {}".format(err))
 
     def assert_email_address(self, username):
         if not is_email_address(username):
@@ -331,6 +337,82 @@ class SharePointClient():
         self.assert_response_ok(response, calling_method="add_list_item_by_id")
         return response
 
+    def get_add_list_item_kwargs(self, list_id, list_item_full_name, item):
+        item["__metadata"] = {
+            "type": "{}".format(list_item_full_name)
+        }
+        headers = {
+            "Content-Type": DSSConstants.APPLICATION_JSON
+        }
+        list_items_url = self.get_list_items_url_by_id(list_id)
+
+        kwargs = {
+            "verb": "post",
+            "url": list_items_url,
+            "json": item,
+            "headers": headers
+        }
+        return kwargs
+
+    def process_batch(self, kwargs_array):
+        batch_id = self.get_random_guid()
+        change_set_id = self.get_random_guid()
+
+        headers = {
+            "Content-Type": "multipart/mixed;boundary=\"batch_{}\"".format(batch_id),
+            "Accept": "multipart/mixed"
+        }
+        url = "{}/{}/_api/$batch".format(self.sharepoint_origin, self.sharepoint_site)
+        body_elements = []
+        body_elements.append("--batch_{}".format(batch_id))
+        body_elements.append("Content-Type: multipart/mixed; boundary=changeset_{}".format(change_set_id))
+        body_elements.append("")
+
+        for kwargs in kwargs_array:
+            body_elements.append("--changeset_{}".format(change_set_id))
+            body_elements.append("Content-Type: application/http")
+            body_elements.append("Content-Transfer-Encoding: binary")
+            body_elements.append("")
+            body_elements.append("{} {} HTTP/1.1".format(kwargs["verb"].upper(), kwargs["url"]))
+            for header in kwargs["headers"]:
+                body_elements.append("{}: {}".format(header, kwargs["headers"][header]))
+            body_elements.append("Accept-Charset: UTF-8")
+            body_elements.append("")
+            body_elements.append("{}".format(kwargs["json"]))
+        body_elements.append("--changeset_{}--".format(change_set_id))
+        body_elements.append('--batch_{}--'.format(batch_id))
+        body = "\r\n".join(body_elements)
+        successful_post = False
+        attempt_number = 0
+        while not successful_post and attempt_number <= SharePointConstants.MAX_RETRIES:
+            try:
+                attempt_number += 1
+                logger.info("Posting batch of {} items".format(len(kwargs_array)))
+                response = self.session.post(
+                    url,
+                    headers=headers,
+                    data=body.encode('utf-8')
+                )
+                logger.info("Batch post status: {}".format(response.status_code))
+                successful_post = True
+            except requests.exceptions.Timeout as err:
+                #  Necessary to raise since timed out items may or may not be uploaded
+                #  possibly resulting in duplicated items
+                logger.error("Timeout error:{}".format(err))
+                raise SharePointClientError("Timeout error: {}".format(err))
+            except Exception as err:
+                logger.warning("ERROR:{}".format(err))
+                logger.warning("on attempt #{}".format(attempt_number))
+                if attempt_number == SharePointConstants.MAX_RETRIES:
+                    raise SharePointClientError("Error in batch processing on attempt #{}: {}".format(attempt_number, err))
+                time.sleep(SharePointConstants.WAIT_TIME_BEFORE_RETRY)
+
+        nb_of_201 = str(response.content).count("HTTP/1.1 201")
+        if nb_of_201 != len(kwargs_array):
+            logger.warning("Checks indicate possible item loss ({}/{} are accounted for)".format(nb_of_201, len(kwargs_array)))
+            logger.warning("response.content={}".format(response.content))
+        return response
+
     def get_base_url(self):
         return "{}/{}/_api/Web".format(
             self.sharepoint_origin, self.sharepoint_site
@@ -475,13 +557,18 @@ class SharePointClient():
         json_response = response.json()
         return json_response.get("access_token")
 
+    @staticmethod
+    def get_random_guid():
+        return str(uuid.uuid4())
+
 
 class SharePointSession():
 
-    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_tenant, sharepoint_site, sharepoint_access_token=None):
+    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_tenant, sharepoint_site, sharepoint_access_token=None, max_retry=10):
         self.sharepoint_tenant = sharepoint_tenant
         self.sharepoint_site = sharepoint_site
         self.sharepoint_access_token = sharepoint_access_token
+        requests.adapters.DEFAULT_RETRIES = max_retry
 
     def get(self, url, headers=None, params=None):
         headers = headers or {}
@@ -497,7 +584,14 @@ class SharePointSession():
            "Authorization": self.get_authorization_bearer()
         }
         default_headers.update(headers)
-        return requests.post(url, headers=default_headers, json=json, data=data)
+        return requests.post(url, headers=default_headers, json=json, data=data, timeout=SharePointConstants.TIMEOUT)
 
     def get_authorization_bearer(self):
         return "Bearer {}".format(self.sharepoint_access_token)
+
+
+class SuppressFilter(logging.Filter):
+    # Avoid poluting logs with redondant warnings
+    # https://github.com/diyan/pywinrm/issues/269
+    def filter(self, record):
+        return 'Failed to parse headers' not in record.getMessage()
