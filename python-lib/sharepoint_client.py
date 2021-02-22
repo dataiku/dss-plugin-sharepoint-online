@@ -249,6 +249,19 @@ class SharePointClient():
         )
         return response
 
+    def get_list_metadata(self, list_name):
+        headers = {
+            "Content-Type": DSSConstants.APPLICATION_JSON,
+            'Accept': DSSConstants.APPLICATION_JSON
+        }
+        response = self.session.get(
+            self.get_lists_by_title_url(list_name),
+            headers=headers
+        )
+        self.assert_response_ok(response, calling_method="get_list_default_view")
+        json_response = response.json()
+        return json_response.get(SharePointConstants.RESULTS_CONTAINER_V2, {})
+
     def create_custom_field_via_id(self, list_id, field_title, field_type=None):
         field_type = SharePointConstants.FALLBACK_TYPE if field_type is None else field_type
         schema_xml = self.get_schema_xml(field_title, field_type)

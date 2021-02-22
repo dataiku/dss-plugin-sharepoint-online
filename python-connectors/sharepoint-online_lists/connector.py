@@ -16,15 +16,17 @@ class SharePointListsConnector(Connector):
 
     def __init__(self, config, plugin_config):
         Connector.__init__(self, config, plugin_config)
-        logger.info('SharePoint Online plugin connector v1.0.7')
+        logger.info('SharePoint Online plugin connector v1.0.8')
         self.sharepoint_list_title = self.config.get("sharepoint_list_title")
         self.auth_type = config.get('auth_type')
         logger.info('init:sharepoint_list_title={}, auth_type={}'.format(self.sharepoint_list_title, self.auth_type))
         self.column_ids = {}
         self.column_names = {}
+        self.column_entity_property_name = {}
         self.expand_lookup = config.get("expand_lookup", False)
         self.metadata_to_retrieve = config.get("metadata_to_retrieve", [])
         advanced_parameters = config.get("advanced_parameters", False)
+        self.write_mode = config.get("write_mode", "create")
         if not advanced_parameters:
             self.max_workers = 1  # no multithread per default
             self.batch_size = 100
@@ -42,6 +44,7 @@ class SharePointListsConnector(Connector):
         dss_columns = []
         self.column_ids = {}
         self.column_names = {}
+        self.column_entity_property_name = {}
         for column in sharepoint_columns:
             if self.is_column_displayable(column):
                 sharepoint_type = get_dss_type(column[SharePointConstants.TYPE_AS_STRING])
@@ -52,6 +55,7 @@ class SharePointListsConnector(Connector):
                     })
                     self.column_ids[column[SharePointConstants.STATIC_NAME]] = sharepoint_type
                     self.column_names[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TITLE_COLUMN]
+                    self.column_entity_property_name[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.ENTITY_PROPERTY_NAME]
         logger.info("get_read_schema: Schema updated with {}".format(dss_columns))
         return {
             SharePointConstants.COLUMNS: dss_columns
@@ -123,7 +127,8 @@ class SharePointListsConnector(Connector):
             dataset_partitioning,
             partition_id,
             max_workers=self.max_workers,
-            batch_size=self.batch_size
+            batch_size=self.batch_size,
+            write_mode=self.write_mode
         )
 
     def get_partitioning(self):

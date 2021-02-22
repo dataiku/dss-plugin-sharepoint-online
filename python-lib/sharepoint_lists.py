@@ -56,7 +56,7 @@ def assert_list_title(list_title):
 
 class SharePointListWriter(object):
 
-    def __init__(self, config, parent, dataset_schema, dataset_partitioning, partition_id, max_workers=5, batch_size=100):
+    def __init__(self, config, parent, dataset_schema, dataset_partitioning, partition_id, max_workers=5, batch_size=100, write_mode="create"):
         self.parent = parent
         self.config = config
         self.dataset_schema = dataset_schema
@@ -66,19 +66,37 @@ class SharePointListWriter(object):
         logger.info('init SharepointListWriter with {} workers and batch size of {}'.format(max_workers, batch_size))
         self.columns = dataset_schema[SharePointConstants.COLUMNS]
         self.sharepoint_column_ids = {}
+        self.sharepoint_existing_column_names = {}
+        self.sharepoint_existing_column_entity_property_names = {}
 
-        logger.info('flush:delete_list "{}"'.format(self.parent.sharepoint_list_title))
-        self.parent.client.delete_list(self.parent.sharepoint_list_title)
-        logger.info('flush:create_list "{}"'.format(self.parent.sharepoint_list_title))
-        created_list = self.parent.client.create_list(self.parent.sharepoint_list_title)
-        self.entity_type_name = created_list.get("EntityTypeName")
-        self.list_item_entity_type_full_name = created_list.get("ListItemEntityTypeFullName")
-        logger.info('New list "{}" created, type {}'.format(self.list_item_entity_type_full_name, self.entity_type_name))
-        self.list_id = created_list.get("Id")
+        if write_mode == "create":
+            logger.info('flush:delete_list "{}"'.format(self.parent.sharepoint_list_title))
+            self.parent.client.delete_list(self.parent.sharepoint_list_title)
+            logger.info('flush:create_list "{}"'.format(self.parent.sharepoint_list_title))
+            created_list = self.parent.client.create_list(self.parent.sharepoint_list_title)
+            self.entity_type_name = created_list.get("EntityTypeName")
+            self.list_item_entity_type_full_name = created_list.get("ListItemEntityTypeFullName")
+            logger.info('New list "{}" created, type {}'.format(self.list_item_entity_type_full_name, self.entity_type_name))
+            self.list_id = created_list.get("Id")
+        else:
+            list_metadata = self.parent.client.get_list_metadata(self.parent.sharepoint_list_title)
+            self.entity_type_name = list_metadata.get("EntityTypeName")
+            self.list_item_entity_type_full_name = list_metadata.get("ListItemEntityTypeFullName")
+            self.list_id = list_metadata.get("Id")
+            logger.info('Existing list "{}" created, type {}'.format(self.list_item_entity_type_full_name, self.entity_type_name))
+            # sharepoint_columns = self.parent.client.get_list_fields(self.parent.sharepoint_list_title)
         self.max_workers = max_workers
         self.batch_size = batch_size
         self.working_batch_size = max_workers * batch_size
         self.parent.get_read_schema()
+        # at this stage: 
+        # self.parent.column_ids : {'Title': 'string', '_x0022_title_x0022_': 'string'...
+        # self.parent.column_name : {'Title': 'Title', '_x0022_title_x0022_': '"title"',...
+        if write_mode != 'create':
+            for column_id in self.parent.column_names:
+                self.sharepoint_column_ids[column_id] = self.parent.column_names[column_id]
+                self.sharepoint_existing_column_names[self.parent.column_names[column_id]] = column_id
+                self.sharepoint_existing_column_entity_property_names[self.parent.column_names[column_id]] = self.parent.column_entity_property_name[column_id]
         self.create_sharepoint_columns()
 
     def write_row(self, row):
@@ -130,7 +148,7 @@ class SharePointListWriter(object):
             dss_type = column.get(SharePointConstants.TYPE_COLUMN, DSSConstants.FALLBACK_TYPE)
             sharepoint_type = get_sharepoint_type(dss_type)
             dss_column_name = column[SharePointConstants.NAME_COLUMN]
-            if dss_column_name not in self.parent.column_ids:
+            if dss_column_name not in self.parent.column_ids and dss_column_name not in self.sharepoint_existing_column_names:
                 logger.info("Creating column '{}'".format(dss_column_name))
                 response = self.parent.client.create_custom_field_via_id(
                     self.list_id,
@@ -141,6 +159,8 @@ class SharePointListWriter(object):
                 self.sharepoint_column_ids[dss_column_name] = \
                     json[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.ENTITY_PROPERTY_NAME]
                 self.parent.client.add_column_to_list_default_view(dss_column_name, self.parent.sharepoint_list_title)
+            elif dss_column_name in self.sharepoint_existing_column_names:
+                self.sharepoint_column_ids[dss_column_name] = self.sharepoint_existing_column_entity_property_names[dss_column_name]
             else:
                 self.sharepoint_column_ids[dss_column_name] = dss_column_name
 
