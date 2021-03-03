@@ -43,4 +43,5 @@ class SharePointConstants(object):
     TYPE_AS_STRING = 'TypeAsString'
     TYPE_COLUMN = 'type'
     VALUE = 'value'
+    WRITE_MODE_CREATE = "create"
     WAIT_TIME_BEFORE_RETRY_SEC = 2

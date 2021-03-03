@@ -5,6 +5,7 @@ import urllib.parse
 import logging
 import uuid
 import time
+import json
 
 from xml.etree.ElementTree import Element, tostring
 from xml.dom import minidom
@@ -197,9 +198,12 @@ class SharePointClient():
     def get_list_items(self, list_title, query_string=""):
         data = {
             "parameters": {
-                "AddRequiredFields": "true",
-                "DatesInUtc": "true",
-                "RenderOptions": 2
+                "__metadata": {
+                    "type": "SP.RenderListDataParameters"
+                },
+                "RenderOptions": 5707271,
+                "AllowMultipleValueFilterForTaxonomyFields": True,
+                "AddRequiredFields": True
             }
         }
         headers = {
@@ -213,7 +217,7 @@ class SharePointClient():
             json=data
         )
         self.assert_response_ok(response, calling_method="get_list_items")
-        return response.json()
+        return response.json().get("ListData", {})
 
     def create_list(self, list_name):
         headers = {
@@ -350,22 +354,58 @@ class SharePointClient():
         self.assert_response_ok(response, calling_method="add_list_item_by_id")
         return response
 
-    def get_add_list_item_kwargs(self, list_id, list_item_full_name, item):
-        item["__metadata"] = {
-            "type": "{}".format(list_item_full_name)
-        }
+    def get_add_list_item_kwargs(self, list_title, item):
         headers = {
-            "Content-Type": DSSConstants.APPLICATION_JSON
+            "Accept": DSSConstants.APPLICATION_JSON,
+            "Content-Type": DSSConstants.APPLICATION_JSON,
         }
-        list_items_url = self.get_list_items_url_by_id(list_id)
+
+        list_items_url = self.get_list_add_item_using_path_url(list_title)
+        item_structure = self.get_item_structure(list_title, item)
 
         kwargs = {
             "verb": "post",
             "url": list_items_url,
-            "json": item,
+            "json": item_structure,
             "headers": headers
         }
+
         return kwargs
+
+    def get_item_structure(self, list_title, item):
+        list_item_create_info = self.get_list_item_create_info(list_title)
+        form_values = []
+        for field_name in item:
+            form_values.append(self.get_form_value(field_name, item[field_name]))
+        form_values.append(self.get_form_value("ContentType", "Item"))
+        return {
+            "listItemCreateInfo": list_item_create_info,
+            "formValues": form_values,
+            "bNewDocumentUpdate": False,
+            "checkInComment": None
+        }
+
+    @staticmethod
+    def get_form_value(field_name, field_value):
+        return {
+            "FieldName": field_name,
+            "FieldValue": field_value,
+            "HasException": False,
+            "ErrorMessage": None
+        }
+
+    def get_list_item_create_info(self, list_title):
+        return {
+            "__metadata": {
+                "type": "SP.ListItemCreationInformationUsingPath"
+            },
+            "FolderPath": {
+                "__metadata": {
+                    "type": "SP.ResourcePath"
+                },
+                "DecodedUrl": "/{}/Lists/{}".format(self.sharepoint_site, list_title)
+            }
+        }
 
     def process_batch(self, kwargs_array):
         batch_id = self.get_random_guid()
@@ -391,7 +431,7 @@ class SharePointClient():
                 body_elements.append("{}: {}".format(header, kwargs["headers"][header]))
             body_elements.append("Accept-Charset: UTF-8")
             body_elements.append("")
-            body_elements.append("{}".format(kwargs["json"]))
+            body_elements.append(json.dumps(kwargs["json"]))
         body_elements.append("--changeset_{}--".format(change_set_id))
         body_elements.append('--batch_{}--'.format(batch_id))
         body = "\r\n".join(body_elements)
@@ -420,9 +460,9 @@ class SharePointClient():
                     raise SharePointClientError("Error in batch processing on attempt #{}: {}".format(attempt_number, err))
                 time.sleep(SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC)
 
-        nb_of_201 = str(response.content).count("HTTP/1.1 201")
-        if nb_of_201 != len(kwargs_array):
-            logger.warning("Checks indicate possible item loss ({}/{} are accounted for)".format(nb_of_201, len(kwargs_array)))
+        nb_of_20x = str(response.content).count("HTTP/1.1 20")
+        if nb_of_20x != len(kwargs_array):
+            logger.warning("Checks indicate possible item loss ({}/{} are accounted for)".format(nb_of_20x, len(kwargs_array)))
             logger.warning("response.content={}".format(response.content))
         return response
 
@@ -451,6 +491,13 @@ class SharePointClient():
 
     def get_list_items_url_by_id(self, list_id):
         return self.get_lists_by_id_url(list_id) + "/Items"
+
+    def get_list_add_item_using_path_url(self, list_title):
+        # https://ikuiku.sharepoint.com/sites/dssplugin/_api/web/GetList(@a1)/AddValidateUpdateItemUsingPath()?@a1=%27%2Fsites%2Fdssplugin%2FLists%2FTypeLocation%27
+        return self.get_base_url() + "/GetList(@a1)/AddValidateUpdateItemUsingPath()?@a1='/{}/Lists/{}'".format(
+            self.sharepoint_site,
+            list_title
+        )
 
     def get_list_fields_url(self, list_title):
         return self.get_lists_by_title_url(list_title) + "/fields"
