@@ -6,6 +6,7 @@ import logging
 import uuid
 import time
 import json
+import re
 
 from xml.etree.ElementTree import Element, tostring
 from xml.dom import minidom
@@ -462,11 +463,29 @@ class SharePointClient():
                     raise SharePointClientError("Error in batch processing on attempt #{}: {}".format(attempt_number, err))
                 time.sleep(SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC)
 
-        nb_of_20x = str(response.content).count("HTTP/1.1 20")
-        if nb_of_20x != len(kwargs_array):
-            logger.warning("Checks indicate possible item loss ({}/{} are accounted for)".format(nb_of_20x, len(kwargs_array)))
-            logger.warning("response.content={}".format(response.content))
+        self.log_batch_errors(response, kwargs_array)
+
         return response
+
+    @staticmethod
+    def log_batch_errors(response, kwargs_array):
+        logger.info("Batch error analysis")
+        statuses = re.findall('HTTP/1.1 (.*?) ', str(response.content))
+        dump_response_content = False
+        for status, kwarg in zip(statuses, kwargs_array):
+            if not status.startswith("20"):
+                logger.warning("Error {} with kwargs={}".format(status, kwarg))
+                dump_response_content = True
+        json_chains = re.findall('\r\n\r\n{"d":(.*?)}\r\n--batchresponse_', str(response.content))
+        for json_chain in json_chains:
+            errors = re.findall('"ErrorCode":(.*?),"', json_chain)
+            for error in errors:
+                if error != "0":
+                    dump_response_content = True
+        if dump_response_content:
+            logger.warning("response.content={}".format(response.content))
+        else:
+            logger.info("Batch error analysis OK")
 
     def get_base_url(self):
         return "{}/{}/_api/Web".format(
