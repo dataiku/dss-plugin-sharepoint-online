@@ -48,6 +48,14 @@ class SharePointListsConnector(Connector):
         self.column_names = {}
         self.column_entity_property_name = {}
         for column in sharepoint_columns:
+            logger.info("get_read_schema:{}/{}/{}/{}/{}/{}".format(
+                column[SharePointConstants.TITLE_COLUMN],
+                column[SharePointConstants.TYPE_AS_STRING],
+                column[SharePointConstants.STATIC_NAME],
+                column[SharePointConstants.INTERNAL_NAME],
+                column[SharePointConstants.ENTITY_PROPERTY_NAME],
+                self.is_column_displayable(column)
+            ))
             if self.is_column_displayable(column):
                 sharepoint_type = get_dss_type(column[SharePointConstants.TYPE_AS_STRING])
                 self.column_sharepoint_type[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TYPE_AS_STRING]
@@ -59,6 +67,7 @@ class SharePointListsConnector(Connector):
                     self.column_ids[column[SharePointConstants.STATIC_NAME]] = sharepoint_type
                     self.column_names[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TITLE_COLUMN]
                     self.column_entity_property_name[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.ENTITY_PROPERTY_NAME]
+                    self.target_column_name[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TITLE_COLUMN]
                     self.target_column_name[column[SharePointConstants.ENTITY_PROPERTY_NAME]] = column[SharePointConstants.TITLE_COLUMN]
         logger.info("get_read_schema: Schema updated with {}".format(dss_columns))
         return {

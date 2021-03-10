@@ -158,7 +158,7 @@ class SharePointListWriter(object):
                 )
                 json = response.json()
                 self.sharepoint_column_ids[dss_column_name] = \
-                    json[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.ENTITY_PROPERTY_NAME]
+                    json[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.STATIC_NAME]
                 self.parent.client.add_column_to_list_default_view(dss_column_name, self.parent.sharepoint_list_title)
             elif dss_column_name in self.sharepoint_existing_column_names:
                 self.sharepoint_column_ids[dss_column_name] = self.sharepoint_existing_column_entity_property_names[dss_column_name]
@@ -168,7 +168,11 @@ class SharePointListWriter(object):
     def build_row_dictionary(self, row):
         ret = {}
         for column, structure in zip(row, self.columns):
-            ret[self.sharepoint_column_ids[structure[SharePointConstants.NAME_COLUMN]]] = column
+            key_to_use = self.sharepoint_existing_column_names.get(
+                structure[SharePointConstants.NAME_COLUMN],
+                self.sharepoint_column_ids[structure[SharePointConstants.NAME_COLUMN]]
+            )
+            ret[key_to_use] = column
         return ret
 
     def close(self):

@@ -10,6 +10,7 @@ class SharePointConstants(object):
     GET_FOLDER_URL_STRUCTURE = "{0}/{1}/_api/Web/GetFolderByServerRelativeUrl('/{1}/{2}{3}')"
     GET_SITE_APP_TOKEN_URL = "https://accounts.accesscontrol.windows.net/{tenant_id}/tokens/OAuth/2"
     HIDDEN_COLUMN = 'Hidden'
+    INTERNAL_NAME = 'InternalName'
     LENGTH = 'Length'
     LOOKUP_FIELD = 'LookupField'
     MAX_RETRIES = 5
