@@ -376,7 +376,9 @@ class SharePointClient():
         list_item_create_info = self.get_list_item_create_info(list_title)
         form_values = []
         for field_name in item:
-            form_values.append(self.get_form_value(field_name, item[field_name]))
+            if item[field_name] is not None and item[field_name] != "":
+                #  Some columns (Title) can't be field with None or ""
+                form_values.append(self.get_form_value(field_name, item[field_name]))
         form_values.append(self.get_form_value("ContentType", "Item"))
         return {
             "listItemCreateInfo": list_item_create_info,
