@@ -8,6 +8,7 @@ import time
 
 from xml.etree.ElementTree import Element, tostring
 from xml.dom import minidom
+from robust_session import RobustSession
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
 from common import is_email_address
@@ -29,6 +30,7 @@ class SharePointClient():
         self.sharepoint_tenant = None
         self.sharepoint_url = None
         self.sharepoint_origin = None
+        self.session = RobustSession(status_codes_to_retry=[403, 429])
         if config.get('auth_type') == DSSConstants.AUTH_OAUTH:
             logger.info("SharePointClient:sharepoint_oauth")
             login_details = config.get('sharepoint_oauth')
@@ -36,12 +38,15 @@ class SharePointClient():
             self.setup_login_details(login_details)
             self.setup_sharepoint_online_url(login_details)
             self.sharepoint_access_token = login_details['sharepoint_oauth']
-            self.session = SharePointSession(
-                None,
-                None,
-                self.sharepoint_tenant,
-                self.sharepoint_site,
-                sharepoint_access_token=self.sharepoint_access_token
+            self.session.update_settings(session=SharePointSession(
+                    None,
+                    None,
+                    self.sharepoint_tenant,
+                    self.sharepoint_site,
+                    sharepoint_access_token=self.sharepoint_access_token
+                ),
+                max_retries=SharePointConstants.MAX_RETRIES,
+                base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
             )
         elif config.get('auth_type') == DSSConstants.AUTH_LOGIN:
             logger.info("SharePointClient:sharepoint_sharepy")
@@ -52,7 +57,19 @@ class SharePointClient():
             password = login_details['sharepoint_password']
             self.assert_email_address(username)
             self.setup_sharepoint_online_url(login_details)
-            self.session = sharepy.connect(self.sharepoint_url, username=username, password=password)
+            # Throttling is harsher for username/password authenticated users
+            # https://www.netwoven.com/2021/01/27/how-to-avoid-throttling-or-getting-blocked-in-sharepoint-online-using-sharepoint-app-authentication/
+            self.session.update_settings(max_retries=5, base_retry_timer_sec=120)  # Yeah !
+            # If several python workers are on the job, opening the session in itslef could be an issue
+            self.session.connect(
+                self.session.retry(
+                    sharepy.connect(
+                        self.sharepoint_url,
+                        username=username,
+                        password=password
+                    )
+                )
+            )
         elif config.get('auth_type') == DSSConstants.AUTH_SITE_APP:
             logger.info("SharePointClient:site_app_permissions")
             login_details = config.get('site_app_permissions')
@@ -64,12 +81,15 @@ class SharePointClient():
             self.client_id = login_details.get("client_id")
             self.sharepoint_tenant = login_details.get('sharepoint_tenant')
             self.sharepoint_access_token = self.get_site_app_access_token()
-            self.session = SharePointSession(
-                None,
-                None,
-                self.sharepoint_tenant,
-                self.sharepoint_site,
-                sharepoint_access_token=self.sharepoint_access_token
+            self.session.update_settings(session=SharePointSession(
+                    None,
+                    None,
+                    self.sharepoint_tenant,
+                    self.sharepoint_site,
+                    sharepoint_access_token=self.sharepoint_access_token
+                ),
+                max_retries=SharePointConstants.MAX_RETRIES,
+                base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
             )
         else:
             raise SharePointClientError("The type of authentication is not selected")
@@ -173,7 +193,7 @@ class SharePointClient():
             self.get_folder_url(full_path),
             headers=headers
         )
-        self.assert_response_ok(response, calling_method="delete_folder")
+        # self.assert_response_ok(response, calling_method="delete_folder")
 
     def get_list_fields(self, list_title):
         list_fields_url = self.get_list_fields_url(list_title)
@@ -390,6 +410,7 @@ class SharePointClient():
                 logger.info("Posting batch of {} items".format(len(kwargs_array)))
                 response = self.session.post(
                     url,
+                    dku_rs_off=True,
                     headers=headers,
                     data=body.encode('utf-8')
                 )
@@ -500,7 +521,8 @@ class SharePointClient():
     def assert_response_ok(self, response, no_json=False, calling_method=""):
         status_code = response.status_code
         if status_code >= 400:
-            enriched_error_message = self.get_enriched_error_message(response, calling_method=calling_method)
+            logger.error("Error {} in method calling_method".format(status_code))
+            enriched_error_message = self.get_enriched_error_message(response, calling_method)
             if enriched_error_message is not None:
                 raise SharePointClientError("Error ({}): {}".format(calling_method, enriched_error_message))
         if status_code == 400:
@@ -519,7 +541,7 @@ class SharePointClient():
             enriched_error_message = "({}) {}".format(calling_method, json_response.get("error").get("message").get("value"))
             return enriched_error_message
         except Exception as error:
-            logger.info("Error trying to extract error message :{}".format(error))
+            logger.info("Error trying to extract error message ({}) :{}".format(calling_method, error))
             logger.info("Response.content={}".format(response.content))
             return None
 
@@ -585,6 +607,10 @@ class SharePointSession():
         }
         default_headers.update(headers)
         return requests.post(url, headers=default_headers, json=json, data=data, timeout=SharePointConstants.TIMEOUT_SEC)
+
+    @staticmethod
+    def close():
+        logger.info("Closing SharePointSession.")
 
     def get_authorization_bearer(self):
         return "Bearer {}".format(self.sharepoint_access_token)
