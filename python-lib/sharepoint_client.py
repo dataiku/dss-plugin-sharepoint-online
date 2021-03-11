@@ -88,13 +88,16 @@ class SharePointClient():
 
     def setup_login_details(self, login_details):
         self.sharepoint_site = login_details['sharepoint_site']
+        logger.info("SharePointClient:sharepoint_site={}".format(self.sharepoint_site))
         if 'sharepoint_root' in login_details:
             self.sharepoint_root = login_details['sharepoint_root'].strip("/")
         else:
             self.sharepoint_root = "Shared Documents"
+        logger.info("SharePointClient:sharepoint_root={}".format(self.sharepoint_root))
 
     def setup_sharepoint_online_url(self, login_details):
         self.sharepoint_tenant = login_details['sharepoint_tenant']
+        logger.info("SharePointClient:sharepoint_tenant={}".format(self.sharepoint_tenant))
         self.sharepoint_url = self.sharepoint_tenant + ".sharepoint.com"
         self.sharepoint_origin = "https://" + self.sharepoint_url
 
