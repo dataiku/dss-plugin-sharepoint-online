@@ -103,7 +103,7 @@
             "name": "write_mode",
             "label": "Write mode",
             "type": "SELECT",
-            "defaultValue": "append",
+            "defaultValue": "create",
             "selectChoices": [
                 {
                     "value": "create",
@@ -113,7 +113,8 @@
                     "value": "append",
                     "label": "Append to existing list"
                 }
-            ]
+            ],
+            "visibilityCondition": false
         },
         {
             "name": "max_workers",
