@@ -7,6 +7,7 @@ class SharePointConstants(object):
     EXPENDABLES_FIELDS = {"Author": "Title", "Editor": "Title"}
     FALLBACK_TYPE = "Text"
     FORM_DIGEST_VALUE = "FormDigestValue"
+    GET_CONTEXT_WEB_INFORMATION = "GetContextWebInformation"
     GET_FOLDER_URL_STRUCTURE = "{0}/{1}/_api/Web/GetFolderByServerRelativeUrl('/{1}/{2}{3}')"
     GET_SITE_APP_TOKEN_URL = "https://accounts.accesscontrol.windows.net/{tenant_id}/tokens/OAuth/2"
     HIDDEN_COLUMN = 'Hidden'

@@ -133,7 +133,7 @@
             "type": "INT",
             "defaultValue": 100,
             "minI": 1,
-            "maxI": 500
+            "maxI": 100
         }
     ]
 }

@@ -150,7 +150,7 @@ class SharePointListWriter(object):
                 sharepoint_type = existing_sharepoint_type
 
             if dss_column_name not in self.parent.column_ids and dss_column_name not in self.sharepoint_existing_column_names:
-                logger.info("Creating column '{}'".format(dss_column_name))
+                logger.info("Creating column '{}' with type {}".format(dss_column_name, sharepoint_type))
                 response = self.parent.client.create_custom_field_via_id(
                     self.list_id,
                     dss_column_name,

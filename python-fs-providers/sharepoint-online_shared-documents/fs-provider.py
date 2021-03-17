@@ -34,7 +34,7 @@ class SharePointFSProvider(FSProvider):
             root = root[1:]
         self.root = root
         self.provider_root = "/"
-        logger.info('SharePoint Online plugin fs v1.0.7')
+        logger.info('SharePoint Online plugin fs v1.0.8')
         logger.info('init:root={}'.format(self.root))
 
         self.client = SharePointClient(config)
@@ -216,7 +216,6 @@ class SharePointFSProvider(FSProvider):
     def read(self, path, stream, limit):
         full_path = self.get_full_path(path)
         logger.info('read:full_path={}'.format(full_path))
-
         response = self.client.get_file_content(full_path)
         bio = BytesIO(response.content)
         shutil.copyfileobj(bio, stream)

@@ -32,7 +32,7 @@ class SharePointClient():
         self.sharepoint_tenant = None
         self.sharepoint_url = None
         self.sharepoint_origin = None
-        self.session = RobustSession(status_codes_to_retry=[403, 429])
+        self.session = RobustSession(status_codes_to_retry=[429])
         if config.get('auth_type') == DSSConstants.AUTH_OAUTH:
             logger.info("SharePointClient:sharepoint_oauth")
             login_details = config.get('sharepoint_oauth')
@@ -64,13 +64,10 @@ class SharePointClient():
             self.session.update_settings(max_retries=5, base_retry_timer_sec=120)  # Yeah !
             # If several python workers are on the job, opening the session in itslef could be an issue
             self.session.connect(
-                self.session.retry(
-                    sharepy.connect(
-                        self.sharepoint_url,
-                        username=username,
-                        password=password
-                    )
-                )
+                connection_function=sharepy, #.connect,
+                site=self.sharepoint_url,
+                username=username,
+                password=password
             )
         elif config.get('auth_type') == DSSConstants.AUTH_SITE_APP:
             logger.info("SharePointClient:site_app_permissions")
@@ -474,6 +471,8 @@ class SharePointClient():
                     data=body.encode('utf-8')
                 )
                 logger.info("Batch post status: {}".format(response.status_code))
+                if response.status_code >= 400:
+                    logger.error("Responnse={}".format(response.content))
                 successful_post = True
             except requests.exceptions.Timeout as err:
                 #  Necessary to raise since timed out items may or may not be uploaded
@@ -670,11 +669,12 @@ class SharePointClient():
 
 class SharePointSession():
 
-    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_tenant, sharepoint_site, sharepoint_access_token=None, max_retry=10):
+    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_tenant, sharepoint_site, sharepoint_access_token=None, form_digest_value=None, max_retry=10):
         self.sharepoint_tenant = sharepoint_tenant
         self.sharepoint_site = sharepoint_site
         self.sharepoint_access_token = sharepoint_access_token
         requests.adapters.DEFAULT_RETRIES = max_retry
+        self.form_digest_value = self.get_form_digest_value()
 
     def get(self, url, headers=None, params=None):
         headers = headers or {}
@@ -689,6 +689,8 @@ class SharePointSession():
            "Content-Type": DSSConstants.APPLICATION_JSON_NOMETADATA,
            "Authorization": self.get_authorization_bearer()
         }
+        if self.form_digest_value:
+            default_headers.update({"X-RequestDigest": self.form_digest_value})
         default_headers.update(headers)
         return requests.post(url, headers=default_headers, json=json, data=data, timeout=SharePointConstants.TIMEOUT_SEC)
 
@@ -698,6 +700,48 @@ class SharePointSession():
 
     def get_authorization_bearer(self):
         return "Bearer {}".format(self.sharepoint_access_token)
+
+    def get_form_digest_value(self):
+        logger.info("Getting form digest value")
+        session = RobustSession(session=requests, status_codes_to_retry=[429])
+        session.update_settings(
+            max_retries=SharePointConstants.MAX_RETRIES,
+            base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
+        )
+        headers = {
+            "Content-Type": DSSConstants.APPLICATION_JSON,
+            "Accept": DSSConstants.APPLICATION_JSON,
+            "Authorization": self.get_authorization_bearer()
+        }
+        response = session.post(
+            url=self.get_contextinfo_url(),
+            headers=headers
+        )
+        form_digest_value = self.get_value_from_path(
+            response.json(),
+            [
+                SharePointConstants.RESULTS_CONTAINER_V2,
+                SharePointConstants.GET_CONTEXT_WEB_INFORMATION,
+                SharePointConstants.FORM_DIGEST_VALUE
+            ]
+        )
+        logger.info("Form digest value {}".format(form_digest_value))
+        return form_digest_value
+
+    def get_contextinfo_url(self):
+        return "https://{}.sharepoint.com/{}/_api/contextinfo".format(
+            self.sharepoint_tenant, self.sharepoint_site
+        )
+
+    @staticmethod
+    def get_value_from_path(dictionary, path, default_reply=None):
+        ret = dictionary
+        for key in path:
+            if key in path:
+                ret = ret.get(key)
+            else:
+                return default_reply
+        return ret
 
 
 class SuppressFilter(logging.Filter):
