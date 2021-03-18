@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
 
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
                     format='sharepoint plugin %(levelname)s - %(message)s')
@@ -68,6 +69,7 @@ class SharePointListWriter(object):
         self.sharepoint_column_ids = {}
         self.sharepoint_existing_column_names = {}
         self.sharepoint_existing_column_entity_property_names = {}
+        self.web_name = self.parent.sharepoint_list_title
 
         if write_mode == SharePointConstants.WRITE_MODE_CREATE:
             logger.info('flush:delete_list "{}"'.format(self.parent.sharepoint_list_title))
@@ -78,8 +80,10 @@ class SharePointListWriter(object):
             self.list_item_entity_type_full_name = created_list.get("ListItemEntityTypeFullName")
             logger.info('New list "{}" created, type {}'.format(self.list_item_entity_type_full_name, self.entity_type_name))
             self.list_id = created_list.get("Id")
+            self.web_name = self.parent.client.get_web_name(created_list) or self.parent.sharepoint_list_title
         else:
             list_metadata = self.parent.client.get_list_metadata(self.parent.sharepoint_list_title)
+            self.web_name = self.parent.client.get_web_name(list_metadata)
             self.entity_type_name = list_metadata.get("EntityTypeName")
             self.list_item_entity_type_full_name = list_metadata.get("ListItemEntityTypeFullName")
             self.list_id = list_metadata.get("Id")
@@ -117,7 +121,7 @@ class SharePointListWriter(object):
         with ThreadPoolExecutor(max_workers=self.max_workers) as thread_pool_executor:
             for row in self.buffer:
                 item = self.build_row_dictionary(row)
-                kwargs.append(self.parent.client.get_add_list_item_kwargs(self.parent.sharepoint_list_title, item))
+                kwargs.append(self.parent.client.get_add_list_item_kwargs(self.web_name, item))
                 index = index + 1
                 if index >= self.batch_size:
                     futures.append(thread_pool_executor.submit(self.parent.client.process_batch, kwargs[offset:offset + index]))
@@ -134,7 +138,7 @@ class SharePointListWriter(object):
         kwargs = []
         for row in self.buffer:
             item = self.build_row_dictionary(row)
-            kwargs.append(self.parent.client.get_add_list_item_kwargs(self.parent.sharepoint_list_title, item))
+            kwargs.append(self.parent.client.get_add_list_item_kwargs(self.web_name, item))
         self.parent.client.process_batch(kwargs)
         logger.info("{} items written".format(len(kwargs)))
 

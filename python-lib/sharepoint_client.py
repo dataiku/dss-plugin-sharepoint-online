@@ -13,7 +13,7 @@ from xml.dom import minidom
 from robust_session import RobustSession
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
-from common import is_email_address
+from common import is_email_address, get_value_from_path
 
 
 logger = logging.getLogger(__name__)
@@ -286,6 +286,19 @@ class SharePointClient():
         self.assert_response_ok(response, calling_method="get_list_default_view")
         json_response = response.json()
         return json_response.get(SharePointConstants.RESULTS_CONTAINER_V2, {})
+
+    def get_web_name(self, created_list):
+        root_folder_url = get_value_from_path(created_list, ['RootFolder', '__deferred', 'uri'])
+        headers = {
+            "Content-Type": DSSConstants.APPLICATION_JSON,
+            'Accept': DSSConstants.APPLICATION_JSON
+        }
+        response = self.session.get(
+            root_folder_url,
+            headers=headers
+        )
+        json_response = response.json()
+        return get_value_from_path(json_response, [SharePointConstants.RESULTS_CONTAINER_V2, "Name"])
 
     def create_custom_field_via_id(self, list_id, field_title, field_type=None):
         field_type = SharePointConstants.FALLBACK_TYPE if field_type is None else field_type
@@ -717,7 +730,7 @@ class SharePointSession():
             url=self.get_contextinfo_url(),
             headers=headers
         )
-        form_digest_value = self.get_value_from_path(
+        form_digest_value = get_value_from_path(
             response.json(),
             [
                 SharePointConstants.RESULTS_CONTAINER_V2,
@@ -732,16 +745,6 @@ class SharePointSession():
         return "https://{}.sharepoint.com/{}/_api/contextinfo".format(
             self.sharepoint_tenant, self.sharepoint_site
         )
-
-    @staticmethod
-    def get_value_from_path(dictionary, path, default_reply=None):
-        ret = dictionary
-        for key in path:
-            if key in path:
-                ret = ret.get(key)
-            else:
-                return default_reply
-        return ret
 
 
 class SuppressFilter(logging.Filter):
