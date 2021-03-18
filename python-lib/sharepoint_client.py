@@ -64,7 +64,7 @@ class SharePointClient():
             self.session.update_settings(max_retries=5, base_retry_timer_sec=120)  # Yeah !
             # If several python workers are on the job, opening the session in itslef could be an issue
             self.session.connect(
-                connection_function=sharepy, #.connect,
+                connection_library=sharepy, #.connect,
                 site=self.sharepoint_url,
                 username=username,
                 password=password

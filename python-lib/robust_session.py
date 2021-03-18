@@ -23,7 +23,7 @@ class RobustSession():
         self.base_retry_timer_sec = base_retry_timer_sec
         self.connection_args = []
         self.connection_kwargs = {}
-        self.connection_function = None
+        self.connection_library = None
 
     def update_settings(self, session=None, status_codes_to_retry=None, max_retries=None, base_retry_timer_sec=None):
         self.session = session or self.session
@@ -31,12 +31,12 @@ class RobustSession():
         self.max_retries = max_retries or self.max_retries
         self.base_retry_timer_sec = base_retry_timer_sec or self.base_retry_timer_sec
 
-    def connect(self, connection_function=None, *args, **kwargs):
-        self.connection_function = connection_function or self.connection_function
+    def connect(self, connection_library=None, *args, **kwargs):
+        self.connection_library = connection_library or self.connection_library
         self.connection_args = args or self.connection_args
         self.connection_kwargs = kwargs or self.connection_kwargs
-        if self.connection_function:
-            self.session = self.retry(self.connection_function.connect, *self.connection_args, **self.connection_kwargs)
+        if self.connection_library:
+            self.session = self.retry(self.connection_library.connect, *self.connection_args, **self.connection_kwargs)
 
     def get(self, url, dku_rs_off=False, **kwargs):
         if dku_rs_off:
