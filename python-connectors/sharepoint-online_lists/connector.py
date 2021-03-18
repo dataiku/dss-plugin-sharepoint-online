@@ -23,7 +23,7 @@ class SharePointListsConnector(Connector):
         self.column_ids = {}
         self.column_names = {}
         self.column_entity_property_name = {}
-        self.target_column_name = {}
+        self.dss_column_name = {}
         self.column_sharepoint_type = {}
         self.expand_lookup = config.get("expand_lookup", False)
         self.metadata_to_retrieve = config.get("metadata_to_retrieve", [])
@@ -67,8 +67,8 @@ class SharePointListsConnector(Connector):
                     self.column_ids[column[SharePointConstants.STATIC_NAME]] = sharepoint_type
                     self.column_names[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TITLE_COLUMN]
                     self.column_entity_property_name[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.ENTITY_PROPERTY_NAME]
-                    self.target_column_name[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TITLE_COLUMN]
-                    self.target_column_name[column[SharePointConstants.ENTITY_PROPERTY_NAME]] = column[SharePointConstants.TITLE_COLUMN]
+                    self.dss_column_name[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TITLE_COLUMN]
+                    self.dss_column_name[column[SharePointConstants.ENTITY_PROPERTY_NAME]] = column[SharePointConstants.TITLE_COLUMN]
         logger.info("get_read_schema: Schema updated with {}".format(dss_columns))
         return {
             SharePointConstants.COLUMNS: dss_columns
@@ -112,7 +112,7 @@ class SharePointListsConnector(Connector):
             page = self.client.get_list_items(self.sharepoint_list_title, query_string=self.get_next_page_query_string(page))
             rows = self.get_page_rows(page)
             for row in rows:
-                yield column_ids_to_names(self.target_column_name, row)
+                yield column_ids_to_names(self.dss_column_name, row)
             record_count += len(rows)
             if is_record_limit and record_count >= records_limit:
                 break
