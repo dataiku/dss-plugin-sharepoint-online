@@ -682,7 +682,7 @@ class SharePointClient():
 
 class SharePointSession():
 
-    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_tenant, sharepoint_site, sharepoint_access_token=None, form_digest_value=None, max_retry=10):
+    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_tenant, sharepoint_site, sharepoint_access_token=None, max_retry=10):
         self.sharepoint_tenant = sharepoint_tenant
         self.sharepoint_site = sharepoint_site
         self.sharepoint_access_token = sharepoint_access_token
