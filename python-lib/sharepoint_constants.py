@@ -21,6 +21,7 @@ class SharePointConstants(object):
     NAME_COLUMN = 'name'
     NEXT_PAGE = '__next'
     READ_ONLY_FIELD = 'ReadOnlyField'
+    RENDER_OPTIONS = 5707271
     RESULTS = 'results'
     RESULTS_CONTAINER_V2 = 'd'
     SHAREPOINT_ONLINE_RESSOURCE = "00000003-0000-0ff1-ce00-000000000000"

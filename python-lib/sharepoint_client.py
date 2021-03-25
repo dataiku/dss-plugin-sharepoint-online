@@ -64,7 +64,7 @@ class SharePointClient():
             self.session.update_settings(max_retries=5, base_retry_timer_sec=120)  # Yeah !
             # If several python workers are on the job, opening the session in itslef could be an issue
             self.session.connect(
-                connection_library=sharepy, #.connect,
+                connection_library=sharepy,
                 site=self.sharepoint_url,
                 username=username,
                 password=password
@@ -191,11 +191,10 @@ class SharePointClient():
         headers = {
             "X-HTTP-Method": "DELETE"
         }
-        response = self.session.post(
+        self.session.post(
             self.get_folder_url(full_path),
             headers=headers
         )
-        # self.assert_response_ok(response, calling_method="delete_folder")
 
     def get_list_fields(self, list_title):
         list_fields_url = self.get_list_fields_url(list_title)
@@ -222,15 +221,12 @@ class SharePointClient():
                 "__metadata": {
                     "type": "SP.RenderListDataParameters"
                 },
-                "RenderOptions": 5707271,
+                "RenderOptions": SharePointConstants.RENDER_OPTIONS,
                 "AllowMultipleValueFilterForTaxonomyFields": True,
                 "AddRequiredFields": True
             }
         }
-        headers = {
-            "Content-Type": DSSConstants.APPLICATION_JSON,
-            "Accept": DSSConstants.APPLICATION_JSON
-        }
+        headers = DSSConstants.JSON_HEADERS
         url = self.get_list_data_as_stream(list_title) + query_string
         response = self.session.post(
             url,
@@ -241,10 +237,7 @@ class SharePointClient():
         return response.json().get("ListData", {})
 
     def create_list(self, list_name):
-        headers = {
-            "Content-Type": DSSConstants.APPLICATION_JSON,
-            'Accept': DSSConstants.APPLICATION_JSON
-        }
+        headers = DSSConstants.JSON_HEADERS
         data = {
             '__metadata': {
                 'type': 'SP.List'
@@ -275,10 +268,7 @@ class SharePointClient():
         return response
 
     def get_list_metadata(self, list_name):
-        headers = {
-            "Content-Type": DSSConstants.APPLICATION_JSON,
-            'Accept': DSSConstants.APPLICATION_JSON
-        }
+        headers = DSSConstants.JSON_HEADERS
         response = self.session.get(
             self.get_lists_by_title_url(list_name),
             headers=headers
@@ -289,10 +279,7 @@ class SharePointClient():
 
     def get_web_name(self, created_list):
         root_folder_url = get_value_from_path(created_list, ['RootFolder', '__deferred', 'uri'])
-        headers = {
-            "Content-Type": DSSConstants.APPLICATION_JSON,
-            'Accept': DSSConstants.APPLICATION_JSON
-        }
+        headers = DSSConstants.JSON_HEADERS
         response = self.session.get(
             root_folder_url,
             headers=headers
@@ -309,10 +296,7 @@ class SharePointClient():
                 'SchemaXml': schema_xml
             }
         }
-        headers = {
-            "Content-Type": DSSConstants.APPLICATION_JSON,
-            "Accept": DSSConstants.APPLICATION_JSON
-        }
+        headers = DSSConstants.JSON_HEADERS
         guid_lists_add_field_url = self.get_guid_lists_add_field_url(list_id)
         response = self.session.post(
             guid_lists_add_field_url,
@@ -389,10 +373,7 @@ class SharePointClient():
         return response
 
     def get_add_list_item_kwargs(self, list_title, item):
-        headers = {
-            "Accept": DSSConstants.APPLICATION_JSON,
-            "Content-Type": DSSConstants.APPLICATION_JSON,
-        }
+        headers = DSSConstants.JSON_HEADERS
 
         list_items_url = self.get_list_add_item_using_path_url(list_title)
         item_structure = self.get_item_structure(list_title, item)
@@ -721,11 +702,7 @@ class SharePointSession():
             max_retries=SharePointConstants.MAX_RETRIES,
             base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
         )
-        headers = {
-            "Content-Type": DSSConstants.APPLICATION_JSON,
-            "Accept": DSSConstants.APPLICATION_JSON,
-            "Authorization": self.get_authorization_bearer()
-        }
+        headers = {**DSSConstants.JSON_HEADERS, **{"Authorization": self.get_authorization_bearer()}}
         response = session.post(
             url=self.get_contextinfo_url(),
             headers=headers
