@@ -100,6 +100,23 @@
             "defaultValue": false
         },
         {
+            "name": "write_mode",
+            "label": "Write mode",
+            "type": "SELECT",
+            "defaultValue": "create",
+            "selectChoices": [
+                {
+                    "value": "create",
+                    "label": "Create a new list"
+                },
+                {
+                    "value": "append",
+                    "label": "Append to existing list"
+                }
+            ],
+            "visibilityCondition": false
+        },
+        {
             "name": "max_workers",
             "label": "Max nb of workers (write mode only)",
             "description": "More workers will speed writing but also randomize items order",
@@ -117,7 +134,7 @@
             "type": "INT",
             "defaultValue": 100,
             "minI": 1,
-            "maxI": 500
+            "maxI": 100
         }
     ]
 }

@@ -7,9 +7,11 @@ class SharePointConstants(object):
     EXPENDABLES_FIELDS = {"Author": "Title", "Editor": "Title"}
     FALLBACK_TYPE = "Text"
     FORM_DIGEST_VALUE = "FormDigestValue"
+    GET_CONTEXT_WEB_INFORMATION = "GetContextWebInformation"
     GET_FOLDER_URL_STRUCTURE = "{0}/{1}/_api/Web/GetFolderByServerRelativeUrl('/{1}/{2}{3}')"
     GET_SITE_APP_TOKEN_URL = "https://accounts.accesscontrol.windows.net/{tenant_id}/tokens/OAuth/2"
     HIDDEN_COLUMN = 'Hidden'
+    INTERNAL_NAME = 'InternalName'
     LENGTH = 'Length'
     LOOKUP_FIELD = 'LookupField'
     MAX_RETRIES = 5
@@ -19,6 +21,7 @@ class SharePointConstants(object):
     NAME_COLUMN = 'name'
     NEXT_PAGE = '__next'
     READ_ONLY_FIELD = 'ReadOnlyField'
+    RENDER_OPTIONS = 5707271
     RESULTS = 'results'
     RESULTS_CONTAINER_V2 = 'd'
     SHAREPOINT_ONLINE_RESSOURCE = "00000003-0000-0ff1-ce00-000000000000"
@@ -43,4 +46,5 @@ class SharePointConstants(object):
     TYPE_AS_STRING = 'TypeAsString'
     TYPE_COLUMN = 'type'
     VALUE = 'value'
+    WRITE_MODE_CREATE = "create"
     WAIT_TIME_BEFORE_RETRY_SEC = 2

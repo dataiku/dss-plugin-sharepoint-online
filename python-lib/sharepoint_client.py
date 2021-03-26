@@ -5,12 +5,15 @@ import urllib.parse
 import logging
 import uuid
 import time
+import json
+import re
 
 from xml.etree.ElementTree import Element, tostring
 from xml.dom import minidom
+from robust_session import RobustSession
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
-from common import is_email_address
+from common import is_email_address, get_value_from_path
 
 
 logger = logging.getLogger(__name__)
@@ -29,6 +32,7 @@ class SharePointClient():
         self.sharepoint_tenant = None
         self.sharepoint_url = None
         self.sharepoint_origin = None
+        self.session = RobustSession(status_codes_to_retry=[429])
         if config.get('auth_type') == DSSConstants.AUTH_OAUTH:
             logger.info("SharePointClient:sharepoint_oauth")
             login_details = config.get('sharepoint_oauth')
@@ -36,12 +40,15 @@ class SharePointClient():
             self.setup_login_details(login_details)
             self.setup_sharepoint_online_url(login_details)
             self.sharepoint_access_token = login_details['sharepoint_oauth']
-            self.session = SharePointSession(
-                None,
-                None,
-                self.sharepoint_tenant,
-                self.sharepoint_site,
-                sharepoint_access_token=self.sharepoint_access_token
+            self.session.update_settings(session=SharePointSession(
+                    None,
+                    None,
+                    self.sharepoint_tenant,
+                    self.sharepoint_site,
+                    sharepoint_access_token=self.sharepoint_access_token
+                ),
+                max_retries=SharePointConstants.MAX_RETRIES,
+                base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
             )
         elif config.get('auth_type') == DSSConstants.AUTH_LOGIN:
             logger.info("SharePointClient:sharepoint_sharepy")
@@ -52,7 +59,16 @@ class SharePointClient():
             password = login_details['sharepoint_password']
             self.assert_email_address(username)
             self.setup_sharepoint_online_url(login_details)
-            self.session = sharepy.connect(self.sharepoint_url, username=username, password=password)
+            # Throttling is harsher for username/password authenticated users
+            # https://www.netwoven.com/2021/01/27/how-to-avoid-throttling-or-getting-blocked-in-sharepoint-online-using-sharepoint-app-authentication/
+            self.session.update_settings(max_retries=5, base_retry_timer_sec=120)  # Yeah !
+            # If several python workers are on the job, opening the session in itslef could be an issue
+            self.session.connect(
+                connection_library=sharepy,
+                site=self.sharepoint_url,
+                username=username,
+                password=password
+            )
         elif config.get('auth_type') == DSSConstants.AUTH_SITE_APP:
             logger.info("SharePointClient:site_app_permissions")
             login_details = config.get('site_app_permissions')
@@ -64,12 +80,15 @@ class SharePointClient():
             self.client_id = login_details.get("client_id")
             self.sharepoint_tenant = login_details.get('sharepoint_tenant')
             self.sharepoint_access_token = self.get_site_app_access_token()
-            self.session = SharePointSession(
-                None,
-                None,
-                self.sharepoint_tenant,
-                self.sharepoint_site,
-                sharepoint_access_token=self.sharepoint_access_token
+            self.session.update_settings(session=SharePointSession(
+                    None,
+                    None,
+                    self.sharepoint_tenant,
+                    self.sharepoint_site,
+                    sharepoint_access_token=self.sharepoint_access_token
+                ),
+                max_retries=SharePointConstants.MAX_RETRIES,
+                base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
             )
         else:
             raise SharePointClientError("The type of authentication is not selected")
@@ -86,13 +105,16 @@ class SharePointClient():
 
     def setup_login_details(self, login_details):
         self.sharepoint_site = login_details['sharepoint_site']
+        logger.info("SharePointClient:sharepoint_site={}".format(self.sharepoint_site))
         if 'sharepoint_root' in login_details:
             self.sharepoint_root = login_details['sharepoint_root'].strip("/")
         else:
             self.sharepoint_root = "Shared Documents"
+        logger.info("SharePointClient:sharepoint_root={}".format(self.sharepoint_root))
 
     def setup_sharepoint_online_url(self, login_details):
         self.sharepoint_tenant = login_details['sharepoint_tenant']
+        logger.info("SharePointClient:sharepoint_tenant={}".format(self.sharepoint_tenant))
         self.sharepoint_url = self.sharepoint_tenant + ".sharepoint.com"
         self.sharepoint_origin = "https://" + self.sharepoint_url
 
@@ -169,11 +191,10 @@ class SharePointClient():
         headers = {
             "X-HTTP-Method": "DELETE"
         }
-        response = self.session.post(
+        self.session.post(
             self.get_folder_url(full_path),
             headers=headers
         )
-        self.assert_response_ok(response, calling_method="delete_folder")
 
     def get_list_fields(self, list_title):
         list_fields_url = self.get_list_fields_url(list_title)
@@ -197,15 +218,15 @@ class SharePointClient():
     def get_list_items(self, list_title, query_string=""):
         data = {
             "parameters": {
-                "AddRequiredFields": "true",
-                "DatesInUtc": "true",
-                "RenderOptions": 2
+                "__metadata": {
+                    "type": "SP.RenderListDataParameters"
+                },
+                "RenderOptions": SharePointConstants.RENDER_OPTIONS,
+                "AllowMultipleValueFilterForTaxonomyFields": True,
+                "AddRequiredFields": True
             }
         }
-        headers = {
-            "Content-Type": DSSConstants.APPLICATION_JSON,
-            "Accept": DSSConstants.APPLICATION_JSON
-        }
+        headers = DSSConstants.JSON_HEADERS
         url = self.get_list_data_as_stream(list_title) + query_string
         response = self.session.post(
             url,
@@ -213,13 +234,10 @@ class SharePointClient():
             json=data
         )
         self.assert_response_ok(response, calling_method="get_list_items")
-        return response.json()
+        return response.json().get("ListData", {})
 
     def create_list(self, list_name):
-        headers = {
-            "Content-Type": DSSConstants.APPLICATION_JSON,
-            'Accept': DSSConstants.APPLICATION_JSON
-        }
+        headers = DSSConstants.JSON_HEADERS
         data = {
             '__metadata': {
                 'type': 'SP.List'
@@ -249,6 +267,26 @@ class SharePointClient():
         )
         return response
 
+    def get_list_metadata(self, list_name):
+        headers = DSSConstants.JSON_HEADERS
+        response = self.session.get(
+            self.get_lists_by_title_url(list_name),
+            headers=headers
+        )
+        self.assert_response_ok(response, calling_method="get_list_default_view")
+        json_response = response.json()
+        return json_response.get(SharePointConstants.RESULTS_CONTAINER_V2, {})
+
+    def get_web_name(self, created_list):
+        root_folder_url = get_value_from_path(created_list, ['RootFolder', '__deferred', 'uri'])
+        headers = DSSConstants.JSON_HEADERS
+        response = self.session.get(
+            root_folder_url,
+            headers=headers
+        )
+        json_response = response.json()
+        return get_value_from_path(json_response, [SharePointConstants.RESULTS_CONTAINER_V2, "Name"])
+
     def create_custom_field_via_id(self, list_id, field_title, field_type=None):
         field_type = SharePointConstants.FALLBACK_TYPE if field_type is None else field_type
         schema_xml = self.get_schema_xml(field_title, field_type)
@@ -258,10 +296,7 @@ class SharePointClient():
                 'SchemaXml': schema_xml
             }
         }
-        headers = {
-            "Content-Type": DSSConstants.APPLICATION_JSON,
-            "Accept": DSSConstants.APPLICATION_JSON
-        }
+        headers = DSSConstants.JSON_HEADERS
         guid_lists_add_field_url = self.get_guid_lists_add_field_url(list_id)
         response = self.session.post(
             guid_lists_add_field_url,
@@ -337,22 +372,57 @@ class SharePointClient():
         self.assert_response_ok(response, calling_method="add_list_item_by_id")
         return response
 
-    def get_add_list_item_kwargs(self, list_id, list_item_full_name, item):
-        item["__metadata"] = {
-            "type": "{}".format(list_item_full_name)
-        }
-        headers = {
-            "Content-Type": DSSConstants.APPLICATION_JSON
-        }
-        list_items_url = self.get_list_items_url_by_id(list_id)
+    def get_add_list_item_kwargs(self, list_title, item):
+        headers = DSSConstants.JSON_HEADERS
+
+        list_items_url = self.get_list_add_item_using_path_url(list_title)
+        item_structure = self.get_item_structure(list_title, item)
 
         kwargs = {
             "verb": "post",
             "url": list_items_url,
-            "json": item,
+            "json": item_structure,
             "headers": headers
         }
+
         return kwargs
+
+    def get_item_structure(self, list_title, item):
+        list_item_create_info = self.get_list_item_create_info(list_title)
+        form_values = []
+        for field_name in item:
+            if item[field_name] is not None and item[field_name] != "":
+                #  Some columns (Title) can't be field with None or ""
+                form_values.append(self.get_form_value(field_name, item[field_name]))
+        form_values.append(self.get_form_value("ContentType", "Item"))
+        return {
+            "listItemCreateInfo": list_item_create_info,
+            "formValues": form_values,
+            "bNewDocumentUpdate": False,
+            "checkInComment": None
+        }
+
+    @staticmethod
+    def get_form_value(field_name, field_value):
+        return {
+            "FieldName": field_name,
+            "FieldValue": field_value,
+            "HasException": False,
+            "ErrorMessage": None
+        }
+
+    def get_list_item_create_info(self, list_title):
+        return {
+            "__metadata": {
+                "type": "SP.ListItemCreationInformationUsingPath"
+            },
+            "FolderPath": {
+                "__metadata": {
+                    "type": "SP.ResourcePath"
+                },
+                "DecodedUrl": "/{}/Lists/{}".format(self.sharepoint_site, list_title)
+            }
+        }
 
     def process_batch(self, kwargs_array):
         batch_id = self.get_random_guid()
@@ -378,7 +448,7 @@ class SharePointClient():
                 body_elements.append("{}: {}".format(header, kwargs["headers"][header]))
             body_elements.append("Accept-Charset: UTF-8")
             body_elements.append("")
-            body_elements.append("{}".format(kwargs["json"]))
+            body_elements.append(json.dumps(kwargs["json"]))
         body_elements.append("--changeset_{}--".format(change_set_id))
         body_elements.append('--batch_{}--'.format(batch_id))
         body = "\r\n".join(body_elements)
@@ -390,10 +460,13 @@ class SharePointClient():
                 logger.info("Posting batch of {} items".format(len(kwargs_array)))
                 response = self.session.post(
                     url,
+                    dku_rs_off=True,
                     headers=headers,
                     data=body.encode('utf-8')
                 )
                 logger.info("Batch post status: {}".format(response.status_code))
+                if response.status_code >= 400:
+                    logger.error("Responnse={}".format(response.content))
                 successful_post = True
             except requests.exceptions.Timeout as err:
                 #  Necessary to raise since timed out items may or may not be uploaded
@@ -407,11 +480,29 @@ class SharePointClient():
                     raise SharePointClientError("Error in batch processing on attempt #{}: {}".format(attempt_number, err))
                 time.sleep(SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC)
 
-        nb_of_201 = str(response.content).count("HTTP/1.1 201")
-        if nb_of_201 != len(kwargs_array):
-            logger.warning("Checks indicate possible item loss ({}/{} are accounted for)".format(nb_of_201, len(kwargs_array)))
-            logger.warning("response.content={}".format(response.content))
+        self.log_batch_errors(response, kwargs_array)
+
         return response
+
+    @staticmethod
+    def log_batch_errors(response, kwargs_array):
+        logger.info("Batch error analysis")
+        statuses = re.findall('HTTP/1.1 (.*?) ', str(response.content))
+        dump_response_content = False
+        for status, kwarg in zip(statuses, kwargs_array):
+            if not status.startswith("20"):
+                logger.warning("Error {} with kwargs={}".format(status, kwarg))
+                dump_response_content = True
+        json_chains = re.findall('\r\n\r\n{"d":(.*?)}\r\n--batchresponse_', str(response.content))
+        for json_chain in json_chains:
+            errors = re.findall('"ErrorCode":(.*?),"', json_chain)
+            for error in errors:
+                if error != "0":
+                    dump_response_content = True
+        if dump_response_content:
+            logger.warning("response.content={}".format(response.content))
+        else:
+            logger.info("Batch error analysis OK")
 
     def get_base_url(self):
         return "{}/{}/_api/Web".format(
@@ -438,6 +529,13 @@ class SharePointClient():
 
     def get_list_items_url_by_id(self, list_id):
         return self.get_lists_by_id_url(list_id) + "/Items"
+
+    def get_list_add_item_using_path_url(self, list_title):
+        # https://ikuiku.sharepoint.com/sites/dssplugin/_api/web/GetList(@a1)/AddValidateUpdateItemUsingPath()?@a1=%27%2Fsites%2Fdssplugin%2FLists%2FTypeLocation%27
+        return self.get_base_url() + "/GetList(@a1)/AddValidateUpdateItemUsingPath()?@a1='/{}/Lists/{}'".format(
+            self.sharepoint_site,
+            list_title
+        )
 
     def get_list_fields_url(self, list_title):
         return self.get_lists_by_title_url(list_title) + "/fields"
@@ -500,7 +598,8 @@ class SharePointClient():
     def assert_response_ok(self, response, no_json=False, calling_method=""):
         status_code = response.status_code
         if status_code >= 400:
-            enriched_error_message = self.get_enriched_error_message(response, calling_method=calling_method)
+            logger.error("Error {} in method calling_method".format(status_code))
+            enriched_error_message = self.get_enriched_error_message(response, calling_method)
             if enriched_error_message is not None:
                 raise SharePointClientError("Error ({}): {}".format(calling_method, enriched_error_message))
         if status_code == 400:
@@ -519,7 +618,7 @@ class SharePointClient():
             enriched_error_message = "({}) {}".format(calling_method, json_response.get("error").get("message").get("value"))
             return enriched_error_message
         except Exception as error:
-            logger.info("Error trying to extract error message :{}".format(error))
+            logger.info("Error trying to extract error message ({}) :{}".format(calling_method, error))
             logger.info("Response.content={}".format(response.content))
             return None
 
@@ -569,6 +668,7 @@ class SharePointSession():
         self.sharepoint_site = sharepoint_site
         self.sharepoint_access_token = sharepoint_access_token
         requests.adapters.DEFAULT_RETRIES = max_retry
+        self.form_digest_value = self.get_form_digest_value()
 
     def get(self, url, headers=None, params=None):
         headers = headers or {}
@@ -583,11 +683,45 @@ class SharePointSession():
            "Content-Type": DSSConstants.APPLICATION_JSON_NOMETADATA,
            "Authorization": self.get_authorization_bearer()
         }
+        if self.form_digest_value:
+            default_headers.update({"X-RequestDigest": self.form_digest_value})
         default_headers.update(headers)
         return requests.post(url, headers=default_headers, json=json, data=data, timeout=SharePointConstants.TIMEOUT_SEC)
 
+    @staticmethod
+    def close():
+        logger.info("Closing SharePointSession.")
+
     def get_authorization_bearer(self):
         return "Bearer {}".format(self.sharepoint_access_token)
+
+    def get_form_digest_value(self):
+        logger.info("Getting form digest value")
+        session = RobustSession(session=requests, status_codes_to_retry=[429])
+        session.update_settings(
+            max_retries=SharePointConstants.MAX_RETRIES,
+            base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
+        )
+        headers = {**DSSConstants.JSON_HEADERS, **{"Authorization": self.get_authorization_bearer()}}
+        response = session.post(
+            url=self.get_contextinfo_url(),
+            headers=headers
+        )
+        form_digest_value = get_value_from_path(
+            response.json(),
+            [
+                SharePointConstants.RESULTS_CONTAINER_V2,
+                SharePointConstants.GET_CONTEXT_WEB_INFORMATION,
+                SharePointConstants.FORM_DIGEST_VALUE
+            ]
+        )
+        logger.info("Form digest value {}".format(form_digest_value))
+        return form_digest_value
+
+    def get_contextinfo_url(self):
+        return "https://{}.sharepoint.com/{}/_api/contextinfo".format(
+            self.sharepoint_tenant, self.sharepoint_site
+        )
 
 
 class SuppressFilter(logging.Filter):
