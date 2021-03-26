@@ -28,7 +28,7 @@ class SharePointListsConnector(Connector):
         self.expand_lookup = config.get("expand_lookup", False)
         self.metadata_to_retrieve = config.get("metadata_to_retrieve", [])
         advanced_parameters = config.get("advanced_parameters", False)
-        self.write_mode = config.get("write_mode", "create")
+        self.write_mode = "create"
         if not advanced_parameters:
             self.max_workers = 1  # no multithread per default
             self.batch_size = 100
