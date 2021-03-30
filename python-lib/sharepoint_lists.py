@@ -1,6 +1,6 @@
 import logging
+import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
 
@@ -176,7 +176,13 @@ class SharePointListWriter(object):
                 structure[SharePointConstants.NAME_COLUMN],
                 self.sharepoint_column_ids[structure[SharePointConstants.NAME_COLUMN]]
             )
-            ret[key_to_use] = column
+            if structure.get("type") == "date":
+                ret[key_to_use] = datetime.datetime.strftime(
+                    datetime.datetime.strptime(column, DSSConstants.DATE_FORMAT),
+                    SharePointConstants.DATE_FORMAT
+                )
+            else:
+                ret[key_to_use] = column
         return ret
 
     def close(self):

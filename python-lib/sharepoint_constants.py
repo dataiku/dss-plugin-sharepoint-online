@@ -1,6 +1,7 @@
 class SharePointConstants(object):
     COLUMNS = 'columns'
     COMMENT_COLUMN = 'comment'
+    DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
     DEFAULT_VIEW_ENDPOINT = "DefaultView/ViewFields"
     ENTITY_PROPERTY_NAME = 'EntityPropertyName'
     ERROR_CONTAINER = 'error'
