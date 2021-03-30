@@ -176,7 +176,7 @@ class SharePointListWriter(object):
                 structure[SharePointConstants.NAME_COLUMN],
                 self.sharepoint_column_ids[structure[SharePointConstants.NAME_COLUMN]]
             )
-            if structure.get("type") == "date":
+            if column and structure.get("type") == "date":
                 ret[key_to_use] = datetime.datetime.strftime(
                     datetime.datetime.strptime(column, DSSConstants.DATE_FORMAT),
                     SharePointConstants.DATE_FORMAT
