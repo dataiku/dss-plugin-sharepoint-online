@@ -27,3 +27,23 @@ def get_value_from_path(dictionary, path, default_reply=None):
         else:
             return default_reply
     return ret
+
+def get_date_time_format_from_regional_settings(regional_settings):
+    date_patterns = {
+        0: ["%m", "%d", "%Y"],
+        1: ["%d", "%m", "%Y"],
+        2: ["%Y", "%m", "%d"]
+    }
+    time_patterns = {
+        False: ["%I","%M %p"],
+        True: ["%H","%M"]
+    }
+    date_format = regional_settings.get("DateFormat")
+    if date_format is None:
+        #return "%Y-%m-%dT%H:%M:%S.%fZ"
+        return None
+    datetime_pattern = ""
+    datetime_pattern = regional_settings.get("DateSeparator", "/").join(date_patterns.get(regional_settings.get("DateFormat", 0)))
+    datetime_pattern += " "
+    datetime_pattern += regional_settings.get("TimeSeparator", ":").join(time_patterns.get(regional_settings.get("Time24", False)))
+    return datetime_pattern

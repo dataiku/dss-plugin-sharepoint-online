@@ -1,8 +1,10 @@
 import logging
+import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
+from common import get_date_time_format_from_regional_settings
 
 
 logger = logging.getLogger(__name__)
@@ -66,6 +68,12 @@ class SharePointListWriter(object):
         self.buffer = []
         logger.info('init SharepointListWriter with {} workers and batch size of {}'.format(max_workers, batch_size))
         self.columns = dataset_schema[SharePointConstants.COLUMNS]
+        if self.has_schema_date():
+            logging.info("Schema contains date(s)")
+            regional_settings = self.parent.client.get_regional_settings()
+            logging.info("Regional settings are {}".format(regional_settings))
+            self.sharepoint_date_format = get_date_time_format_from_regional_settings(regional_settings)
+            logging.info("Computed date format is {}".format(self.sharepoint_date_format))
         self.sharepoint_column_ids = {}
         self.sharepoint_existing_column_names = {}
         self.sharepoint_existing_column_entity_property_names = {}
@@ -99,6 +107,12 @@ class SharePointListWriter(object):
                 self.sharepoint_existing_column_names[self.parent.column_names[column_id]] = column_id
                 self.sharepoint_existing_column_entity_property_names[self.parent.column_names[column_id]] = self.parent.column_entity_property_name[column_id]
         self.create_sharepoint_columns()
+
+    def has_schema_date(self):
+        for column in self.columns:
+            if column.get('type')=='date':
+                return True
+        return False
 
     def write_row(self, row):
         self.buffer.append(row)
@@ -170,13 +184,17 @@ class SharePointListWriter(object):
                 self.sharepoint_column_ids[dss_column_name] = dss_column_name
 
     def build_row_dictionary(self, row):
+        DSS_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
         ret = {}
         for column, structure in zip(row, self.columns):
             key_to_use = self.sharepoint_existing_column_names.get(
                 structure[SharePointConstants.NAME_COLUMN],
                 self.sharepoint_column_ids[structure[SharePointConstants.NAME_COLUMN]]
             )
-            ret[key_to_use] = column
+            if self.sharepoint_date_format and structure.get("type") == "date":
+                ret[key_to_use] = datetime.datetime.strftime(datetime.datetime.strptime(column, DSS_DATE_FORMAT), self.sharepoint_date_format)
+            else:
+                ret[key_to_use] = column
         return ret
 
     def close(self):

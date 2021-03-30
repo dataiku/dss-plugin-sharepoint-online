@@ -277,6 +277,16 @@ class SharePointClient():
         json_response = response.json()
         return json_response.get(SharePointConstants.RESULTS_CONTAINER_V2, {})
 
+    def get_regional_settings(self):
+        headers = DSSConstants.JSON_HEADERS
+        response = self.session.get(
+            self.get_regional_settings_url(),
+            headers=headers
+        )
+        self.assert_response_ok(response, calling_method="get_regional_settings")
+        json_response = response.json()
+        return json_response.get(SharePointConstants.RESULTS_CONTAINER_V2, {})
+
     def get_web_name(self, created_list):
         root_folder_url = get_value_from_path(created_list, ['RootFolder', '__deferred', 'uri'])
         headers = DSSConstants.JSON_HEADERS
@@ -508,6 +518,9 @@ class SharePointClient():
         return "{}/{}/_api/Web".format(
             self.sharepoint_origin, self.sharepoint_site
         )
+
+    def get_regional_settings_url(self):
+        return self.get_base_url() + "/RegionalSettings"
 
     def get_lists_url(self):
         return self.get_base_url() + "/lists"
