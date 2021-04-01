@@ -499,6 +499,9 @@ class SharePointClient():
             for error in errors:
                 if error != "0":
                     dump_response_content = True
+        error_messages = re.findall('"ErrorMessage":"(.*?)}', str(response.content))
+        for error_message in error_messages:
+            logger.warning("Error:'{}'".format(error_message))
         if dump_response_content:
             logger.warning("response.content={}".format(response.content))
         else:
