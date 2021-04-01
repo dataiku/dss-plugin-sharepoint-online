@@ -5,6 +5,7 @@ class DSSConstants(object):
     AUTH_OAUTH = "oauth"
     AUTH_SITE_APP = "site-app-permissions"
     CHILDREN = 'children'
+    DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
     DIRECTORY = 'directory'
     EXISTS = 'exists'
     FALLBACK_TYPE = "string"
