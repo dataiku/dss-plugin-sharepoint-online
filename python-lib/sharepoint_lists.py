@@ -55,6 +55,24 @@ def assert_list_title(list_title):
         raise ValueError("The list title contains a '?' characters")
 
 
+def dss_to_sharepoint_date(date):
+    return format_date(date, DSSConstants.DATE_FORMAT, SharePointConstants.DATE_FORMAT)
+
+
+def sharepoint_to_dss_date(date):
+    return format_date(date, "%m/%d/%Y %I:%M %p", DSSConstants.DATE_FORMAT)
+
+
+def format_date(date, from_format, to_format):
+    if date:
+        return datetime.datetime.strftime(
+            datetime.datetime.strptime(date, from_format),
+            to_format
+        )
+    else:
+        return date
+
+
 class SharePointListWriter(object):
 
     def __init__(self, config, parent, dataset_schema, dataset_partitioning, partition_id, max_workers=5, batch_size=100, write_mode="create"):
@@ -177,10 +195,7 @@ class SharePointListWriter(object):
                 self.sharepoint_column_ids[structure[SharePointConstants.NAME_COLUMN]]
             )
             if column and structure.get("type") == "date":
-                ret[key_to_use] = datetime.datetime.strftime(
-                    datetime.datetime.strptime(column, DSSConstants.DATE_FORMAT),
-                    SharePointConstants.DATE_FORMAT
-                )
+                ret[key_to_use] = dss_to_sharepoint_date(column)
             else:
                 ret[key_to_use] = column
         return ret

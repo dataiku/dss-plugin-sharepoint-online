@@ -2,10 +2,10 @@ from dataiku.connector import Connector
 import logging
 
 from sharepoint_client import SharePointClient
-
 from sharepoint_constants import SharePointConstants
 from sharepoint_lists import assert_list_title, get_dss_type
-from sharepoint_lists import SharePointListWriter, column_ids_to_names
+from sharepoint_lists import SharePointListWriter, column_ids_to_names, sharepoint_to_dss_date
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
@@ -23,6 +23,7 @@ class SharePointListsConnector(Connector):
         self.column_ids = {}
         self.column_names = {}
         self.column_entity_property_name = {}
+        self.columns_to_format = []
         self.dss_column_name = {}
         self.column_sharepoint_type = {}
         self.expand_lookup = config.get("expand_lookup", False)
@@ -47,6 +48,7 @@ class SharePointListsConnector(Connector):
         self.column_ids = {}
         self.column_names = {}
         self.column_entity_property_name = {}
+        self.columns_to_format = []
         for column in sharepoint_columns:
             logger.info("get_read_schema:{}/{}/{}/{}/{}/{}".format(
                 column[SharePointConstants.TITLE_COLUMN],
@@ -69,6 +71,8 @@ class SharePointListsConnector(Connector):
                     self.column_entity_property_name[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.ENTITY_PROPERTY_NAME]
                     self.dss_column_name[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TITLE_COLUMN]
                     self.dss_column_name[column[SharePointConstants.ENTITY_PROPERTY_NAME]] = column[SharePointConstants.TITLE_COLUMN]
+                if sharepoint_type == "date":
+                    self.columns_to_format.append((column[SharePointConstants.STATIC_NAME], sharepoint_type))
         logger.info("get_read_schema: Schema updated with {}".format(dss_columns))
         return {
             SharePointConstants.COLUMNS: dss_columns
@@ -112,6 +116,7 @@ class SharePointListsConnector(Connector):
             page = self.client.get_list_items(self.sharepoint_list_title, query_string=self.get_next_page_query_string(page))
             rows = self.get_page_rows(page)
             for row in rows:
+                row = self.format_row(row)
                 yield column_ids_to_names(self.dss_column_name, row)
             record_count += len(rows)
             if is_record_limit and record_count >= records_limit:
@@ -129,6 +134,13 @@ class SharePointListsConnector(Connector):
     @staticmethod
     def get_page_rows(page):
         return page.get("Row", "")
+
+    def format_row(self, row):
+        for column_to_format, type_to_process in self.columns_to_format:
+            value = row.get(column_to_format)
+            if value :
+                row[column_to_format] = sharepoint_to_dss_date(value)
+        return row
 
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
                    partition_id=None):
