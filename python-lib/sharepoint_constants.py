@@ -7,6 +7,8 @@ class SharePointConstants(object):
     ERROR_CONTAINER = 'error'
     EXPENDABLES_FIELDS = {"Author": "Title", "Editor": "Title"}
     FALLBACK_TYPE = "Text"
+    FILE = 0
+    FILE_SYSTEM_OBJECT_TYPE = "FileSystemObjectType"
     FORM_DIGEST_VALUE = "FormDigestValue"
     GET_CONTEXT_WEB_INFORMATION = "GetContextWebInformation"
     GET_FOLDER_URL_STRUCTURE = "{0}/{1}/_api/Web/GetFolderByServerRelativeUrl('/{1}/{2}{3}')"

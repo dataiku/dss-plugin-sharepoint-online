@@ -155,8 +155,11 @@ class SharePointFSProvider(FSProvider):
     def enumerate(self, path, first_non_empty):
         path = get_rel_path(path)
         full_path = get_lnt_path(self.get_full_path(path))
-        logger.info('enumerate:path={},fullpath={}'.format(path, full_path))
+        logger.info('enumerate:path={},fullpath={}, first_non_empty={}'.format(path, full_path, first_non_empty))
         path_to_item, item_name = os.path.split(full_path)
+        is_file = self.client.is_file(full_path)
+        if is_file:
+            return [{'path': path}]
         ret = self.list_recursive(path, full_path, first_non_empty)
         return ret
 

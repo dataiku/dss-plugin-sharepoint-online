@@ -129,6 +129,16 @@ class SharePointClient():
         self.assert_response_ok(response, calling_method="get_files")
         return response.json()
 
+    def get_item_fields(self, path):
+        response = self.session.get(self.get_sharepoint_item_url(path)+ "/ListItemAllFields")
+        self.assert_response_ok(response, calling_method="get_item_fields")
+        return response.json()
+
+    def is_file(self, path):
+        item_fields = self.get_item_fields(path)
+        file_system_object_type = item_fields.get(SharePointConstants.RESULTS_CONTAINER_V2, {}).get(SharePointConstants.FILE_SYSTEM_OBJECT_TYPE)
+        return (file_system_object_type == SharePointConstants.FILE)
+
     def get_sharepoint_item_url(self, path):
         if path == '/':
             path = ""
@@ -506,7 +516,7 @@ class SharePointClient():
             if self.number_dumped_logs == 0:
                 logger.warning("response.content={}".format(response.content))
             else:
-                logger.info("Batch error analysis KO ({})".format(self.number_dumped_logs))    
+                logger.warning("Batch error analysis KO ({})".format(self.number_dumped_logs))    
             self.number_dumped_logs += 1
         else:
             logger.info("Batch error analysis OK")
