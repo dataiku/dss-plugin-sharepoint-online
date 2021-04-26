@@ -33,6 +33,7 @@ class SharePointClient():
         self.sharepoint_url = None
         self.sharepoint_origin = None
         self.session = RobustSession(status_codes_to_retry=[429])
+        self.number_dumped_logs = 0
         if config.get('auth_type') == DSSConstants.AUTH_OAUTH:
             logger.info("SharePointClient:sharepoint_oauth")
             login_details = config.get('sharepoint_oauth')
@@ -484,8 +485,7 @@ class SharePointClient():
 
         return response
 
-    @staticmethod
-    def log_batch_errors(response, kwargs_array):
+    def log_batch_errors(self, response, kwargs_array):
         logger.info("Batch error analysis")
         statuses = re.findall('HTTP/1.1 (.*?) ', str(response.content))
         dump_response_content = False
@@ -503,7 +503,11 @@ class SharePointClient():
         for error_message in error_messages:
             logger.warning("Error:'{}'".format(error_message))
         if dump_response_content:
-            logger.warning("response.content={}".format(response.content))
+            if self.number_dumped_logs == 0:
+                logger.warning("response.content={}".format(response.content))
+            else:
+                logger.info("Batch error analysis KO ({})".format(self.number_dumped_logs))    
+            self.number_dumped_logs += 1
         else:
             logger.info("Batch error analysis OK")
 
