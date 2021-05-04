@@ -26,12 +26,14 @@ class SharePointListsConnector(Connector):
         self.metadata_to_retrieve = config.get("metadata_to_retrieve", [])
         advanced_parameters = config.get("advanced_parameters", False)
         if not advanced_parameters:
+            self.use_allitems_view = False
             self.max_workers = 1  # no multithread per default
             self.batch_size = 100
         else:
+            self.use_allitems_view = config.get("use_allitems_view", False)
             self.max_workers = config.get("max_workers", 1)
             self.batch_size = config.get("batch_size", 100)
-        logger.info("init:advanced_parameters={}, max_workers={}, batch_size={}".format(advanced_parameters, self.max_workers, self.batch_size))
+        logger.info("init:advanced_parameters={}, max_workers={}, batch_size={}, use_allitems_view={}".format(advanced_parameters, self.max_workers, self.batch_size, self.use_allitems_view))
         self.metadata_to_retrieve.append("Title")
         self.display_metadata = len(self.metadata_to_retrieve) > 0
         self.client = SharePointClient(config)
@@ -104,10 +106,14 @@ class SharePointListsConnector(Connector):
     def is_not_last_page(page):
         return "Row" in page and "NextHref" in page
 
-    @staticmethod
-    def get_next_page_query_string(page):
-        ret = page.get("NextHref", "")
+    def get_next_page_query_string(self, page):
+        ret = page.get("NextHref", self.get_view_query_string())
         return ret
+
+    def get_view_query_string(self):
+        if self.use_allitems_view:
+            return self.client.get_list_allitems_view_query(self.sharepoint_list_title)
+        return ""
 
     @staticmethod
     def get_page_rows(page):

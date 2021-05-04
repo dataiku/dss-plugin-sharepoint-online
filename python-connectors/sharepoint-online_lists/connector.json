@@ -100,6 +100,14 @@
             "defaultValue": false
         },
         {
+            "name": "use_allitems_view",
+            "label": "Use All Items view",
+            "description": "Use All Items view instead of (maybe filtered) default view",
+            "visibilityCondition": "model.advanced_parameters == true",  
+            "type": "BOOLEAN",
+            "defaultValue": false
+        },
+        {
             "name": "max_workers",
             "label": "Max nb of workers (write mode only)",
             "description": "More workers will speed writing but also randomize items order",

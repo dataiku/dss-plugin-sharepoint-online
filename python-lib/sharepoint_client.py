@@ -281,6 +281,27 @@ class SharePointClient():
         self.assert_response_ok(response, calling_method="get_list_default_view")
         json_response = response.json()
         return json_response.get(SharePointConstants.RESULTS_CONTAINER_V2, {"Items": {"results": []}}).get("Items", {"results": []}).get("results", [])
+      
+    def get_list_allitems_view_query(self, list_name):
+        list_allitems_view_url = self.get_list_allitems_view_url(list_name)
+        response = self.session.get(
+            list_allitems_view_url
+        )
+        if response.status_code == 404:
+            return []
+        self.assert_response_ok(response, calling_method="get_list_default_view")
+        json_response = response.json()
+        views = json_response.get(SharePointConstants.RESULTS_CONTAINER_V2, {"results": []}).get("results", [])
+        if len(views) == 1:
+            view_id = response[0]["Id"]
+        else:
+            view_id = [
+                v["Id"]
+                for v in views
+                if v.get("ServerRelativeUrl", "").endswith("AllItems.aspx")
+            ][0]
+        
+        return "?View={}".format(view_id)
 
     def add_column_to_list_default_view(self, column_name, list_name):
         escaped_column_name = column_name.replace("'", "''")
@@ -487,6 +508,12 @@ class SharePointClient():
         return os.path.join(
             self.get_lists_by_title_url(list_title),
             SharePointConstants.DEFAULT_VIEW_ENDPOINT
+        )
+
+    def get_list_allitems_view_url(self, list_title):
+        return os.path.join(
+            self.get_lists_by_title_url(list_title),
+            "views?$select=ID,ServerRelativeUrl"
         )
 
     @staticmethod
