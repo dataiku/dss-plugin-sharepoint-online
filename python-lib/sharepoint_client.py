@@ -281,8 +281,23 @@ class SharePointClient():
         self.assert_response_ok(response, calling_method="get_list_default_view")
         json_response = response.json()
         return json_response.get(SharePointConstants.RESULTS_CONTAINER_V2, {"Items": {"results": []}}).get("Items", {"results": []}).get("results", [])
-      
-    def get_list_allitems_view_query(self, list_name):
+
+    def get_view_query_string(self, list_name, query_string="", use_allitems_view=False, page_size=None):
+        query = {}
+        if use_allitems_view:
+            query.update(self.get_allitems_view_id(list_name))
+        if page_size:
+            if isinstance(page_size, int):
+                query.update({"Paged": "TRUE", "RowLimit": page_size})
+            else:
+                logger.warning("page_size {} is not a valid integer", page_size)
+        if query_string != "":
+            query.update(dict(urllib.parse.parse_qsl(query_string.lstrip("?"))))
+        ret = "?{}".format(urllib.parse.urlencode(query)) if len(query) > 0 else ""
+        logger.info(ret)
+        return ret
+
+    def get_allitems_view_id(self, list_name):
         list_allitems_view_url = self.get_list_allitems_view_url(list_name)
         response = self.session.get(
             list_allitems_view_url
@@ -300,8 +315,7 @@ class SharePointClient():
                 for v in views
                 if v.get("ServerRelativeUrl", "").endswith("AllItems.aspx")
             ][0]
-        
-        return "?View={}".format(view_id)
+        return {"View": view_id}
 
     def add_column_to_list_default_view(self, column_name, list_name):
         escaped_column_name = column_name.replace("'", "''")

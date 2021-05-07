@@ -108,6 +108,16 @@
             "defaultValue": false
         },
         {
+            "name": "page_size",
+            "label": "Page size (read mode only)",
+            "description": "No. of rows read from Sharepoint at once",
+            "visibilityCondition": "model.advanced_parameters == true",
+            "type": "INT",
+            "defaultValue": 30,
+            "minI": 30,
+            "maxI": 5000
+        },
+        {
             "name": "max_workers",
             "label": "Max nb of workers (write mode only)",
             "description": "More workers will speed writing but also randomize items order",
