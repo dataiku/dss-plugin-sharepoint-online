@@ -293,7 +293,7 @@ class SharePointClient():
         json_response = response.json()
         views = json_response.get(SharePointConstants.RESULTS_CONTAINER_V2, {"results": []}).get("results", [])
         if len(views) == 1:
-            view_id = response[0]["Id"]
+            view_id = views[0]["Id"]
         else:
             view_id = [
                 v["Id"]
