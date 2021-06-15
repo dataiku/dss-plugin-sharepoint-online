@@ -134,6 +134,15 @@ class SharePointClient():
         self.assert_response_ok(response, calling_method="get_item_fields")
         return response.json()
 
+    def get_start_upload_url(self, path, upload_id):
+        return self.get_file_url(path) + "/startupload(uploadId=guid'{}')".format(upload_id)
+
+    def get_continue_upload_url(self, path, upload_id, file_offset):
+        return self.get_file_url(path) + "/continueupload(uploadId=guid'{}',fileOffset={})".format(upload_id, file_offset)
+
+    def get_finish_upload_url(self, path, upload_id, file_offset):
+        return self.get_file_url(path) + "/finishupload(uploadId=guid'{}',fileOffset={})".format(upload_id, file_offset)
+
     def is_file(self, path):
         item_fields = self.get_item_fields(path)
         file_system_object_type = item_fields.get(SharePointConstants.RESULTS_CONTAINER_V2, {}).get(SharePointConstants.FILE_SYSTEM_OBJECT_TYPE)
@@ -157,6 +166,16 @@ class SharePointClient():
         return response
 
     def write_file_content(self, full_path, data):
+        self.file_size = len(data)
+        if self.file_size < SharePointConstants.MAX_FILE_SIZE_CONTINUOUS_UPLOAD:
+            # below 262MB, the file can be uploaded in one go
+            self.write_full_file_content(full_path, data)
+        else:
+            # Start by creating an empty file. Thanks, MS doc, not.
+            self.write_full_file_content(full_path, [])
+            self.write_chunked_file_content(full_path, data)
+
+    def write_full_file_content(self, full_path, data):
         full_path_parent, file_name = os.path.split(full_path)
         headers = {
             "Content-Length": "{}".format(len(data))
@@ -170,6 +189,36 @@ class SharePointClient():
             data=data
         )
         self.assert_response_ok(response, calling_method="write_file_content")
+        return response
+
+    def write_chunked_file_content(self, full_path, data):
+        is_initial_chunk = True
+        is_last_chunk = False
+        chunk_size = SharePointConstants.FILE_UPLOAD_CHUNK_SIZE
+        save_upload_offset = 0
+        upload_id = self.get_random_guid()
+        while save_upload_offset < self.file_size:
+            next_save_upload_offset = save_upload_offset + chunk_size
+            if next_save_upload_offset >= self.file_size:
+                is_last_chunk = True
+                next_save_upload_offset = self.file_size
+            if is_initial_chunk:
+                is_initial_chunk = False
+                logger.info("write_chunked_file_content:start_upload")
+                url = self.get_start_upload_url(full_path, upload_id)
+            elif is_last_chunk:
+                logger.info("write_chunked_file_content:finish_upload")
+                url = self.get_finish_upload_url(full_path, upload_id, save_upload_offset)
+            else:
+                logger.info("write_chunked_file_content:continue_upload")
+                url = self.get_continue_upload_url(full_path, upload_id, save_upload_offset)
+            logger.info("write_chunked_file_content from {} to {}".format(save_upload_offset, next_save_upload_offset))
+            response = self.session.post(
+                url,
+                data=data[save_upload_offset:next_save_upload_offset]
+            )
+            save_upload_offset = next_save_upload_offset
+            self.assert_response_ok(response, calling_method="write_chunked_file_content")
         return response
 
     def create_folder(self, full_path):

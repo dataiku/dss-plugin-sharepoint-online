@@ -9,6 +9,7 @@ class SharePointConstants(object):
     FALLBACK_TYPE = "Text"
     FILE = 0
     FILE_SYSTEM_OBJECT_TYPE = "FileSystemObjectType"
+    FILE_UPLOAD_CHUNK_SIZE = 131072000
     FORM_DIGEST_VALUE = "FormDigestValue"
     GET_CONTEXT_WEB_INFORMATION = "GetContextWebInformation"
     GET_FOLDER_URL_STRUCTURE = "{0}/{1}/_api/Web/GetFolderByServerRelativeUrl('/{1}/{2}{3}')"
@@ -17,6 +18,7 @@ class SharePointConstants(object):
     INTERNAL_NAME = 'InternalName'
     LENGTH = 'Length'
     LOOKUP_FIELD = 'LookupField'
+    MAX_FILE_SIZE_CONTINUOUS_UPLOAD = 262144000
     MAX_RETRIES = 5
     MESSAGE = 'message'
     MOVE_TO = "MoveTo"
