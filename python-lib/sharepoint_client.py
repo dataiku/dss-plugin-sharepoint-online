@@ -14,11 +14,10 @@ from robust_session import RobustSession
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
 from common import is_email_address, get_value_from_path
+from safe_logger import SafeLogger
 
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO,
-                    format='sharepoint-online plugin %(levelname)s - %(message)s')
+logger = SafeLogger("sharepoint-online plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
 
 
 class SharePointClientError(ValueError):
@@ -550,7 +549,10 @@ class SharePointClient():
         dump_response_content = False
         for status, kwarg in zip(statuses, kwargs_array):
             if not status.startswith("20"):
-                logger.warning("Error {} with kwargs={}".format(status, kwarg))
+                if dump_response_content:
+                    logger.warning("Error {}".format(status))
+                else:
+                    logger.warning("Error {} with kwargs={}".format(status, logger.filter_secrets(kwarg)))
                 dump_response_content = True
         json_chains = re.findall('\r\n\r\n{"d":(.*?)}\r\n--batchresponse_', str(response.content))
         for json_chain in json_chains:
