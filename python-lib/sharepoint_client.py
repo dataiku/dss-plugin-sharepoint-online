@@ -104,7 +104,7 @@ class SharePointClient():
             raise SharePointClientError("Sharepoint-Online's username should be an email address")
 
     def setup_login_details(self, login_details):
-        self.sharepoint_site = login_details['sharepoint_site']
+        self.sharepoint_site = login_details.get('sharepoint_site', "").strip("/")
         logger.info("SharePointClient:sharepoint_site={}".format(self.sharepoint_site))
         if 'sharepoint_root' in login_details:
             self.sharepoint_root = login_details['sharepoint_root'].strip("/")
