@@ -100,6 +100,14 @@
             "defaultValue": false
         },
         {
+            "name": "sharepoint_list_view_title",
+            "label": "View name",
+            "description": "Read data from a specific view",
+            "type": "STRING",
+            "defaultValue": "",
+            "visibilityCondition": "model.advanced_parameters == true"
+        },
+        {
             "name": "write_mode",
             "label": "Write mode",
             "type": "SELECT",

@@ -274,7 +274,7 @@ class SharePointClient():
     def extract_results(response):
         return response[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.RESULTS]
 
-    def get_list_items(self, list_title, query_string=""):
+    def get_list_items(self, list_title, params={}):
         data = {
             "parameters": {
                 "__metadata": {
@@ -286,9 +286,9 @@ class SharePointClient():
             }
         }
         headers = DSSConstants.JSON_HEADERS
-        url = self.get_list_data_as_stream(list_title) + query_string
         response = self.session.post(
-            url,
+            self.get_list_data_as_stream(list_title),
+            params=params,
             headers=headers,
             json=data
         )
@@ -598,6 +598,9 @@ class SharePointClient():
     def get_list_items_url_by_id(self, list_id):
         return self.get_lists_by_id_url(list_id) + "/Items"
 
+    def get_list_views_url(self, list_title):
+        return self.get_lists_by_title_url(list_title) + "/Views"
+
     def get_list_add_item_using_path_url(self, list_title):
         # https://ikuiku.sharepoint.com/sites/dssplugin/_api/web/GetList(@a1)/AddValidateUpdateItemUsingPath()?@a1=%27%2Fsites%2Fdssplugin%2FLists%2FTypeLocation%27
         return self.get_base_url() + "/GetList(@a1)/AddValidateUpdateItemUsingPath()?@a1='/{}/Lists/{}'".format(
@@ -724,6 +727,17 @@ class SharePointClient():
         json_response = response.json()
         return json_response.get("access_token")
 
+    def get_list_views(self, list_title):
+        response = self.session.get(
+            self.get_list_views_url(list_title),
+            params={
+                "$select": "ID,ServerRelativeUrl,Title"
+            }
+        )
+        self.assert_response_ok(response, calling_method="get_list_views_ids")
+        json_response = response.json()
+        return get_value_from_path(json_response, [SharePointConstants.RESULTS_CONTAINER_V2, "results"])
+
     @staticmethod
     def get_random_guid():
         return str(uuid.uuid4())
@@ -744,7 +758,7 @@ class SharePointSession():
         headers["Authorization"] = self.get_authorization_bearer()
         return requests.get(url, headers=headers, params=params)
 
-    def post(self, url, headers=None, json=None, data=None):
+    def post(self, url, headers=None, json=None, data=None, params=None):
         headers = headers or {}
         default_headers = {
            "Accept": DSSConstants.APPLICATION_JSON_NOMETADATA,
@@ -754,7 +768,7 @@ class SharePointSession():
         if self.form_digest_value:
             default_headers.update({"X-RequestDigest": self.form_digest_value})
         default_headers.update(headers)
-        return requests.post(url, headers=default_headers, json=json, data=data, timeout=SharePointConstants.TIMEOUT_SEC)
+        return requests.post(url, headers=default_headers, json=json, data=data, params=params, timeout=SharePointConstants.TIMEOUT_SEC)
 
     @staticmethod
     def close():

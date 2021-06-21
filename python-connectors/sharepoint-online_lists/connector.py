@@ -5,6 +5,10 @@ from sharepoint_client import SharePointClient
 from sharepoint_constants import SharePointConstants
 from sharepoint_lists import assert_list_title, get_dss_type
 from sharepoint_lists import SharePointListWriter, column_ids_to_names, sharepoint_to_dss_date
+try:
+    import urlparse
+except:
+    import urllib.parse as urlparse
 
 
 logger = logging.getLogger(__name__)
@@ -33,13 +37,27 @@ class SharePointListsConnector(Connector):
         if not advanced_parameters:
             self.max_workers = 1  # no multithread per default
             self.batch_size = 100
+            self.sharepoint_list_view_title = ""
         else:
             self.max_workers = config.get("max_workers", 1)
             self.batch_size = config.get("batch_size", 100)
+            self.sharepoint_list_view_title = config.get("sharepoint_list_view_title", "")
         logger.info("init:advanced_parameters={}, max_workers={}, batch_size={}".format(advanced_parameters, self.max_workers, self.batch_size))
         self.metadata_to_retrieve.append("Title")
         self.display_metadata = len(self.metadata_to_retrieve) > 0
         self.client = SharePointClient(config)
+        self.sharepoint_list_view_id = None
+        if self.sharepoint_list_view_title:
+            self.sharepoint_list_view_id = self.get_view_id(self.sharepoint_list_title, self.sharepoint_list_view_title)
+
+    def get_view_id(self, list_title, view_title):
+        if not list_title:
+            return None
+        views = self.client.get_list_views(list_title)
+        for view in views:
+            if view.get("Title") == view_title:
+                return view.get("Id")
+        raise ValueError("View '{}' does not exist in list '{}'.".format(view_title, list_title))
 
     def get_read_schema(self):
         logger.info('get_read_schema')
@@ -113,7 +131,10 @@ class SharePointListsConnector(Connector):
         is_record_limit = records_limit > 0
         while is_first_run or self.is_not_last_page(page):
             is_first_run = False
-            page = self.client.get_list_items(self.sharepoint_list_title, query_string=self.get_next_page_query_string(page))
+            page = self.client.get_list_items(
+                self.sharepoint_list_title,
+                params=self.get_requests_params(page)
+            )
             rows = self.get_page_rows(page)
             for row in rows:
                 row = self.format_row(row)
@@ -126,10 +147,16 @@ class SharePointListsConnector(Connector):
     def is_not_last_page(page):
         return "Row" in page and "NextHref" in page
 
-    @staticmethod
-    def get_next_page_query_string(page):
-        ret = page.get("NextHref", "")
-        return ret
+    def get_requests_params(self, page):
+        next_page_query_string = page.get("NextHref", "")
+        next_page_requests_params = parse_query_string_to_dict(next_page_query_string)
+        if self.sharepoint_list_view_id:
+            next_page_requests_params.update(
+                {
+                    "View": self.sharepoint_list_view_id
+                }
+            )
+        return next_page_requests_params
 
     @staticmethod
     def get_page_rows(page):
@@ -138,7 +165,7 @@ class SharePointListsConnector(Connector):
     def format_row(self, row):
         for column_to_format, type_to_process in self.columns_to_format:
             value = row.get(column_to_format)
-            if value :
+            if value:
                 row[column_to_format] = sharepoint_to_dss_date(value)
         return row
 
@@ -171,3 +198,13 @@ class SharePointListsConnector(Connector):
     def get_records_count(self, partitioning=None, partition_id=None):
         logger.info('get_records_count:partitioning={}, partition_id={}'.format(partitioning, partition_id))
         raise Exception("unimplemented")
+
+
+def parse_query_string_to_dict(query_string):
+    return dict(
+        urlparse.parse_qsl(
+            list(
+                urlparse.urlparse(query_string)
+            )[4]
+        )
+    )
