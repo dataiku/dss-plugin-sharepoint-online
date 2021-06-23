@@ -5,10 +5,7 @@ from sharepoint_client import SharePointClient
 from sharepoint_constants import SharePointConstants
 from sharepoint_lists import assert_list_title, get_dss_type
 from sharepoint_lists import SharePointListWriter, column_ids_to_names, sharepoint_to_dss_date
-try:
-    import urlparse
-except:
-    import urllib.parse as urlparse
+from common import parse_query_string_to_dict
 
 
 logger = logging.getLogger(__name__)
@@ -198,13 +195,3 @@ class SharePointListsConnector(Connector):
     def get_records_count(self, partitioning=None, partition_id=None):
         logger.info('get_records_count:partitioning={}, partition_id={}'.format(partitioning, partition_id))
         raise Exception("unimplemented")
-
-
-def parse_query_string_to_dict(query_string):
-    return dict(
-        urlparse.parse_qsl(
-            list(
-                urlparse.urlparse(query_string)
-            )[4]
-        )
-    )

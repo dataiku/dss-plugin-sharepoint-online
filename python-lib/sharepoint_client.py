@@ -736,7 +736,9 @@ class SharePointClient():
         )
         self.assert_response_ok(response, calling_method="get_list_views_ids")
         json_response = response.json()
-        return get_value_from_path(json_response, [SharePointConstants.RESULTS_CONTAINER_V2, "results"])
+        views = get_value_from_path(json_response, [SharePointConstants.RESULTS_CONTAINER_V2, "results"])
+        logger.info("get_list_views:available views:{}".format(views))
+        return views
 
     @staticmethod
     def get_random_guid():
