@@ -274,7 +274,8 @@ class SharePointClient():
     def extract_results(response):
         return response[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.RESULTS]
 
-    def get_list_items(self, list_title, params={}):
+    def get_list_items(self, list_title, params=None):
+        params = params or {}
         data = {
             "parameters": {
                 "__metadata": {
