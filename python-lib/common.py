@@ -1,4 +1,8 @@
 import re
+try:
+    import urlparse
+except:
+    import urllib.parse as urlparse
 
 
 def get_rel_path(path):
@@ -27,3 +31,13 @@ def get_value_from_path(dictionary, path, default_reply=None):
         else:
             return default_reply
     return ret
+
+
+def parse_query_string_to_dict(query_string):
+    return dict(
+        urlparse.parse_qsl(
+            list(
+                urlparse.urlparse(query_string)
+            )[4]
+        )
+    )

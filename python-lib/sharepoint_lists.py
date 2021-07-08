@@ -60,7 +60,14 @@ def dss_to_sharepoint_date(date):
 
 
 def sharepoint_to_dss_date(date):
-    return format_date(date, "%m/%d/%Y %I:%M %p", DSSConstants.DATE_FORMAT)
+    sharepoint_formats = ["%m/%d/%Y", "%m/%d/%Y %I:%M %p"]
+    for sharepoint_format in sharepoint_formats:
+        try:
+            dss_date = format_date(date, sharepoint_format, DSSConstants.DATE_FORMAT)
+        except ValueError as err:
+            continue
+        return dss_date
+    return date
 
 
 def format_date(date, from_format, to_format):
