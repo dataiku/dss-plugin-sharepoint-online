@@ -1,8 +1,9 @@
 import logging
+import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
@@ -25,9 +26,9 @@ def get_sharepoint_type(dss_type):
     return DSSConstants.TYPES.get(dss_type, SharePointConstants.FALLBACK_TYPE)
 
 
-def column_ids_to_names(column_ids, column_names, sharepoint_row):
+def column_ids_to_names(convert_table, sharepoint_row):
     """ Replace the column ID used by SharePoint by their column names for use in DSS"""
-    return {column_names[key]: value for key, value in sharepoint_row.items() if key in column_ids}
+    return {convert_table[key]: value for key, value in sharepoint_row.items() if key in convert_table}
 
 
 def is_error(response):
@@ -54,9 +55,34 @@ def assert_list_title(list_title):
         raise ValueError("The list title contains a '?' characters")
 
 
+def dss_to_sharepoint_date(date):
+    return format_date(date, DSSConstants.DATE_FORMAT, SharePointConstants.DATE_FORMAT)
+
+
+def sharepoint_to_dss_date(date):
+    sharepoint_formats = ["%m/%d/%Y", "%m/%d/%Y %I:%M %p"]
+    for sharepoint_format in sharepoint_formats:
+        try:
+            dss_date = format_date(date, sharepoint_format, DSSConstants.DATE_FORMAT)
+        except ValueError as err:
+            continue
+        return dss_date
+    return date
+
+
+def format_date(date, from_format, to_format):
+    if date:
+        return datetime.datetime.strftime(
+            datetime.datetime.strptime(date, from_format),
+            to_format
+        )
+    else:
+        return date
+
+
 class SharePointListWriter(object):
 
-    def __init__(self, config, parent, dataset_schema, dataset_partitioning, partition_id, max_workers=5, batch_size=100):
+    def __init__(self, config, parent, dataset_schema, dataset_partitioning, partition_id, max_workers=5, batch_size=100, write_mode="create"):
         self.parent = parent
         self.config = config
         self.dataset_schema = dataset_schema
@@ -66,19 +92,37 @@ class SharePointListWriter(object):
         logger.info('init SharepointListWriter with {} workers and batch size of {}'.format(max_workers, batch_size))
         self.columns = dataset_schema[SharePointConstants.COLUMNS]
         self.sharepoint_column_ids = {}
+        self.sharepoint_existing_column_names = {}
+        self.sharepoint_existing_column_entity_property_names = {}
+        self.web_name = self.parent.sharepoint_list_title
 
-        logger.info('flush:delete_list "{}"'.format(self.parent.sharepoint_list_title))
-        self.parent.client.delete_list(self.parent.sharepoint_list_title)
-        logger.info('flush:create_list "{}"'.format(self.parent.sharepoint_list_title))
-        created_list = self.parent.client.create_list(self.parent.sharepoint_list_title)
-        self.entity_type_name = created_list.get("EntityTypeName")
-        self.list_item_entity_type_full_name = created_list.get("ListItemEntityTypeFullName")
-        logger.info('New list "{}" created, type {}'.format(self.list_item_entity_type_full_name, self.entity_type_name))
-        self.list_id = created_list.get("Id")
+        if write_mode == SharePointConstants.WRITE_MODE_CREATE:
+            logger.info('flush:delete_list "{}"'.format(self.parent.sharepoint_list_title))
+            self.parent.client.delete_list(self.parent.sharepoint_list_title)
+            logger.info('flush:create_list "{}"'.format(self.parent.sharepoint_list_title))
+            created_list = self.parent.client.create_list(self.parent.sharepoint_list_title)
+            self.entity_type_name = created_list.get("EntityTypeName")
+            self.list_item_entity_type_full_name = created_list.get("ListItemEntityTypeFullName")
+            logger.info('New list "{}" created, type {}'.format(self.list_item_entity_type_full_name, self.entity_type_name))
+            self.list_id = created_list.get("Id")
+            self.web_name = self.parent.client.get_web_name(created_list) or self.parent.sharepoint_list_title
+        else:
+            list_metadata = self.parent.client.get_list_metadata(self.parent.sharepoint_list_title)
+            self.web_name = self.parent.client.get_web_name(list_metadata)
+            self.entity_type_name = list_metadata.get("EntityTypeName")
+            self.list_item_entity_type_full_name = list_metadata.get("ListItemEntityTypeFullName")
+            self.list_id = list_metadata.get("Id")
+            logger.info('Existing list "{}" created, type {}'.format(self.list_item_entity_type_full_name, self.entity_type_name))
         self.max_workers = max_workers
         self.batch_size = batch_size
         self.working_batch_size = max_workers * batch_size
         self.parent.get_read_schema()
+
+        if write_mode != SharePointConstants.WRITE_MODE_CREATE:
+            for column_id in self.parent.column_names:
+                self.sharepoint_column_ids[column_id] = self.parent.column_names[column_id]
+                self.sharepoint_existing_column_names[self.parent.column_names[column_id]] = column_id
+                self.sharepoint_existing_column_entity_property_names[self.parent.column_names[column_id]] = self.parent.column_entity_property_name[column_id]
         self.create_sharepoint_columns()
 
     def write_row(self, row):
@@ -102,7 +146,7 @@ class SharePointListWriter(object):
         with ThreadPoolExecutor(max_workers=self.max_workers) as thread_pool_executor:
             for row in self.buffer:
                 item = self.build_row_dictionary(row)
-                kwargs.append(self.parent.client.get_add_list_item_kwargs(self.list_id, self.list_item_entity_type_full_name, item))
+                kwargs.append(self.parent.client.get_add_list_item_kwargs(self.web_name, item))
                 index = index + 1
                 if index >= self.batch_size:
                     futures.append(thread_pool_executor.submit(self.parent.client.process_batch, kwargs[offset:offset + index]))
@@ -119,7 +163,7 @@ class SharePointListWriter(object):
         kwargs = []
         for row in self.buffer:
             item = self.build_row_dictionary(row)
-            kwargs.append(self.parent.client.get_add_list_item_kwargs(self.list_id, self.list_item_entity_type_full_name, item))
+            kwargs.append(self.parent.client.get_add_list_item_kwargs(self.web_name, item))
         self.parent.client.process_batch(kwargs)
         logger.info("{} items written".format(len(kwargs)))
 
@@ -130,8 +174,12 @@ class SharePointListWriter(object):
             dss_type = column.get(SharePointConstants.TYPE_COLUMN, DSSConstants.FALLBACK_TYPE)
             sharepoint_type = get_sharepoint_type(dss_type)
             dss_column_name = column[SharePointConstants.NAME_COLUMN]
-            if dss_column_name not in self.parent.column_ids:
-                logger.info("Creating column '{}'".format(dss_column_name))
+            existing_sharepoint_type = self.parent.column_sharepoint_type.get(dss_column_name)
+            if existing_sharepoint_type:
+                sharepoint_type = existing_sharepoint_type
+
+            if dss_column_name not in self.parent.column_ids and dss_column_name not in self.sharepoint_existing_column_names:
+                logger.info("Creating column '{}' with type {}".format(dss_column_name, sharepoint_type))
                 response = self.parent.client.create_custom_field_via_id(
                     self.list_id,
                     dss_column_name,
@@ -139,15 +187,24 @@ class SharePointListWriter(object):
                 )
                 json = response.json()
                 self.sharepoint_column_ids[dss_column_name] = \
-                    json[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.ENTITY_PROPERTY_NAME]
+                    json[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.STATIC_NAME]
                 self.parent.client.add_column_to_list_default_view(dss_column_name, self.parent.sharepoint_list_title)
+            elif dss_column_name in self.sharepoint_existing_column_names:
+                self.sharepoint_column_ids[dss_column_name] = self.sharepoint_existing_column_entity_property_names[dss_column_name]
             else:
                 self.sharepoint_column_ids[dss_column_name] = dss_column_name
 
     def build_row_dictionary(self, row):
         ret = {}
         for column, structure in zip(row, self.columns):
-            ret[self.sharepoint_column_ids[structure[SharePointConstants.NAME_COLUMN]]] = column
+            key_to_use = self.sharepoint_existing_column_names.get(
+                structure[SharePointConstants.NAME_COLUMN],
+                self.sharepoint_column_ids[structure[SharePointConstants.NAME_COLUMN]]
+            )
+            if column and structure.get("type") == "date":
+                ret[key_to_use] = dss_to_sharepoint_date(column)
+            else:
+                ret[key_to_use] = column
         return ret
 
     def close(self):

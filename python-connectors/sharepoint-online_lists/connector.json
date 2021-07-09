@@ -100,6 +100,31 @@
             "defaultValue": false
         },
         {
+            "name": "sharepoint_list_view_title",
+            "label": "View name",
+            "description": "Read data from a specific view",
+            "type": "STRING",
+            "defaultValue": "",
+            "visibilityCondition": "model.advanced_parameters == true"
+        },
+        {
+            "name": "write_mode",
+            "label": "Write mode",
+            "type": "SELECT",
+            "defaultValue": "create",
+            "selectChoices": [
+                {
+                    "value": "create",
+                    "label": "Create a new list"
+                },
+                {
+                    "value": "append",
+                    "label": "Append to existing list"
+                }
+            ],
+            "visibilityCondition": false
+        },
+        {
             "name": "max_workers",
             "label": "Max nb of workers (write mode only)",
             "description": "More workers will speed writing but also randomize items order",
@@ -117,7 +142,7 @@
             "type": "INT",
             "defaultValue": 100,
             "minI": 1,
-            "maxI": 500
+            "maxI": 100
         }
     ]
 }

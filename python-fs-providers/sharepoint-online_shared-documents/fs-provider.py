@@ -34,7 +34,7 @@ class SharePointFSProvider(FSProvider):
             root = root[1:]
         self.root = root
         self.provider_root = "/"
-        logger.info('SharePoint Online plugin fs v1.0.7')
+        logger.info('SharePoint Online plugin fs v1.0.8')
         logger.info('init:root={}'.format(self.root))
 
         self.client = SharePointClient(config)
@@ -153,10 +153,14 @@ class SharePointFSProvider(FSProvider):
         return ret
 
     def enumerate(self, path, first_non_empty):
-        path = get_rel_path(path)
         full_path = get_lnt_path(self.get_full_path(path))
-        logger.info('enumerate:path={},fullpath={}'.format(path, full_path))
+        logger.info('enumerate:path="{}",fullpath="{}", first_non_empty="{}"'.format(path, full_path, first_non_empty))
         path_to_item, item_name = os.path.split(full_path)
+        is_file = self.client.is_file(full_path)
+        if is_file:
+            return [{
+                DSSConstants.PATH: path
+            }]
         ret = self.list_recursive(path, full_path, first_non_empty)
         return ret
 
@@ -216,7 +220,6 @@ class SharePointFSProvider(FSProvider):
     def read(self, path, stream, limit):
         full_path = self.get_full_path(path)
         logger.info('read:full_path={}'.format(full_path))
-
         response = self.client.get_file_content(full_path)
         bio = BytesIO(response.content)
         shutil.copyfileobj(bio, stream)

@@ -1,4 +1,8 @@
 import re
+try:
+    import urlparse
+except:
+    import urllib.parse as urlparse
 
 
 def get_rel_path(path):
@@ -17,3 +21,23 @@ def get_lnt_path(path):
 
 def is_email_address(address):
     return bool(re.match("^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$", address))
+
+
+def get_value_from_path(dictionary, path, default_reply=None):
+    ret = dictionary
+    for key in path:
+        if key in ret:
+            ret = ret.get(key)
+        else:
+            return default_reply
+    return ret
+
+
+def parse_query_string_to_dict(query_string):
+    return dict(
+        urlparse.parse_qsl(
+            list(
+                urlparse.urlparse(query_string)
+            )[4]
+        )
+    )
