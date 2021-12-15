@@ -13,7 +13,7 @@ from xml.dom import minidom
 from robust_session import RobustSession
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
-from common import is_email_address, get_value_from_path
+from common import is_email_address, get_value_from_path, get_value_from_paths
 from safe_logger import SafeLogger
 
 
@@ -33,6 +33,7 @@ class SharePointClient():
         self.sharepoint_origin = None
         self.session = RobustSession(status_codes_to_retry=[429])
         self.number_dumped_logs = 0
+        self.username_for_namespace_diag = None
         if config.get('auth_type') == DSSConstants.AUTH_OAUTH:
             logger.info("SharePointClient:sharepoint_oauth")
             login_details = config.get('sharepoint_oauth')
@@ -58,6 +59,7 @@ class SharePointClient():
             username = login_details['sharepoint_username']
             password = login_details['sharepoint_password']
             self.assert_email_address(username)
+            self.username_for_namespace_diag = username  # stored for possible 403 diagnostic
             self.setup_sharepoint_online_url(login_details)
             # Throttling is harsher for username/password authenticated users
             # https://www.netwoven.com/2021/01/27/how-to-avoid-throttling-or-getting-blocked-in-sharepoint-online-using-sharepoint-app-authentication/
@@ -666,27 +668,62 @@ class SharePointClient():
     def assert_response_ok(self, response, no_json=False, calling_method=""):
         status_code = response.status_code
         if status_code >= 400:
-            logger.error("Error {} in method calling_method".format(status_code))
-            enriched_error_message = self.get_enriched_error_message(response, calling_method)
+            logger.error("Error {} in method {}".format(status_code, calling_method))
+            enriched_error_message = self.get_enriched_error_message(response)
             if enriched_error_message is not None:
                 raise SharePointClientError("Error ({}): {}".format(calling_method, enriched_error_message))
-        if status_code == 400:
-            raise SharePointClientError("({}){}".format(calling_method, response.text))
-        if status_code == 404:
-            raise SharePointClientError("Not found. Please check tenant, site type or site name. ({})".format(calling_method))
-        if status_code == 403:
-            raise SharePointClientError("Forbidden. Please check your account credentials. ({})".format(calling_method))
+            if status_code == 400:
+                raise SharePointClientError("({}){}".format(calling_method, response.text))
+            if status_code == 404:
+                raise SharePointClientError("Not found. Please check tenant, site type or site name. ({})".format(calling_method))
+            if status_code == 403:
+                logger.error("403 error. Checking for federated namespace.")
+                self.assert_non_federated_namespace()
+                logger.error("User does not belong to federated namespace.")
+                raise SharePointClientError("403 Forbidden. Please check your account credentials. ({})".format(calling_method))
+            raise SharePointClientError("Error {} ({})".format(status_code, calling_method))
         if not no_json:
             self.assert_no_error_in_json(response, calling_method=calling_method)
 
+    def assert_non_federated_namespace(self):
+        # Called following 403 error
+        if self.username_for_namespace_diag:
+            # username / password login was used to login
+            # we check if the email used as username belongs to a federated namespace
+            json_response = ""
+            try:
+                response = self.session.get(
+                    "https://login.microsoftonline.com/GetUserRealm.srf",
+                    params={
+                        "login": "{}".format(self.username_for_namespace_diag)
+                    }
+                )
+                json_response = response.json()
+            except Exception as err:
+                logger.info("Error while testing for federated namespace: {}".format(err))
+            if json_response.get("NameSpaceType", "").lower() == "federated":
+                logger.error("User email address belongs to a federated namespace.")
+                raise SharePointClientError(
+                    "403 Forbidden. The '{}' account belongs to a federated namespace. ".format(self.username_for_namespace_diag)
+                    + "Dataiku might not be able to use it to access SharePoint-Online. "
+                    + "Please contact your administrator to configure a Single Sign On or an App token access."
+                )
+
     @staticmethod
-    def get_enriched_error_message(response, calling_method=""):
+    def get_enriched_error_message(response):
         try:
             json_response = response.json()
-            enriched_error_message = "({}) {}".format(calling_method, json_response.get("error").get("message").get("value"))
-            return enriched_error_message
+            error_message = get_value_from_paths(
+                json_response,
+                [
+                    ["error", "message", "value"],
+                    ["error_description"]
+                ]
+            )
+            if error_message:
+                return "{}".format(error_message)
         except Exception as error:
-            logger.info("Error trying to extract error message ({}) :{}".format(calling_method, error))
+            logger.info("Error trying to extract error message: {}".format(error))
             logger.info("Response.content={}".format(response.content))
             return None
 
@@ -720,7 +757,7 @@ class SharePointClient():
             headers=headers,
             data=data
         )
-        self.assert_response_ok(response, calling_method="")
+        self.assert_response_ok(response, calling_method="get_site_app_access_token")
         json_response = response.json()
         return json_response.get("access_token")
 
