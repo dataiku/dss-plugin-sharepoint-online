@@ -34,7 +34,7 @@ class SharePointFSProvider(FSProvider):
             root = root[1:]
         self.root = root
         self.provider_root = "/"
-        logger.info('SharePoint Online plugin fs v1.0.9b1')
+        logger.info('SharePoint Online plugin fs v1.0.9')
         logger.info('init:root={}'.format(self.root))
 
         self.client = SharePointClient(config)
