@@ -115,6 +115,9 @@ class SharePointClient():
         if scheme:
             self.sharepoint_url = domain
             self.sharepoint_origin = scheme + "://" + domain
+        elif tenant.endswith(".sharepoint.com"):
+            self.sharepoint_url = tenant
+            self.sharepoint_origin = "https://" + tenant
         else:
             self.sharepoint_url = tenant + ".sharepoint.com"
             self.sharepoint_origin = "https://" + self.sharepoint_url
