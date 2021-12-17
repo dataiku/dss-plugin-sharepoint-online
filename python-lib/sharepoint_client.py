@@ -13,7 +13,7 @@ from xml.dom import minidom
 from robust_session import RobustSession
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
-from common import is_email_address, get_value_from_path
+from common import is_email_address, get_value_from_path, parse_url
 from safe_logger import SafeLogger
 
 
@@ -28,7 +28,6 @@ class SharePointClient():
 
     def __init__(self, config):
         self.sharepoint_root = None
-        self.sharepoint_tenant = None
         self.sharepoint_url = None
         self.sharepoint_origin = None
         self.session = RobustSession(status_codes_to_retry=[429])
@@ -43,7 +42,7 @@ class SharePointClient():
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
-                    self.sharepoint_tenant,
+                    self.sharepoint_url,
                     self.sharepoint_site,
                     sharepoint_access_token=self.sharepoint_access_token
                 ),
@@ -78,12 +77,11 @@ class SharePointClient():
             self.tenant_id = login_details.get("tenant_id")
             self.client_secret = login_details.get("client_secret")
             self.client_id = login_details.get("client_id")
-            self.sharepoint_tenant = login_details.get('sharepoint_tenant')
             self.sharepoint_access_token = self.get_site_app_access_token()
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
-                    self.sharepoint_tenant,
+                    self.sharepoint_url,
                     self.sharepoint_site,
                     sharepoint_access_token=self.sharepoint_access_token
                 ),
@@ -113,23 +111,35 @@ class SharePointClient():
         logger.info("SharePointClient:sharepoint_root={}".format(self.sharepoint_root))
 
     def setup_sharepoint_online_url(self, login_details):
-        self.sharepoint_tenant = login_details['sharepoint_tenant']
-        logger.info("SharePointClient:sharepoint_tenant={}".format(self.sharepoint_tenant))
-        self.sharepoint_url = self.sharepoint_tenant + ".sharepoint.com"
-        self.sharepoint_origin = "https://" + self.sharepoint_url
+        scheme, domain, tenant = parse_url(login_details['sharepoint_tenant'])
+        if scheme:
+            self.sharepoint_url = domain
+            self.sharepoint_origin = scheme + "://" + domain
+        elif tenant.endswith(".sharepoint.com"):
+            self.sharepoint_url = tenant
+            self.sharepoint_origin = "https://" + tenant
+        else:
+            self.sharepoint_url = tenant + ".sharepoint.com"
+            self.sharepoint_origin = "https://" + self.sharepoint_url
+        logger.info("SharePointClient:sharepoint_tenant={}, url={}, origin={}".format(
+                login_details['sharepoint_tenant'],
+                self.sharepoint_url,
+                self.sharepoint_origin
+            )
+        )
 
     def get_folders(self, path):
-        response = self.session.get(self.get_sharepoint_item_url(path) + "/Folders")
+        response = self.session.get(self.get_folder_url(path) + "/Folders")
         self.assert_response_ok(response, calling_method="get_folders")
         return response.json()
 
     def get_files(self, path):
-        response = self.session.get(self.get_sharepoint_item_url(path) + "/Files")
+        response = self.session.get(self.get_folder_url(path) + "/Files")
         self.assert_response_ok(response, calling_method="get_files")
         return response.json()
 
     def get_item_fields(self, path):
-        response = self.session.get(self.get_sharepoint_item_url(path)+ "/ListItemAllFields")
+        response = self.session.get(self.get_folder_url(path) + "/ListItemAllFields")
         self.assert_response_ok(response, calling_method="get_item_fields")
         return response.json()
 
@@ -146,16 +156,6 @@ class SharePointClient():
         item_fields = self.get_item_fields(path)
         file_system_object_type = item_fields.get(SharePointConstants.RESULTS_CONTAINER_V2, {}).get(SharePointConstants.FILE_SYSTEM_OBJECT_TYPE)
         return (file_system_object_type == SharePointConstants.FILE)
-
-    def get_sharepoint_item_url(self, path):
-        if path == '/':
-            path = ""
-        return SharePointConstants.GET_FOLDER_URL_STRUCTURE.format(
-            self.sharepoint_origin,
-            self.sharepoint_site,
-            self.sharepoint_root,
-            path
-        )
 
     def get_file_content(self, full_path):
         response = self.session.get(
@@ -244,7 +244,7 @@ class SharePointClient():
             self.get_file_url(full_path),
             headers=headers
         )
-        self.assert_response_ok(response, calling_method="delete_file")
+        self.assert_response_ok(response, no_json=True, calling_method="delete_file")
 
     def delete_folder(self, full_path):
         headers = {
@@ -378,7 +378,7 @@ class SharePointClient():
         return json_response.get(SharePointConstants.RESULTS_CONTAINER_V2, {"Items": {"results": []}}).get("Items", {"results": []}).get("results", [])
 
     def add_column_to_list_default_view(self, column_name, list_name):
-        escaped_column_name = column_name.replace("'", "''")
+        escaped_column_name = self.escape_path(column_name)
         list_default_view_url = os.path.join(
             self.get_list_default_view_url(list_name),
             "addviewfield('{}')".format(urllib.parse.quote(escaped_column_name))
@@ -584,7 +584,7 @@ class SharePointClient():
     def get_lists_by_title_url(self, list_title):
         # Sharepoint's API escapes single quotes in titles by doubling them. "McDonald's" -> 'McDonald''s'
         # https://sharepoint.stackexchange.com/questions/246685/sharepoint-rest-api-update-metadata-document-library-item-when-value-string-in
-        escaped_list_title = list_title.replace("'", "''")
+        escaped_list_title = self.escape_path(list_title)
         return self.get_lists_url() + "/GetByTitle('{}')".format(urllib.parse.quote(escaped_list_title))
 
     def get_lists_by_id_url(self, list_id):
@@ -606,7 +606,7 @@ class SharePointClient():
         # https://ikuiku.sharepoint.com/sites/dssplugin/_api/web/GetList(@a1)/AddValidateUpdateItemUsingPath()?@a1=%27%2Fsites%2Fdssplugin%2FLists%2FTypeLocation%27
         return self.get_base_url() + "/GetList(@a1)/AddValidateUpdateItemUsingPath()?@a1='/{}/Lists/{}'".format(
             self.sharepoint_site,
-            list_title
+            self.escape_path(list_title)
         )
 
     def get_list_fields_url(self, list_title):
@@ -615,7 +615,7 @@ class SharePointClient():
     def get_lists_add_field_url(self, list_title):
         return self.get_base_url() + "/GetList(@a1)/Fields/CreateFieldAsXml?@a1='/{}/Lists/{}'".format(
             self.sharepoint_site,
-            list_title
+            self.escape_path(list_title)
         )
 
     def get_guid_lists_add_field_url(self, list_id):
@@ -624,6 +624,8 @@ class SharePointClient():
         )
 
     def get_folder_url(self, full_path):
+        if full_path == '/':
+            full_path = ""
         return self.get_base_url() + "/GetFolderByServerRelativeUrl({})".format(
             self.get_site_path(full_path)
         )
@@ -642,7 +644,11 @@ class SharePointClient():
         )
 
     def get_site_path(self, full_path):
-        return "'/{}/{}{}'".format(self.sharepoint_site, self.sharepoint_root, full_path)
+        return "'/{}/{}{}'".format(
+            self.escape_path(self.sharepoint_site),
+            self.escape_path(self.sharepoint_root),
+            self.escape_path(full_path)
+        )
 
     def get_add_folder_url(self, full_path):
         return self.get_base_url() + "/Folders/add('{}{}')".format(
@@ -651,7 +657,7 @@ class SharePointClient():
         )
 
     def get_file_add_url(self, full_path, file_name):
-        return self.get_folder_url(full_path) + "/Files/add(url='{}',overwrite=true)".format(file_name)
+        return self.get_folder_url(full_path) + "/Files/add(url='{}',overwrite=true)".format(self.escape_path(file_name))
 
     def get_list_default_view_url(self, list_title):
         return os.path.join(
@@ -713,9 +719,9 @@ class SharePointClient():
             "grant_type": "client_credentials",
             "client_id": "{client_id}@{tenant_id}".format(client_id=self.client_id, tenant_id=self.tenant_id),
             "client_secret": self.client_secret,
-            "resource": "{resource}/{sharepoint_tenant}.sharepoint.com@{tenant_id}".format(
+            "resource": "{resource}/{sharepoint_url}@{tenant_id}".format(
                 resource=SharePointConstants.SHAREPOINT_ONLINE_RESSOURCE,
-                sharepoint_tenant=self.sharepoint_tenant,
+                sharepoint_url=self.sharepoint_url,
                 tenant_id=self.tenant_id
             )
         }
@@ -745,11 +751,15 @@ class SharePointClient():
     def get_random_guid():
         return str(uuid.uuid4())
 
+    @staticmethod
+    def escape_path(path):
+        return path.replace("'", "''")
+
 
 class SharePointSession():
 
-    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_tenant, sharepoint_site, sharepoint_access_token=None, max_retry=10):
-        self.sharepoint_tenant = sharepoint_tenant
+    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_url, sharepoint_site, sharepoint_access_token=None, max_retry=10):
+        self.sharepoint_url = sharepoint_url
         self.sharepoint_site = sharepoint_site
         self.sharepoint_access_token = sharepoint_access_token
         requests.adapters.DEFAULT_RETRIES = max_retry
@@ -804,8 +814,8 @@ class SharePointSession():
         return form_digest_value
 
     def get_contextinfo_url(self):
-        return "https://{}.sharepoint.com/{}/_api/contextinfo".format(
-            self.sharepoint_tenant, self.sharepoint_site
+        return "https://{}/{}/_api/contextinfo".format(
+            self.sharepoint_url, self.sharepoint_site
         )
 
 
