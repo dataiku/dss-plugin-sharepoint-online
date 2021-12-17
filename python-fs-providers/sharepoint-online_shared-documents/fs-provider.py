@@ -214,8 +214,9 @@ class SharePointFSProvider(FSProvider):
         full_to_path = self.get_full_path(to_path)
         logger.info('move:from={},to={}'.format(full_from_path, full_to_path))
 
-        response = self.client.move_file(full_from_path, full_to_path)
-        return SharePointConstants.RESULTS_CONTAINER_V2 in response and SharePointConstants.MOVE_TO in response[SharePointConstants.RESULTS_CONTAINER_V2]
+        self.client.move_file(full_from_path, full_to_path)
+        # SP Online now returns {'odata.null': True}
+        return True
 
     def read(self, path, stream, limit):
         full_path = self.get_full_path(path)
