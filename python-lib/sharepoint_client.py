@@ -246,6 +246,11 @@ class SharePointClient():
         )
         self.assert_response_ok(response, no_json=True, calling_method="delete_file")
 
+    def recycle_file(self, full_path):
+        recycle_file_url = self.get_recycle_file_url(full_path)
+        response = self.session.post(recycle_file_url)
+        self.assert_no_error_in_json(response, calling_method="recycle_file")
+
     def delete_folder(self, full_path):
         headers = {
             "X-HTTP-Method": "DELETE"
@@ -254,6 +259,11 @@ class SharePointClient():
             self.get_folder_url(full_path),
             headers=headers
         )
+
+    def recycle_folder(self, full_path):
+        recycle_folder_url = self.get_recycle_folder_url(full_path)
+        response = self.session.post(recycle_folder_url)
+        self.assert_no_error_in_json(response, calling_method="recycle_folder")
 
     def get_list_fields(self, list_title):
         list_fields_url = self.get_list_fields_url(list_title)
@@ -642,6 +652,12 @@ class SharePointClient():
         return self.get_file_url(from_path) + "/moveto(newurl={},flags=1)".format(
             self.get_site_path(to_path)
         )
+
+    def get_recycle_file_url(self, full_path):
+        return self.get_file_url(full_path) + "/recycle()"
+
+    def get_recycle_folder_url(self, full_path):
+        return self.get_folder_url(full_path) + "/recycle()"
 
     def get_site_path(self, full_path):
         return "'/{}/{}{}'".format(
