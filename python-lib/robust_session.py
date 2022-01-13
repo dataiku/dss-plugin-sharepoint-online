@@ -15,7 +15,7 @@ class RobustSession():
     """
     Implements a retry on status code 429 and connections reset by peer, and a connection reset + retry on error 403
     """
-    def __init__(self, session=None, status_codes_to_retry=None, max_retries=1, base_retry_timer_sec=60):
+    def __init__(self, session=None, status_codes_to_retry=None, max_retries=1, base_retry_timer_sec=60, attempt_session_reset_on_403=False):
         logger.info("Init RobustSession")
         self.session = session
         self.status_codes_to_retry = status_codes_to_retry or []
@@ -24,6 +24,7 @@ class RobustSession():
         self.connection_args = []
         self.connection_kwargs = {}
         self.connection_library = None
+        self.attempt_session_reset_on_403 = attempt_session_reset_on_403
 
     def update_settings(self, session=None, status_codes_to_retry=None, max_retries=None, base_retry_timer_sec=None):
         self.session = session or self.session
@@ -68,7 +69,7 @@ class RobustSession():
                 response = self.retry(self.session.get, **kwargs)
             else:
                 response = self.retry(self.session.post, **kwargs)
-            if response.status_code == 403:
+            if response.status_code == 403 and self.attempt_session_reset_on_403:
                 if attempt_number_on_403 >= 1:
                     logger.error("Max number of 403 errors reached. Stopping the plugin to avoid the account to be locked out.")
                     break

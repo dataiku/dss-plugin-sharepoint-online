@@ -31,7 +31,8 @@ class SharePointClient():
         self.sharepoint_tenant = None
         self.sharepoint_url = None
         self.sharepoint_origin = None
-        self.session = RobustSession(status_codes_to_retry=[429])
+        attempt_session_reset_on_403 = config.get("advanced_parameters", False) and config.get("attempt_session_reset_on_403", False)
+        self.session = RobustSession(status_codes_to_retry=[429], attempt_session_reset_on_403=attempt_session_reset_on_403)
         self.number_dumped_logs = 0
         self.username_for_namespace_diag = None
         if config.get('auth_type') == DSSConstants.AUTH_OAUTH:
