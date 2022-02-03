@@ -37,6 +37,7 @@ class SharePointClient():
             login_details = config.get('sharepoint_oauth')
             self.assert_login_details(DSSConstants.OAUTH_DETAILS, login_details)
             self.setup_login_details(login_details)
+            self.apply_paths_overwrite(config)
             self.setup_sharepoint_online_url(login_details)
             self.sharepoint_access_token = login_details['sharepoint_oauth']
             self.session.update_settings(session=SharePointSession(
@@ -109,6 +110,15 @@ class SharePointClient():
         else:
             self.sharepoint_root = "Shared Documents"
         logger.info("SharePointClient:sharepoint_root={}".format(self.sharepoint_root))
+
+    def apply_paths_overwrite(self, config):
+        advanced_parameters = config.get("advanced_parameters", False)
+        sharepoint_root_overwrite = config.get("sharepoint_root_overwrite", "").strip("/")
+        sharepoint_site_overwrite = config.get("sharepoint_site_overwrite", "").strip("/")
+        if advanced_parameters and sharepoint_root_overwrite:
+            self.sharepoint_root = sharepoint_root_overwrite
+        if advanced_parameters and sharepoint_site_overwrite:
+            self.sharepoint_site = sharepoint_site_overwrite
 
     def setup_sharepoint_online_url(self, login_details):
         scheme, domain, tenant = parse_url(login_details['sharepoint_tenant'])

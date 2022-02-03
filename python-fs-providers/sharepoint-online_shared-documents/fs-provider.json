@@ -44,6 +44,28 @@
             "type": "PRESET",
             "parameterSetId": "site-app-permissions",
             "visibilityCondition": "model.auth_type == 'site-app-permissions'"
+        },
+        {
+            "name": "advanced_parameters",
+            "label": "Show advanced parameters",
+            "description": "",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        },
+        {
+            "name": "sharepoint_site_overwrite",
+            "label": "Site path",
+            "type": "STRING",
+            "description": "sites/site_name/subsite...",
+            "visibilityCondition": "model.advanced_parameters == true"
+        },
+        {
+            "name": "sharepoint_root_overwrite",
+            "label": "Root directory",
+            "type": "STRING",
+            "description": "",
+            "defaultValue": "Shared Documents",
+            "visibilityCondition": "model.advanced_parameters == true"
         }
     ]
 }
