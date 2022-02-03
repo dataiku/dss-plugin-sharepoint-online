@@ -1,5 +1,12 @@
 # Changelog
 
+## [Version 1.0.9](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.9) - Feature and bugfix release - 2021-12-17
+
+- Add support for custom domain
+- Fix error message during file move
+- Fix error message on file delete
+- Fix apostrophe in files name
+
 ## [Version 1.0.8](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.8) - Feature and bugfix release - 2021-07-09
 
 - Improved logging

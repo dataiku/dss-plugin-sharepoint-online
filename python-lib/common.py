@@ -50,3 +50,8 @@ def parse_query_string_to_dict(query_string):
             )[4]
         )
     )
+
+
+def parse_url(tenant_name):
+    url_tokens = urlparse.urlparse(tenant_name.strip('/'))
+    return url_tokens.scheme, url_tokens.netloc, url_tokens.path

@@ -13,7 +13,7 @@ from xml.dom import minidom
 from robust_session import RobustSession
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
-from common import is_email_address, get_value_from_path, get_value_from_paths
+from common import is_email_address, get_value_from_path, parse_url, get_value_from_paths
 from safe_logger import SafeLogger
 
 
@@ -28,7 +28,6 @@ class SharePointClient():
 
     def __init__(self, config):
         self.sharepoint_root = None
-        self.sharepoint_tenant = None
         self.sharepoint_url = None
         self.sharepoint_origin = None
         attempt_session_reset_on_403 = config.get("advanced_parameters", False) and config.get("attempt_session_reset_on_403", False)
@@ -45,7 +44,7 @@ class SharePointClient():
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
-                    self.sharepoint_tenant,
+                    self.sharepoint_url,
                     self.sharepoint_site,
                     sharepoint_access_token=self.sharepoint_access_token
                 ),
@@ -81,12 +80,11 @@ class SharePointClient():
             self.tenant_id = login_details.get("tenant_id")
             self.client_secret = login_details.get("client_secret")
             self.client_id = login_details.get("client_id")
-            self.sharepoint_tenant = login_details.get('sharepoint_tenant')
             self.sharepoint_access_token = self.get_site_app_access_token()
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
-                    self.sharepoint_tenant,
+                    self.sharepoint_url,
                     self.sharepoint_site,
                     sharepoint_access_token=self.sharepoint_access_token
                 ),
@@ -116,10 +114,22 @@ class SharePointClient():
         logger.info("SharePointClient:sharepoint_root={}".format(self.sharepoint_root))
 
     def setup_sharepoint_online_url(self, login_details):
-        self.sharepoint_tenant = login_details['sharepoint_tenant']
-        logger.info("SharePointClient:sharepoint_tenant={}".format(self.sharepoint_tenant))
-        self.sharepoint_url = self.sharepoint_tenant + ".sharepoint.com"
-        self.sharepoint_origin = "https://" + self.sharepoint_url
+        scheme, domain, tenant = parse_url(login_details['sharepoint_tenant'])
+        if scheme:
+            self.sharepoint_url = domain
+            self.sharepoint_origin = scheme + "://" + domain
+        elif tenant.endswith(".sharepoint.com"):
+            self.sharepoint_url = tenant
+            self.sharepoint_origin = "https://" + tenant
+        else:
+            self.sharepoint_url = tenant + ".sharepoint.com"
+            self.sharepoint_origin = "https://" + self.sharepoint_url
+        logger.info("SharePointClient:sharepoint_tenant={}, url={}, origin={}".format(
+                login_details['sharepoint_tenant'],
+                self.sharepoint_url,
+                self.sharepoint_origin
+            )
+        )
 
     def get_folders(self, path):
         response = self.session.get(self.get_folder_url(path) + "/Folders")
@@ -747,9 +757,9 @@ class SharePointClient():
             "grant_type": "client_credentials",
             "client_id": "{client_id}@{tenant_id}".format(client_id=self.client_id, tenant_id=self.tenant_id),
             "client_secret": self.client_secret,
-            "resource": "{resource}/{sharepoint_tenant}.sharepoint.com@{tenant_id}".format(
+            "resource": "{resource}/{sharepoint_url}@{tenant_id}".format(
                 resource=SharePointConstants.SHAREPOINT_ONLINE_RESSOURCE,
-                sharepoint_tenant=self.sharepoint_tenant,
+                sharepoint_url=self.sharepoint_url,
                 tenant_id=self.tenant_id
             )
         }
@@ -786,8 +796,8 @@ class SharePointClient():
 
 class SharePointSession():
 
-    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_tenant, sharepoint_site, sharepoint_access_token=None, max_retry=10):
-        self.sharepoint_tenant = sharepoint_tenant
+    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_url, sharepoint_site, sharepoint_access_token=None, max_retry=10):
+        self.sharepoint_url = sharepoint_url
         self.sharepoint_site = sharepoint_site
         self.sharepoint_access_token = sharepoint_access_token
         requests.adapters.DEFAULT_RETRIES = max_retry
@@ -842,8 +852,8 @@ class SharePointSession():
         return form_digest_value
 
     def get_contextinfo_url(self):
-        return "https://{}.sharepoint.com/{}/_api/contextinfo".format(
-            self.sharepoint_tenant, self.sharepoint_site
+        return "https://{}/{}/_api/contextinfo".format(
+            self.sharepoint_url, self.sharepoint_site
         )
 
 
