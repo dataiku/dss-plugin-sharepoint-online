@@ -235,3 +235,4 @@ class SharePointFSProvider(FSProvider):
         create_path(self.client, full_path)
         response = self.client.write_file_content(full_path, data)
         logger.info("write:response={}".format(response))
+        self.client.check_in_file(full_path)
