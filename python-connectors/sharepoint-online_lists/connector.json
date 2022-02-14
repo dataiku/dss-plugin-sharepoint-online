@@ -101,7 +101,7 @@
         },
         {
             "name": "sharepoint_site_overwrite",
-            "label": "Site path",
+            "label": "Site path preset overwrite",
             "type": "STRING",
             "description": "sites/site_name/subsite...",
             "visibilityCondition": "model.advanced_parameters == true"
