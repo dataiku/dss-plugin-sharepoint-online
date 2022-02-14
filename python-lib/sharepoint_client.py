@@ -249,6 +249,14 @@ class SharePointClient():
         self.assert_response_ok(response, calling_method="move_file")
         return response.json()
 
+    def check_in_file(self, full_path):
+        logger.info("Checking in {}.".format(full_path))
+        file_check_in_url = self.get_file_check_in_url(full_path)
+        response = self.session.post(file_check_in_url)
+        self.assert_response_ok(response, calling_method="check_in_file")
+        logger.info("File {} checked in.".format(full_path))
+        return response.json()
+
     def delete_file(self, full_path):
         headers = {
             "X-HTTP-Method": "DELETE"
@@ -655,6 +663,9 @@ class SharePointClient():
         return self.get_file_url(from_path) + "/moveto(newurl={},flags=1)".format(
             self.get_site_path(to_path)
         )
+
+    def get_file_check_in_url(self, full_path):
+        return self.get_file_url(full_path) + "/CheckIn()"
 
     def get_site_path(self, full_path):
         return "'/{}/{}{}'".format(
