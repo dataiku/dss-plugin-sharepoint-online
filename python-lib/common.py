@@ -33,6 +33,15 @@ def get_value_from_path(dictionary, path, default_reply=None):
     return ret
 
 
+def get_value_from_paths(dictionary, paths, default_reply=None):
+    ret = None
+    for path in paths:
+        ret = get_value_from_path(dictionary, path, default_reply)
+        if ret:
+            return ret
+    return default_reply
+
+
 def parse_query_string_to_dict(query_string):
     return dict(
         urlparse.parse_qsl(

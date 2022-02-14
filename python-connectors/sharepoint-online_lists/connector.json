@@ -150,6 +150,14 @@
             "defaultValue": 100,
             "minI": 1,
             "maxI": 100
+        },
+        {
+            "name": "attempt_session_reset_on_403",
+            "label": "Attempt session reset",
+            "description": "Slow, refer to documentation",
+            "type": "BOOLEAN",
+            "defaultValue": false,
+            "visibilityCondition": "model.advanced_parameters == true"
         }
     ]
 }
