@@ -6,7 +6,6 @@ import logging
 
 from sharepoint_client import SharePointClient
 from dss_constants import DSSConstants
-from sharepoint_constants import SharePointConstants
 from sharepoint_items import loop_sharepoint_items, has_sharepoint_items, extract_item_from, get_size, get_last_modified, get_name, assert_path_is_not_root
 from sharepoint_items import create_path
 from common import get_rel_path, get_lnt_path
@@ -34,7 +33,7 @@ class SharePointFSProvider(FSProvider):
             root = root[1:]
         self.root = root
         self.provider_root = "/"
-        logger.info('SharePoint Online plugin fs v1.0.9')
+        logger.info('SharePoint Online plugin fs v1.0.10')
         logger.info('init:root={}'.format(self.root))
 
         self.client = SharePointClient(config)
