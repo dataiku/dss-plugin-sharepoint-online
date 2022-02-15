@@ -6,7 +6,6 @@ import logging
 
 from sharepoint_client import SharePointClient
 from dss_constants import DSSConstants
-from sharepoint_constants import SharePointConstants
 from sharepoint_items import loop_sharepoint_items, has_sharepoint_items, extract_item_from, get_size, get_last_modified, get_name, assert_path_is_not_root
 from sharepoint_items import create_path
 from common import get_rel_path, get_lnt_path
@@ -34,7 +33,7 @@ class SharePointFSProvider(FSProvider):
             root = root[1:]
         self.root = root
         self.provider_root = "/"
-        logger.info('SharePoint Online plugin fs v1.0.9')
+        logger.info('SharePoint Online plugin fs v1.0.10')
         logger.info('init:root={}'.format(self.root))
 
         self.client = SharePointClient(config)
@@ -200,11 +199,11 @@ class SharePointFSProvider(FSProvider):
             raise Exception("Ambiguous naming with file / folder {}".format(item_name))
 
         if file is not None:
-            self.client.delete_file(get_lnt_path(full_path))
+            self.client.recycle_file(get_lnt_path(full_path))
             return 1
 
         if folder is not None:
-            self.client.delete_folder(get_lnt_path(full_path))
+            self.client.recycle_folder(get_lnt_path(full_path))
             return 1
 
         return 0
@@ -235,3 +234,4 @@ class SharePointFSProvider(FSProvider):
         create_path(self.client, full_path)
         response = self.client.write_file_content(full_path, data)
         logger.info("write:response={}".format(response))
+        self.client.check_in_file(full_path)

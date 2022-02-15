@@ -1,5 +1,13 @@
 # Changelog
 
+## [Version 1.0.10](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.10) - Feature and bugfix release - 2022-02-15
+
+- Add option to overwrite the preset's site and/or folder root from within the custom dataset
+- Deleting files now sends them to the recycle bin
+- Files checked-in once uploaded
+- Session reset on error 403 de-activated by default
+- Only one session reset on error 403 now allowed
+
 ## [Version 1.0.9](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.9) - Feature and bugfix release - 2021-12-17
 
 - Add support for custom domain

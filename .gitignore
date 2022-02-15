@@ -231,3 +231,5 @@ gradle-app.setting
 # gradle/wrapper/gradle-wrapper.properties
 .vscode/settings.json
 setup.cfg
+tests/allure_report
+
