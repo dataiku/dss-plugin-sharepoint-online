@@ -200,11 +200,11 @@ class SharePointFSProvider(FSProvider):
             raise Exception("Ambiguous naming with file / folder {}".format(item_name))
 
         if file is not None:
-            self.client.delete_file(get_lnt_path(full_path))
+            self.client.recycle_file(get_lnt_path(full_path))
             return 1
 
         if folder is not None:
-            self.client.delete_folder(get_lnt_path(full_path))
+            self.client.recycle_folder(get_lnt_path(full_path))
             return 1
 
         return 0
