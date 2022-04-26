@@ -13,7 +13,7 @@ from xml.dom import minidom
 from robust_session import RobustSession
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
-from common import is_email_address, get_value_from_path, parse_url, get_value_from_paths
+from common import is_email_address, get_value_from_path, parse_url, get_value_from_paths, is_request_performed
 from safe_logger import SafeLogger
 
 
@@ -823,7 +823,10 @@ class SharePointSession():
         headers = headers or {}
         headers["Accept"] = DSSConstants.APPLICATION_JSON
         headers["Authorization"] = self.get_authorization_bearer()
-        return requests.get(url, headers=headers, params=params)
+        response = None
+        while not is_request_performed(response):
+            response = requests.get(url, headers=headers, params=params)
+        return response
 
     def post(self, url, headers=None, json=None, data=None, params=None):
         headers = headers or {}
@@ -835,7 +838,10 @@ class SharePointSession():
         if self.form_digest_value:
             default_headers.update({"X-RequestDigest": self.form_digest_value})
         default_headers.update(headers)
-        return requests.post(url, headers=default_headers, json=json, data=data, params=params, timeout=SharePointConstants.TIMEOUT_SEC)
+        response = None
+        while not is_request_performed(response):
+            response = requests.post(url, headers=default_headers, json=json, data=data, params=params, timeout=SharePointConstants.TIMEOUT_SEC)
+        return response
 
     @staticmethod
     def close():

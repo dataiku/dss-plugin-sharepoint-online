@@ -3,6 +3,7 @@ class SharePointConstants(object):
     COMMENT_COLUMN = 'comment'
     DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
     DEFAULT_VIEW_ENDPOINT = "DefaultView/ViewFields"
+    DEFAULT_WAIT_BEFORE_RETRY = 60
     ENTITY_PROPERTY_NAME = 'EntityPropertyName'
     ERROR_CONTAINER = 'error'
     EXPENDABLES_FIELDS = {"Author": "Title", "Editor": "Title"}
