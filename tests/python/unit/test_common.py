@@ -50,19 +50,19 @@ class TestCommonMethods:
     def test_is_request_performed_none(self):
         mock_response = None
         response = is_request_performed(mock_response)
-        assert response is None
+        assert response is False
 
     def test_is_request_performed_error_200(self):
         response = is_request_performed(self.mock_response_http_200)
-        assert response == self.mock_response_http_200
+        assert response == True
 
     def test_is_request_performed_error_429(self):
         response = is_request_performed(self.mock_response_http_429_digit_1s)
-        assert response is None
+        assert response is False
 
     def test_is_request_performed_error_503(self):
         response = is_request_performed(self.mock_response_http_503_digit_1s)
-        assert response is None
+        assert response is False
 
     def test_decode_retry_after_header_seconds(self):
         seconds_before_retry = decode_retry_after_header(self.mock_response_http_429_digit_1s)
