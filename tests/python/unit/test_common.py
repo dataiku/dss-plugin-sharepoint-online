@@ -31,7 +31,6 @@ class TestCommonMethods:
         self.mock_response_http_429_date_in_future = MockResponse(429, {"Retry-After": "Wed, 21 Oct 9999 07:28:00 GMT"})
         self.mock_response_http_429_garbage = MockResponse(429, {"Retry-After": "blablablabla"})
 
-
     def test_get_value_from_path_long_path(self):
         key = get_value_from_path(self.dictionary_to_search, self.ok_path_1)
         assert key == "ok1"
