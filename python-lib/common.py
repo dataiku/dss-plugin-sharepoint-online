@@ -65,14 +65,14 @@ def parse_url(tenant_name):
 
 def is_request_performed(response):
     if response is None:
-        return None
+        return False
     if response.status_code in [429, 503]:
         logger.warning("Error {}, headers = {}".format(response.status_code, response.headers))
         seconds_before_retry = decode_retry_after_header(response)
         logger.warning("Sleeping for {} seconds".format(seconds_before_retry))
         time.sleep(seconds_before_retry)
-        return None
-    return response
+        return False
+    return True
 
 
 def decode_retry_after_header(response):
