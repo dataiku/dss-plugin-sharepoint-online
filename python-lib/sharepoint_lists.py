@@ -97,8 +97,8 @@ class SharePointListWriter(object):
         self.web_name = self.parent.sharepoint_list_title
 
         if write_mode == SharePointConstants.WRITE_MODE_CREATE:
-            logger.info('flush:delete_list "{}"'.format(self.parent.sharepoint_list_title))
-            self.parent.client.delete_list(self.parent.sharepoint_list_title)
+            logger.info('flush:recycle_list "{}"'.format(self.parent.sharepoint_list_title))
+            self.parent.client.recycle_list(self.parent.sharepoint_list_title)
             logger.info('flush:create_list "{}"'.format(self.parent.sharepoint_list_title))
             created_list = self.parent.client.create_list(self.parent.sharepoint_list_title)
             self.entity_type_name = created_list.get("EntityTypeName")

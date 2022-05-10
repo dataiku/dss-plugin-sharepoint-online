@@ -337,6 +337,14 @@ class SharePointClient():
         )
         return response
 
+    def recycle_list(self, list_name):
+        headers = DSSConstants.JSON_HEADERS
+        response = self.session.post(
+            self.get_lists_by_title_url(list_name)+"/recycle()",
+            headers=headers
+        )
+        return response
+
     def get_list_metadata(self, list_name):
         headers = DSSConstants.JSON_HEADERS
         response = self.session.get(
