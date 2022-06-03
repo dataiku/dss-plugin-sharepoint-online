@@ -78,6 +78,7 @@ class SharePointClient():
             self.assert_login_details(DSSConstants.SITE_APP_DETAILS, login_details)
             self.setup_sharepoint_online_url(login_details)
             self.setup_login_details(login_details)
+            self.apply_paths_overwrite(config)
             self.tenant_id = login_details.get("tenant_id")
             self.client_secret = login_details.get("client_secret")
             self.client_id = login_details.get("client_id")
