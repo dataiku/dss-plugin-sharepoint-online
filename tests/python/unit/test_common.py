@@ -54,7 +54,7 @@ class TestCommonMethods:
 
     def test_is_request_performed_error_200(self):
         response = is_request_performed(self.mock_response_http_200)
-        assert response == True
+        assert response is True
 
     def test_is_request_performed_error_429(self):
         response = is_request_performed(self.mock_response_http_429_digit_1s)
