@@ -94,7 +94,7 @@ def decode_retry_after_header(response):
     return seconds_before_retry
 
 
-class RecordsLimit():
+class ItemsLimit():
     def __init__(self, records_limit=-1):
         self.has_no_limit = (records_limit == -1)
         self.records_limit = records_limit
