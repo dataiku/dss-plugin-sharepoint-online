@@ -92,3 +92,19 @@ def decode_retry_after_header(response):
             logger.error("decode_retry_after_header error {}".format(err))
             seconds_before_retry = SharePointConstants.DEFAULT_WAIT_BEFORE_RETRY
     return seconds_before_retry
+
+
+class RecordsLimit():
+    def __init__(self, records_limit=-1):
+        self.has_no_limit = (records_limit == -1)
+        self.records_limit = records_limit
+        self.counter = 0
+
+    def is_reached(self, number_of_new_records=None):
+        if self.has_no_limit:
+            return False
+        self.counter += number_of_new_records or 1
+        return self.counter > self.records_limit
+
+    def add_record(self):
+        self.counter += 1
