@@ -1,8 +1,14 @@
 import re
+import datetime
+import time
 try:
     import urlparse
 except:
     import urllib.parse as urlparse
+from safe_logger import SafeLogger
+from sharepoint_constants import SharePointConstants
+
+logger = SafeLogger("sharepoint-online plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
 
 
 def get_rel_path(path):
@@ -55,3 +61,50 @@ def parse_query_string_to_dict(query_string):
 def parse_url(tenant_name):
     url_tokens = urlparse.urlparse(tenant_name.strip('/'))
     return url_tokens.scheme, url_tokens.netloc, url_tokens.path
+
+
+def is_request_performed(response):
+    if response is None:
+        return False
+    if response.status_code in [429, 503]:
+        logger.warning("Error {}, headers = {}".format(response.status_code, response.headers))
+        seconds_before_retry = decode_retry_after_header(response)
+        logger.warning("Sleeping for {} seconds".format(seconds_before_retry))
+        time.sleep(seconds_before_retry)
+        return False
+    return True
+
+
+def decode_retry_after_header(response):
+    seconds_before_retry = SharePointConstants.DEFAULT_WAIT_BEFORE_RETRY
+    raw_header_value = response.headers.get("Retry-After", str(SharePointConstants.DEFAULT_WAIT_BEFORE_RETRY))
+    if raw_header_value.isdigit():
+        seconds_before_retry = int(raw_header_value)
+    else:
+        # Date format, "Wed, 21 Oct 2015 07:28:00 GMT"
+        try:
+            datetime_now = datetime.datetime.now()
+            datetime_header = datetime.datetime.strptime(raw_header_value, '%a, %d %b %Y %H:%M:%S GMT')
+            if datetime_header.timestamp() > datetime_now.timestamp():
+                # target date in the future
+                seconds_before_retry = (datetime_header - datetime_now).seconds
+        except Exception as err:
+            logger.error("decode_retry_after_header error {}".format(err))
+            seconds_before_retry = SharePointConstants.DEFAULT_WAIT_BEFORE_RETRY
+    return seconds_before_retry
+
+
+class ItemsLimit():
+    def __init__(self, records_limit=-1):
+        self.has_no_limit = (records_limit == -1)
+        self.records_limit = records_limit
+        self.counter = 0
+
+    def is_reached(self, number_of_new_records=None):
+        if self.has_no_limit:
+            return False
+        self.counter += number_of_new_records or 1
+        return self.counter > self.records_limit
+
+    def add_record(self):
+        self.counter += 1
