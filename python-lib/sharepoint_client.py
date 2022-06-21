@@ -78,6 +78,7 @@ class SharePointClient():
             self.assert_login_details(DSSConstants.SITE_APP_DETAILS, login_details)
             self.setup_sharepoint_online_url(login_details)
             self.setup_login_details(login_details)
+            self.apply_paths_overwrite(config)
             self.tenant_id = login_details.get("tenant_id")
             self.client_secret = login_details.get("client_secret")
             self.client_id = login_details.get("client_id")
@@ -326,13 +327,10 @@ class SharePointClient():
         json = response.json()
         return json.get(SharePointConstants.RESULTS_CONTAINER_V2, {})
 
-    def delete_list(self, list_name):
-        headers = {
-            "X-HTTP-Method": "DELETE",
-            "IF-MATCH": "*"
-        }
+    def recycle_list(self, list_name):
+        headers = DSSConstants.JSON_HEADERS
         response = self.session.post(
-            self.get_lists_by_title_url(list_name),
+            self.get_lists_by_title_url(list_name)+"/recycle()",
             headers=headers
         )
         return response
