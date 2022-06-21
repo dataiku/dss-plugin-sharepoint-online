@@ -17,7 +17,7 @@ class SharePointListsConnector(Connector):
 
     def __init__(self, config, plugin_config):
         Connector.__init__(self, config, plugin_config)
-        logger.info('SharePoint Online plugin connector v1.0.10')
+        logger.info('SharePoint Online plugin connector v1.0.11')
         self.sharepoint_list_title = self.config.get("sharepoint_list_title")
         self.auth_type = config.get('auth_type')
         logger.info('init:sharepoint_list_title={}, auth_type={}'.format(self.sharepoint_list_title, self.auth_type))
