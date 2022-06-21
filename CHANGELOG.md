@@ -1,5 +1,11 @@
 # Changelog
 
+## [Version 1.0.11](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.11) - Feature and bugfix release - 2022-06-21
+
+- Add site path overwrite for site app permissions presets
+- List are placed in recycle bin instead of being deleted during overwrite operations
+- Better handling of 429 and 503 errors for multiple files uploads
+
 ## [Version 1.0.10](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.10) - Feature and bugfix release - 2022-02-15
 
 - Add option to overwrite the preset's site and/or folder root from within the custom dataset
