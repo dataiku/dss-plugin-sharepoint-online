@@ -327,17 +327,6 @@ class SharePointClient():
         json = response.json()
         return json.get(SharePointConstants.RESULTS_CONTAINER_V2, {})
 
-    def delete_list(self, list_name):
-        headers = {
-            "X-HTTP-Method": "DELETE",
-            "IF-MATCH": "*"
-        }
-        response = self.session.post(
-            self.get_lists_by_title_url(list_name),
-            headers=headers
-        )
-        return response
-
     def recycle_list(self, list_name):
         headers = DSSConstants.JSON_HEADERS
         response = self.session.post(
