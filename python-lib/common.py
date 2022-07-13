@@ -68,11 +68,23 @@ def is_request_performed(response):
         return False
     if response.status_code in [429, 503]:
         logger.warning("Error {}, headers = {}".format(response.status_code, response.headers))
+        if response.status_code == 503:
+            logger.warning("dumping content: {}".format(response.content))
         seconds_before_retry = decode_retry_after_header(response)
         logger.warning("Sleeping for {} seconds".format(seconds_before_retry))
         time.sleep(seconds_before_retry)
         return False
+    if not is_response_json(response):
+        logger.error("JSON is expected but SharePoint Online response is something else")
+        logger.error("on url {}, dump={}, server headers={}".format(response.url, response.content, response.headers))
+        seconds_before_retry = 20
+        logger.warning("Sleeping for {} seconds".format(seconds_before_retry))
+        time.sleep(seconds_before_retry)
     return True
+
+
+def is_response_json(response):
+    return 'application/json' in response.headers.get('Content-Type', '')
 
 
 def decode_retry_after_header(response):

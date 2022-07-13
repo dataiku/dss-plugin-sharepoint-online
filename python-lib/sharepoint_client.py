@@ -31,7 +31,7 @@ class SharePointClient():
         self.sharepoint_url = None
         self.sharepoint_origin = None
         attempt_session_reset_on_403 = config.get("advanced_parameters", False) and config.get("attempt_session_reset_on_403", False)
-        self.session = RobustSession(status_codes_to_retry=[429], attempt_session_reset_on_403=attempt_session_reset_on_403)
+        self.session = RobustSession(status_codes_to_retry=[429, 503], attempt_session_reset_on_403=attempt_session_reset_on_403)
         self.number_dumped_logs = 0
         self.username_for_namespace_diag = None
         if config.get('auth_type') == DSSConstants.AUTH_OAUTH:
@@ -694,6 +694,8 @@ class SharePointClient():
         status_code = response.status_code
         if status_code >= 400:
             logger.error("Error {} in method {}".format(status_code, calling_method))
+            logger.error("when calling {}".format(response.url))
+            logger.error("dump={}".format(response.content))
             enriched_error_message = self.get_enriched_error_message(response)
             if enriched_error_message is not None:
                 raise SharePointClientError("Error ({}): {}".format(calling_method, enriched_error_message))
@@ -852,7 +854,7 @@ class SharePointSession():
 
     def get_form_digest_value(self):
         logger.info("Getting form digest value")
-        session = RobustSession(session=requests, status_codes_to_retry=[429])
+        session = RobustSession(session=requests, status_codes_to_retry=[429, 503])
         session.update_settings(
             max_retries=SharePointConstants.MAX_RETRIES,
             base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
