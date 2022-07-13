@@ -782,7 +782,8 @@ class SharePointClient():
         response = requests.post(
             SharePointConstants.GET_SITE_APP_TOKEN_URL.format(tenant_id=self.tenant_id),
             headers=headers,
-            data=data
+            data=data,
+            timeout=SharePointConstants.TIMEOUT_SEC
         )
         self.assert_response_ok(response, calling_method="get_site_app_access_token")
         json_response = response.json()
@@ -826,7 +827,7 @@ class SharePointSession():
         headers["Authorization"] = self.get_authorization_bearer()
         response = None
         while not is_request_performed(response) and not retries_limit.is_reached():
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=SharePointConstants.TIMEOUT_SEC)
         return response
 
     def post(self, url, headers=None, json=None, data=None, params=None):
@@ -860,9 +861,12 @@ class SharePointSession():
             base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
         )
         headers = {**DSSConstants.JSON_HEADERS, **{"Authorization": self.get_authorization_bearer()}}
+
+        # Treat this as a response = requests.post(
         response = session.post(
             url=self.get_contextinfo_url(),
-            headers=headers
+            headers=headers,
+            timeout=SharePointConstants.TIMEOUT_SEC
         )
         form_digest_value = get_value_from_path(
             response.json(),
