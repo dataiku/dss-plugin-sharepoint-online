@@ -57,6 +57,7 @@ class SharePointClient():
             login_details = config.get('sharepoint_sharepy')
             self.assert_login_details(DSSConstants.LOGIN_DETAILS, login_details)
             self.setup_login_details(login_details)
+            self.apply_paths_overwrite(config)
             username = login_details['sharepoint_username']
             password = login_details['sharepoint_password']
             self.assert_email_address(username)
