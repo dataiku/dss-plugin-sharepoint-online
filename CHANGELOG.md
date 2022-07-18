@@ -1,7 +1,8 @@
 # Changelog
 
-## [Version 1.0.12](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.12) - Bugfix release - 2022-07-15
+## [Version 1.0.12](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.12) - Feature and bugfix release - 2022-07-19
 
+- Add site path overwrite for username / password permissions presets
 - Handles non JSON error pages
 - Fixes possible hang on read operations
 
