@@ -7,8 +7,9 @@ except:
     import urllib.parse as urlparse
 from safe_logger import SafeLogger
 from sharepoint_constants import SharePointConstants
+from dss_constants import DSSConstants
 
-logger = SafeLogger("sharepoint-online plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
+logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)
 
 
 def get_rel_path(path):

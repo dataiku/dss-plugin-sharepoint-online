@@ -17,7 +17,7 @@ from common import is_email_address, get_value_from_path, parse_url, get_value_f
 from safe_logger import SafeLogger
 
 
-logger = SafeLogger("sharepoint-online plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
+logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)
 
 
 class SharePointClientError(ValueError):

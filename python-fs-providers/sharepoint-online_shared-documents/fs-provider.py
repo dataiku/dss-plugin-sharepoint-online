@@ -2,22 +2,20 @@ from dataiku.fsprovider import FSProvider
 
 import os
 import shutil
-import logging
 
 from sharepoint_client import SharePointClient
 from dss_constants import DSSConstants
 from sharepoint_items import loop_sharepoint_items, has_sharepoint_items, extract_item_from, get_size, get_last_modified, get_name, assert_path_is_not_root
 from sharepoint_items import create_path
 from common import get_rel_path, get_lnt_path
+from safe_logger import SafeLogger
 
 try:
     from BytesIO import BytesIO  # for Python 2
 except ImportError:
     from io import BytesIO  # for Python 3
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO,
-                    format='sharepoint-online plugin %(levelname)s - %(message)s')
+logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)
 
 
 # based on https://docs.microsoft.com/fr-fr/sharepoint/dev/sp-add-ins/working-with-folders-and-files-with-rest
