@@ -1,4 +1,4 @@
-from common import get_value_from_path, is_request_performed, decode_retry_after_header
+from common import get_value_from_path, is_request_performed, decode_retry_after_header, SharePointClientError
 from sharepoint_constants import SharePointConstants
 import pytest
 
@@ -25,13 +25,14 @@ class TestCommonMethods:
         self.ok_path_2 = ["a", "d"]
         self.ko_path = ["a", "c"]
         self.mock_response_none = None
-        self.mock_response_http_200 = MockResponse(200, {"Retry-After": "1"})
+        self.mock_response_http_200 = MockResponse(200, {"Content-Type": "application/json", "Retry-After": "1"})
         self.mock_response_http_429_digit_1s = MockResponse(429, {"Retry-After": "1"})
         self.mock_response_http_429_no_header = MockResponse(429, {})
         self.mock_response_http_503_digit_1s = MockResponse(503, {"Retry-After": "1"})
         self.mock_response_http_429_date_in_past = MockResponse(429, {"Retry-After": "Wed, 21 Oct 2015 07:28:00 GMT"})
         self.mock_response_http_429_date_in_future = MockResponse(429, {"Retry-After": "Wed, 21 Oct 9999 07:28:00 GMT"})
         self.mock_response_http_429_garbage = MockResponse(429, {"Retry-After": "blablablabla"})
+        self.mock_response_http_200_no_json = MockResponse(200, {"Content-Type": "text", "Retry-After": "1"})
 
     def test_get_value_from_path_long_path(self):
         key = get_value_from_path(self.dictionary_to_search, self.ok_path_1)
@@ -65,6 +66,10 @@ class TestCommonMethods:
     def test_is_request_performed_error_503(self):
         response = is_request_performed(self.mock_response_http_503_digit_1s)
         assert response is False
+
+    def test_is_request_performed_200_no_json(self):
+        with pytest.raises(SharePointClientError):
+            response = is_request_performed(self.mock_response_http_200_no_json)
 
     def test_decode_retry_after_header_seconds(self):
         seconds_before_retry = decode_retry_after_header(self.mock_response_http_429_digit_1s)
