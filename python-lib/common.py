@@ -11,10 +11,6 @@ from sharepoint_constants import SharePointConstants
 logger = SafeLogger("sharepoint-online plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
 
 
-class SharePointClientError(ValueError):
-    pass
-
-
 def get_rel_path(path):
     if len(path) > 0 and path[0] == '/':
         path = path[1:]
@@ -78,16 +74,7 @@ def is_request_performed(response):
         logger.warning("Sleeping for {} seconds".format(seconds_before_retry))
         time.sleep(seconds_before_retry)
         return False
-    if not is_response_json(response):
-        error_message = "JSON is expected but SharePoint Online response is something else"
-        logger.error(error_message)
-        logger.error("on url {}, status={}, dump={}, server headers={}".format(response.url, response.status_code, response.content, response.headers))
-        raise SharePointClientError(error_message)
     return True
-
-
-def is_response_json(response):
-    return 'application/json' in response.headers.get('Content-Type', '')
 
 
 def decode_retry_after_header(response):

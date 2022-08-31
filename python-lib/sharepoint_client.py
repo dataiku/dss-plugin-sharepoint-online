@@ -13,11 +13,15 @@ from xml.dom import minidom
 from robust_session import RobustSession
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
-from common import is_email_address, get_value_from_path, parse_url, get_value_from_paths, is_request_performed, ItemsLimit, SharePointClientError
+from common import is_email_address, get_value_from_path, parse_url, get_value_from_paths, is_request_performed, ItemsLimit
 from safe_logger import SafeLogger
 
 
 logger = SafeLogger("sharepoint-online plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
+
+
+class SharePointClientError(ValueError):
+    pass
 
 
 class SharePointClient():
