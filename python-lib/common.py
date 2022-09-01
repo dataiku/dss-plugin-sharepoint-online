@@ -69,6 +69,7 @@ def is_request_performed(response):
     if response.status_code in [429, 503]:
         logger.warning("Error {}, headers = {}".format(response.status_code, response.headers))
         if response.status_code == 503:
+            # SP 503 errors tend to generate html error message, so we dump it in the logs
             logger.warning("dumping content: {}".format(response.content))
         seconds_before_retry = decode_retry_after_header(response)
         logger.warning("Sleeping for {} seconds".format(seconds_before_retry))
