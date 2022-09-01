@@ -7,6 +7,8 @@ class MockResponse:
     def __init__(self, status_code, headers):
         self.status_code = status_code
         self.headers = headers
+        self.content = '{"a": 1}'
+        self.url = 'https://test.com/test'
 
 
 class TestCommonMethods:

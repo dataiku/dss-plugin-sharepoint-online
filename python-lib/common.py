@@ -7,8 +7,9 @@ except:
     import urllib.parse as urlparse
 from safe_logger import SafeLogger
 from sharepoint_constants import SharePointConstants
+from dss_constants import DSSConstants
 
-logger = SafeLogger("sharepoint-online plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
+logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)
 
 
 def get_rel_path(path):
@@ -68,6 +69,9 @@ def is_request_performed(response):
         return False
     if response.status_code in [429, 503]:
         logger.warning("Error {}, headers = {}".format(response.status_code, response.headers))
+        if response.status_code == 503:
+            # SP 503 errors tend to generate html error message, so we dump it in the logs
+            logger.warning("dumping content: {}".format(response.content))
         seconds_before_retry = decode_retry_after_header(response)
         logger.warning("Sleeping for {} seconds".format(seconds_before_retry))
         time.sleep(seconds_before_retry)

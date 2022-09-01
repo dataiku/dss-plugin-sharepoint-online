@@ -17,7 +17,7 @@ from common import is_email_address, get_value_from_path, parse_url, get_value_f
 from safe_logger import SafeLogger
 
 
-logger = SafeLogger("sharepoint-online plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
+logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)
 
 
 class SharePointClientError(ValueError):
@@ -31,7 +31,7 @@ class SharePointClient():
         self.sharepoint_url = None
         self.sharepoint_origin = None
         attempt_session_reset_on_403 = config.get("advanced_parameters", False) and config.get("attempt_session_reset_on_403", False)
-        self.session = RobustSession(status_codes_to_retry=[429], attempt_session_reset_on_403=attempt_session_reset_on_403)
+        self.session = RobustSession(status_codes_to_retry=[429, 503], attempt_session_reset_on_403=attempt_session_reset_on_403)
         self.number_dumped_logs = 0
         self.username_for_namespace_diag = None
         if config.get('auth_type') == DSSConstants.AUTH_OAUTH:
@@ -57,6 +57,7 @@ class SharePointClient():
             login_details = config.get('sharepoint_sharepy')
             self.assert_login_details(DSSConstants.LOGIN_DETAILS, login_details)
             self.setup_login_details(login_details)
+            self.apply_paths_overwrite(config)
             username = login_details['sharepoint_username']
             password = login_details['sharepoint_password']
             self.assert_email_address(username)
@@ -694,6 +695,8 @@ class SharePointClient():
         status_code = response.status_code
         if status_code >= 400:
             logger.error("Error {} in method {}".format(status_code, calling_method))
+            logger.error("when calling {}".format(response.url))
+            logger.error("dump={}".format(response.content))
             enriched_error_message = self.get_enriched_error_message(response)
             if enriched_error_message is not None:
                 raise SharePointClientError("Error ({}): {}".format(calling_method, enriched_error_message))
@@ -780,7 +783,8 @@ class SharePointClient():
         response = requests.post(
             SharePointConstants.GET_SITE_APP_TOKEN_URL.format(tenant_id=self.tenant_id),
             headers=headers,
-            data=data
+            data=data,
+            timeout=SharePointConstants.TIMEOUT_SEC
         )
         self.assert_response_ok(response, calling_method="get_site_app_access_token")
         json_response = response.json()
@@ -824,7 +828,7 @@ class SharePointSession():
         headers["Authorization"] = self.get_authorization_bearer()
         response = None
         while not is_request_performed(response) and not retries_limit.is_reached():
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=SharePointConstants.TIMEOUT_SEC)
         return response
 
     def post(self, url, headers=None, json=None, data=None, params=None):
@@ -852,15 +856,18 @@ class SharePointSession():
 
     def get_form_digest_value(self):
         logger.info("Getting form digest value")
-        session = RobustSession(session=requests, status_codes_to_retry=[429])
+        session = RobustSession(session=requests, status_codes_to_retry=[429, 503])
         session.update_settings(
             max_retries=SharePointConstants.MAX_RETRIES,
             base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
         )
         headers = {**DSSConstants.JSON_HEADERS, **{"Authorization": self.get_authorization_bearer()}}
+
+        # Treat this as a response = requests.post(
         response = session.post(
             url=self.get_contextinfo_url(),
-            headers=headers
+            headers=headers,
+            timeout=SharePointConstants.TIMEOUT_SEC
         )
         form_digest_value = get_value_from_path(
             response.json(),

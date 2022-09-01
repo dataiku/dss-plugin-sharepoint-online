@@ -1,13 +1,11 @@
-import logging
 import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
+from safe_logger import SafeLogger
 
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO,
-                    format='sharepoint plugin %(levelname)s - %(message)s')
+logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)
 
 
 def is_response_empty(response):
