@@ -1,10 +1,9 @@
-import logging
 import time
+from safe_logger import SafeLogger
+from dss_constants import DSSConstants
 
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO,
-                    format='sharepoint-online plugin %(levelname)s - %(message)s')
+logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)
 
 
 class RobustSessionError(ValueError):

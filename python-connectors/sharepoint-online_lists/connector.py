@@ -1,23 +1,22 @@
 from dataiku.connector import Connector
-import logging
 
 from sharepoint_client import SharePointClient
 from sharepoint_constants import SharePointConstants
 from sharepoint_lists import assert_list_title, get_dss_type
 from sharepoint_lists import SharePointListWriter, column_ids_to_names, sharepoint_to_dss_date
 from common import parse_query_string_to_dict
+from safe_logger import SafeLogger
+from dss_constants import DSSConstants
 
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO,
-                    format='sharepoint-online plugin %(levelname)s - %(message)s')
+logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)
 
 
 class SharePointListsConnector(Connector):
 
     def __init__(self, config, plugin_config):
         Connector.__init__(self, config, plugin_config)
-        logger.info('SharePoint Online plugin connector v1.0.11')
+        logger.info('SharePoint Online plugin connector v1.0.12')
         self.sharepoint_list_title = self.config.get("sharepoint_list_title")
         self.auth_type = config.get('auth_type')
         logger.info('init:sharepoint_list_title={}, auth_type={}'.format(self.sharepoint_list_title, self.auth_type))
