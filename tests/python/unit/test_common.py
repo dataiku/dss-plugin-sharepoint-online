@@ -25,7 +25,7 @@ class TestCommonMethods:
         self.ok_path_2 = ["a", "d"]
         self.ko_path = ["a", "c"]
         self.mock_response_none = None
-        self.mock_response_http_200 = MockResponse(200, {"Content-Type": "application/json", "Retry-After": "1"})
+        self.mock_response_http_200 = MockResponse(200, {"Retry-After": "1"})
         self.mock_response_http_429_digit_1s = MockResponse(429, {"Retry-After": "1"})
         self.mock_response_http_429_no_header = MockResponse(429, {})
         self.mock_response_http_503_digit_1s = MockResponse(503, {"Retry-After": "1"})
