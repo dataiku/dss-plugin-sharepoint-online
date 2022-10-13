@@ -185,6 +185,10 @@ class SharePointClient():
 
     def write_file_content(self, full_path, data):
         self.file_size = len(data)
+
+        #Preventive file check out, in case it already exists on SP's side
+        self.check_out_file(full_path)
+
         if self.file_size < SharePointConstants.MAX_FILE_SIZE_CONTINUOUS_UPLOAD:
             # below 262MB, the file can be uploaded in one go
             self.write_full_file_content(full_path, data)
@@ -261,6 +265,12 @@ class SharePointClient():
         logger.info("Checking in {}.".format(full_path))
         file_check_in_url = self.get_file_check_in_url(full_path)
         self.session.post(file_check_in_url)
+        return
+
+    def check_out_file(self, full_path):
+        logger.info("Checking out {}.".format(full_path))
+        file_check_out_url = self.get_file_check_out_url(full_path)
+        self.session.post(file_check_out_url)
         return
 
     def recycle_file(self, full_path):
@@ -666,6 +676,9 @@ class SharePointClient():
 
     def get_file_check_in_url(self, full_path):
         return self.get_file_url(full_path) + "/CheckIn()"
+
+    def get_file_check_out_url(self, full_path):
+        return self.get_file_url(full_path) + "/CheckOut()"
 
     def get_site_path(self, full_path):
         return "'/{}/{}{}'".format(
