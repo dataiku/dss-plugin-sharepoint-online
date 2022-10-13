@@ -1,5 +1,10 @@
 # Changelog
 
+## [Version 1.0.13](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.13) - Bugfix release - 2022-10-13
+
+- Allow file to be overwritten using export recipe without `clear before export` activated
+- Fix folder creation when root path is left empty
+
 ## [Version 1.0.12](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.12) - Feature and bugfix release - 2022-07-19
 
 - Add site path overwrite for username / password permissions presets
