@@ -13,7 +13,11 @@ from xml.dom import minidom
 from robust_session import RobustSession
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
-from common import is_email_address, get_value_from_path, parse_url, get_value_from_paths, is_request_performed, ItemsLimit
+from common import (
+    is_email_address, get_value_from_path, parse_url,
+    get_value_from_paths, is_request_performed, ItemsLimit,
+    is_empty_path, merge_paths
+)
 from safe_logger import SafeLogger
 
 
@@ -181,6 +185,10 @@ class SharePointClient():
 
     def write_file_content(self, full_path, data):
         self.file_size = len(data)
+
+        #Preventive file check out, in case it already exists on SP's side
+        self.check_out_file(full_path)
+
         if self.file_size < SharePointConstants.MAX_FILE_SIZE_CONTINUOUS_UPLOAD:
             # below 262MB, the file can be uploaded in one go
             self.write_full_file_content(full_path, data)
@@ -236,6 +244,8 @@ class SharePointClient():
         return response
 
     def create_folder(self, full_path):
+        if is_empty_path(full_path) and is_empty_path(self.sharepoint_root):
+            return
         response = self.session.post(
             self.get_add_folder_url(full_path)
         )
@@ -255,6 +265,12 @@ class SharePointClient():
         logger.info("Checking in {}.".format(full_path))
         file_check_in_url = self.get_file_check_in_url(full_path)
         self.session.post(file_check_in_url)
+        return
+
+    def check_out_file(self, full_path):
+        logger.info("Checking out {}.".format(full_path))
+        file_check_out_url = self.get_file_check_out_url(full_path)
+        self.session.post(file_check_out_url)
         return
 
     def recycle_file(self, full_path):
@@ -661,6 +677,9 @@ class SharePointClient():
     def get_file_check_in_url(self, full_path):
         return self.get_file_url(full_path) + "/CheckIn()"
 
+    def get_file_check_out_url(self, full_path):
+        return self.get_file_url(full_path) + "/CheckOut()"
+
     def get_site_path(self, full_path):
         return "'/{}/{}{}'".format(
             self.escape_path(self.sharepoint_site),
@@ -669,9 +688,9 @@ class SharePointClient():
         )
 
     def get_add_folder_url(self, full_path):
-        return self.get_base_url() + "/Folders/add('{}{}')".format(
-            self.sharepoint_root,
-            full_path
+        path = merge_paths(self.sharepoint_root, full_path)
+        return self.get_base_url() + "/Folders/add('{}')".format(
+            path
         )
 
     def get_file_add_url(self, full_path, file_name):

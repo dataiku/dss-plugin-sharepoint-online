@@ -98,6 +98,23 @@ def decode_retry_after_header(response):
     return seconds_before_retry
 
 
+def is_empty_path(path):
+    if not path:
+        return True
+    if path.strip("/") == "":
+        return True
+    return False
+
+
+def merge_paths(first_path, second_path):
+    path_1 = first_path or ""
+    path_2 = second_path or ""
+    path_1 = path_1.strip("/")
+    path_2 = path_2.strip("/")
+    joined_path = "/".join([path_1, path_2])
+    return joined_path.strip("/")
+    
+
 class ItemsLimit():
     def __init__(self, records_limit=-1):
         self.has_no_limit = (records_limit == -1)
