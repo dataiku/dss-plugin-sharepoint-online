@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.0.14](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.14) - Bugfix release - 2023-04-18
+
+- Updated code-env descriptor for DSS 12
+
 ## [Version 1.0.13](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.13) - Bugfix release - 2022-10-13
 
 - Allow file to be overwritten using export recipe without `clear before export` activated
