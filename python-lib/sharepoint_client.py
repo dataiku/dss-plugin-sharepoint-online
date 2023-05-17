@@ -324,6 +324,27 @@ class SharePointClient():
         self.assert_response_ok(response, calling_method="get_list_items")
         return response.json().get("ListData", {})
 
+    def get_documents_medatada(self):
+        headers = DSSConstants.JSON_HEADERS
+        url = "{}/{}/_vti_bin/listdata.svc/Documents".format(self.sharepoint_origin, self.sharepoint_site)
+        first = True
+        while url:
+            params = None
+            if first:
+                params = {"Query": "*"}
+                first = False
+            response = self.session.get(
+                url=url,
+                headers=headers,
+                params=params
+            )
+            self.assert_response_ok(response, calling_method="get_documents_medatada")
+            json_response = response.json()
+            url = get_value_from_path(json_response, [SharePointConstants.RESULTS_CONTAINER_V2, SharePointConstants.NEXT_PAGE])
+            rows = get_value_from_path(json_response, [SharePointConstants.RESULTS_CONTAINER_V2, "results"])
+            for row in rows:
+                yield row
+
     def create_list(self, list_name):
         headers = DSSConstants.JSON_HEADERS
         data = {
