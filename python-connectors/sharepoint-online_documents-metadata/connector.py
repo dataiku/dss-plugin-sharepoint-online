@@ -1,12 +1,18 @@
 from sharepoint_client import SharePointClient
 from common import ItemsLimit
 from dataiku.connector import Connector
+from safe_logger import SafeLogger
+from dss_constants import DSSConstants
+
+
+logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)
 
 
 class SharePointDocumentsMetadataConnector(Connector):
 
     def __init__(self, config, plugin_config):
         Connector.__init__(self, config, plugin_config)
+        logger.info('SharePoint Online plugin metadata dataset v{}'.format(DSSConstants.PLUGIN_VERSION))
         self.client = SharePointClient(config)
 
     def get_read_schema(self):
