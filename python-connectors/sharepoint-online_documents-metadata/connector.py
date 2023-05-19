@@ -14,6 +14,7 @@ class SharePointDocumentsMetadataConnector(Connector):
         Connector.__init__(self, config, plugin_config)
         logger.info('SharePoint Online plugin metadata dataset v{}'.format(DSSConstants.PLUGIN_VERSION))
         self.client = SharePointClient(config)
+        self.search_path = config.get("search_path", None)
 
     def get_read_schema(self):
         return None
@@ -21,7 +22,7 @@ class SharePointDocumentsMetadataConnector(Connector):
     def generate_rows(self, dataset_schema=None, dataset_partitioning=None,
                       partition_id=None, records_limit=-1):
         limit = ItemsLimit(records_limit)
-        for row in self.client.get_documents_medatada():
+        for row in self.client.get_documents_medatada(search_path=self.search_path):
             yield row
             if limit.is_reached():
                 break

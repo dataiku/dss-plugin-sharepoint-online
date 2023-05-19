@@ -60,6 +60,19 @@
             "type": "STRING",
             "description": "sites/site_name/subsite...",
             "visibilityCondition": "model.advanced_parameters == true"
+        },
+        {
+            "name": "sharepoint_root_overwrite",
+            "label": "Root directory preset overwrite",
+            "type": "STRING",
+            "description": "",
+            "visibilityCondition": "model.advanced_parameters == true"
+        },
+        {
+            "name": "search_path",
+            "label": "Path to folder",
+            "type": "STRING",
+            "description": "Path to your folder of interest..."
         }
     ]
 }
