@@ -1,0 +1,78 @@
+{
+    "meta" : {
+        "label": "Documents' metadata",
+        "description": "Retrieve metadata for all documents stored on your SharePoint server",
+        "icon": "icon-cloud"
+    },
+    "readable": true,
+    "writable": false,
+    "params": [
+        {
+            "name": "auth_type",
+            "label": "Type of authentication",
+            "type": "SELECT",
+            "selectChoices": [
+                {
+                    "value": "login",
+                    "label": "User name / password"
+                },
+                {
+                    "value": "oauth",
+                    "label": "Azure Single Sign On"
+                },
+                {
+                    "value": "site-app-permissions",
+                    "label": "Site App Permissions"
+                }
+            ]
+        },
+        {
+            "name": "sharepoint_oauth",
+            "label": "Azure preset",
+            "type": "PRESET",
+            "parameterSetId": "oauth-login",
+            "visibilityCondition": "model.auth_type == 'oauth'"
+        },
+        {
+            "name": "sharepoint_sharepy",
+            "label": "SharePoint preset",
+            "type": "PRESET",
+            "parameterSetId": "sharepoint-login",
+            "visibilityCondition": "model.auth_type == 'login'"
+        },
+        {
+            "name": "site_app_permissions",
+            "label": "Site App preset",
+            "type": "PRESET",
+            "parameterSetId": "site-app-permissions",
+            "visibilityCondition": "model.auth_type == 'site-app-permissions'"
+        },
+        {
+            "name": "advanced_parameters",
+            "label": "Show advanced parameters",
+            "description": "",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        },
+        {
+            "name": "sharepoint_site_overwrite",
+            "label": "Site path preset overwrite",
+            "type": "STRING",
+            "description": "sites/site_name/subsite...",
+            "visibilityCondition": "model.advanced_parameters == true"
+        },
+        {
+            "name": "sharepoint_root_overwrite",
+            "label": "Root directory preset overwrite",
+            "type": "STRING",
+            "description": "",
+            "visibilityCondition": "model.advanced_parameters == true"
+        },
+        {
+            "name": "search_path",
+            "label": "Path to folder",
+            "type": "STRING",
+            "description": "Path to your folder of interest..."
+        }
+    ]
+}

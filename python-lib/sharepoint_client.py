@@ -324,6 +324,30 @@ class SharePointClient():
         self.assert_response_ok(response, calling_method="get_list_items")
         return response.json().get("ListData", {})
 
+    def get_documents_medatada(self, search_path=None):
+        headers = DSSConstants.JSON_HEADERS
+        next_page_url = "{}/{}/_vti_bin/listdata.svc/Documents".format(self.sharepoint_origin, self.sharepoint_site)
+        first = True
+        initial_params = {"Query": "*"}
+        if search_path:
+            initial_params.update({"$filter": "Path eq '/{}/{}/{}'".format(self.sharepoint_site, self.sharepoint_root, search_path.strip("/"))})
+        while next_page_url:
+            params = None
+            if first:
+                params = initial_params
+                first = False
+            response = self.session.get(
+                url=next_page_url,
+                headers=headers,
+                params=params
+            )
+            self.assert_response_ok(response, calling_method="get_documents_medatada")
+            json_response = response.json()
+            next_page_url = get_value_from_path(json_response, [SharePointConstants.RESULTS_CONTAINER_V2, SharePointConstants.NEXT_PAGE])
+            rows = get_value_from_path(json_response, [SharePointConstants.RESULTS_CONTAINER_V2, "results"])
+            for row in rows:
+                yield row
+
     def create_list(self, list_name):
         headers = DSSConstants.JSON_HEADERS
         data = {
