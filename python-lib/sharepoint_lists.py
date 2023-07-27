@@ -129,6 +129,12 @@ class SharePointListWriter(object):
             self.flush()
             self.buffer = []
 
+    def write_row_dict(self, row_dict):
+        row = []
+        for element in row_dict:
+            row.append(str(row_dict.get(element)))
+        self.write_row(row)
+
     def flush(self):
         if self.max_workers > 1:
             self.upload_rows_multithreaded()
