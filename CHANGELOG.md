@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.0.15](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.15) - Feature release - 2023-07-24
+
+- DSS 11 Release
+
 ## [Version 1.0.14](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.14) - Bugfix release - 2023-04-18
 
 - Updated code-env descriptor for DSS 12
