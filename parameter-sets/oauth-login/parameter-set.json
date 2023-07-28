@@ -5,7 +5,7 @@
         "icon": "icon-cloud"
     },
     "defaultDefinableInline": false,
-    "defaultDefinableAtProjectLevel": true,
+    "defaultDefinableAtProjectLevel": false,
     "pluginParams": [],
     "params": [
         {
