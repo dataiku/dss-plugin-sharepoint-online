@@ -10,6 +10,7 @@ import re
 
 from xml.etree.ElementTree import Element, tostring
 from xml.dom import minidom
+import msal
 from robust_session import RobustSession
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
@@ -88,6 +89,28 @@ class SharePointClient():
             self.client_secret = login_details.get("client_secret")
             self.client_id = login_details.get("client_id")
             self.sharepoint_access_token = self.get_site_app_access_token()
+            self.session.update_settings(session=SharePointSession(
+                    None,
+                    None,
+                    self.sharepoint_url,
+                    self.sharepoint_site,
+                    sharepoint_access_token=self.sharepoint_access_token
+                ),
+                max_retries=SharePointConstants.MAX_RETRIES,
+                base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
+            )
+        elif config.get('auth_type') == DSSConstants.AUTH_CERTIFICATE_APP:
+            logger.info("SharePointClient:app-registration-certificate")
+            login_details = config.get('app-registration-certificate')
+            self.assert_login_details(DSSConstants.CERTIFICATE_APP_DETAILS, login_details)
+            self.setup_sharepoint_online_url(login_details)
+            self.setup_login_details(login_details)
+            self.apply_paths_overwrite(config)
+            self.tenant_id = login_details.get("tenant_id")
+            self.client_certificate = login_details.get("client_certificate")
+            self.client_certificate_thumbprint = login_details.get("client_certificate_thumbprint")
+            self.client_id = login_details.get("client_id")
+            self.sharepoint_access_token = self.get_certificate_app_access_token()
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
@@ -807,6 +830,18 @@ class SharePointClient():
         )
         self.assert_response_ok(response, calling_method="get_site_app_access_token")
         json_response = response.json()
+        return json_response.get("access_token")
+    
+    def get_certificate_app_access_token(self):
+        app = msal.ConfidentialClientApplication(
+            self.client_id,
+            authority=f"https://login.microsoftonline.com/{self.tenant_id}",
+            client_credential={
+                "thumbprint": self.client_certificate_thumbprint,
+                "private_key": self.client_certificate
+            }
+        )
+        json_response = app.acquire_token_for_client(scopes=['https://graph.microsoft.com/.default'])
         return json_response.get("access_token")
 
     def get_list_views(self, list_title):

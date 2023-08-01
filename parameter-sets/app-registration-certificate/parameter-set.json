@@ -1,0 +1,61 @@
+{
+    "meta": {
+        "label": "App Registration with certificate",
+        "description": "",
+        "icon": "icon-cloud"
+    },
+    "defaultDefinableInline": true,
+    "defaultDefinableAtProjectLevel": true,
+    "pluginParams": [],
+    "params": [
+        {
+            "name": "sharepoint_tenant",
+            "label": "Tenant",
+            "type": "STRING",
+            "description": "As in <tenant>.sharepoint.com. Please refer to plugin doc.",
+            "mandatory": true
+        },
+        {
+            "name": "sharepoint_site",
+            "label": "Site path",
+            "type": "STRING",
+            "description": "sites/site_name/subsite...",
+            "mandatory": true
+        },
+        {
+            "name": "sharepoint_root",
+            "label": "Root directory",
+            "type": "STRING",
+            "description": "",
+            "defaultValue": "Shared Documents"
+        },
+        {
+            "name": "tenant_id",
+            "label": "Tenant ID",
+            "type": "STRING",
+            "description": "",
+            "mandatory": true
+        },
+        {
+            "name": "client_id",
+            "label": "Client ID",
+            "type": "STRING",
+            "description": "",
+            "mandatory": true
+        },
+        {
+            "name": "client_certificate_thumbprint",
+            "label": "Client certificate_thumbprint",
+            "type": "STRING",
+            "description": "",
+            "mandatory": true
+        },
+        {
+            "name": "client_certificate",
+            "label": "Client certificate",
+            "type": "PASSWORD",
+            "description": "Base64-encoded, starting with '-----BEGIN PRIVATE KEY-----'",
+            "mandatory": true
+        }
+    ]
+}

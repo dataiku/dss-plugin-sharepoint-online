@@ -21,6 +21,10 @@
                 {
                     "value": "site-app-permissions",
                     "label": "Site App Permissions"
+                },
+                {
+                    "value": "app-registration-certificate",
+                    "label": "App Registration with certificate"
                 }
             ]
         },
@@ -44,6 +48,13 @@
             "type": "PRESET",
             "parameterSetId": "site-app-permissions",
             "visibilityCondition": "model.auth_type == 'site-app-permissions'"
+        },
+        {
+            "name": "app_registration_certificate",
+            "label": "App Registration with certificate preset",
+            "type": "PRESET",
+            "parameterSetId": "app-registration-certificate",
+            "visibilityCondition": "model.auth_type == 'app-registration-certificate'"
         },
         {
             "name": "advanced_parameters",
