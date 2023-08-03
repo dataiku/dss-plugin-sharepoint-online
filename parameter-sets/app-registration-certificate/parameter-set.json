@@ -45,17 +45,24 @@
         },
         {
             "name": "client_certificate_thumbprint",
-            "label": "Client certificate_thumbprint",
+            "label": "Client certificate thumbprint",
             "type": "STRING",
             "description": "",
             "mandatory": true
         },
         {
             "name": "client_certificate",
-            "label": "Client certificate",
+            "label": "Client certificate (private key)",
             "type": "PASSWORD",
             "description": "Base64-encoded, starting with '-----BEGIN PRIVATE KEY-----'",
             "mandatory": true
+        },
+        {
+            "name": "passphrase",
+            "label": "Certificate passphrase",
+            "type": "PASSWORD",
+            "description": "If required by private key",
+            "mandatory": false
         }
     ]
 }
