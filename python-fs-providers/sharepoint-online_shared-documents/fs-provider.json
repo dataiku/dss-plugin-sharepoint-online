@@ -23,8 +23,8 @@
                     "label": "Site App Permissions"
                 },
                 {
-                    "value": "app-registration-certificate",
-                    "label": "App Registration with certificate"
+                    "value": "app-certificate",
+                    "label": "Azure App (certificate)"
                 }
             ]
         },
@@ -50,11 +50,11 @@
             "visibilityCondition": "model.auth_type == 'site-app-permissions'"
         },
         {
-            "name": "app_registration_certificate",
-            "label": "App Registration with certificate preset",
+            "name": "app_certificate",
+            "label": "Azure App (certificate)",
             "type": "PRESET",
-            "parameterSetId": "app-registration-certificate",
-            "visibilityCondition": "model.auth_type == 'app-registration-certificate'"
+            "parameterSetId": "app-certificate",
+            "visibilityCondition": "model.auth_type == 'app-certificate'"
         },
         {
             "name": "advanced_parameters",

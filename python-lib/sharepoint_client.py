@@ -99,10 +99,10 @@ class SharePointClient():
                 max_retries=SharePointConstants.MAX_RETRIES,
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
             )
-        elif config.get('auth_type') == DSSConstants.AUTH_CERTIFICATE_APP:
-            logger.info("SharePointClient:app-registration-certificate")
-            login_details = config.get('app_registration_certificate')
-            self.assert_login_details(DSSConstants.CERTIFICATE_APP_DETAILS, login_details)
+        elif config.get('auth_type') == DSSConstants.AUTH_APP_CERTIFICATE:
+            logger.info("SharePointClient:app-certificate")
+            login_details = config.get('app_certificate')
+            self.assert_login_details(DSSConstants.APP_CERTIFICATE_DETAILS, login_details)
             self.setup_sharepoint_online_url(login_details)
             self.setup_login_details(login_details)
             self.apply_paths_overwrite(config)

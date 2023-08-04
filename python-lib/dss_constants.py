@@ -4,7 +4,7 @@ class DSSConstants(object):
     AUTH_LOGIN = "login"
     AUTH_OAUTH = "oauth"
     AUTH_SITE_APP = "site-app-permissions"
-    AUTH_CERTIFICATE_APP = "app-registration-certificate"
+    AUTH_APP_CERTIFICATE = "app-certificate"
     CHILDREN = 'children'
     DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
     DIRECTORY = 'directory'
@@ -29,7 +29,14 @@ class DSSConstants(object):
         "sharepoint_oauth": "The access token is missing"
     }
     PATH = 'path'
-    SECRET_PARAMETERS_KEYS = ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret", "client_certificate"]
+    SECRET_PARAMETERS_KEYS = [
+        "Authorization",
+        "sharepoint_username",
+        "sharepoint_password",
+        "client_secret",
+        "client_certificate",
+        "passphrase"
+    ]
     SITE_APP_DETAILS = {
         "sharepoint_tenant": "The tenant name is missing",
         "sharepoint_site": "The site name is missing",
@@ -37,7 +44,7 @@ class DSSConstants(object):
         "client_id": "The client ID is missing",
         "client_secret": "The client secret is missing"
     }
-    CERTIFICATE_APP_DETAILS = {
+    APP_CERTIFICATE_DETAILS = {
         "sharepoint_tenant": "The tenant name is missing",
         "sharepoint_site": "The site name is missing",
         "tenant_id": "The tenant ID is missing. See documentation on how to obtain this information",
