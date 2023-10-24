@@ -3,6 +3,7 @@
 ## [Version 1.0.15](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.15) - Feature release - 2023-07-24
 
 - Adding an **Append to list** recipe
+- Adding app certificate login
 
 ## [Version 1.0.14](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.14) - Bugfix release - 2023-04-18
 
