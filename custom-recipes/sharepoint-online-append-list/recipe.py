@@ -14,12 +14,12 @@ def convert_date_format(json_row):
     return json_row
 
 
-input_dataset = get_input_names_for_role('input_dataset')
-input_parameters_dataset = dataiku.Dataset(input_dataset[0])
-input_parameters_dataframe = input_parameters_dataset.get_dataframe()
-input_schema = input_parameters_dataset.read_schema()
-output_names_stats = get_output_names_for_role('api_output')
-output_dataset = dataiku.Dataset(output_names_stats[0])
+input_dataset_names = get_input_names_for_role('input_dataset')
+input_dataset = dataiku.Dataset(input_dataset_names[0])
+input_dataframe = input_dataset.get_dataframe()
+input_schema = input_dataset.read_schema()
+output_dataset_names = get_output_names_for_role('api_output')
+output_dataset = dataiku.Dataset(output_dataset_names[0])
 output_dataset.write_schema(input_schema)
 config = get_recipe_config()
 dku_flow_variables = dataiku.get_flow_variables()
@@ -55,7 +55,7 @@ if sharepoint_list_view_title:
 
 sharepoint_writer = client.get_writer({"columns": input_schema}, None, None, max_workers, batch_size, write_mode)
 with output_dataset.get_writer() as writer:
-    for index, input_parameters_row in input_parameters_dataframe.iterrows():
+    for index, input_parameters_row in input_dataframe.iterrows():
         json_row = input_parameters_row.to_dict()
         sharepoint_writer.write_row_dict(json_row)
         writer.write_row_dict(convert_date_format(json_row))
