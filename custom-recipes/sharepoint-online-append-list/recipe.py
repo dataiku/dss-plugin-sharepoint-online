@@ -49,9 +49,6 @@ logger.info("init:advanced_parameters={}, max_workers={}, batch_size={}".format(
 metadata_to_retrieve.append("Title")
 display_metadata = len(metadata_to_retrieve) > 0
 client = SharePointClient(config)
-sharepoint_list_view_id = None
-if sharepoint_list_view_title:
-    sharepoint_list_view_id = client.get_view_id(sharepoint_list_title, sharepoint_list_view_title)
 
 sharepoint_writer = client.get_writer({"columns": input_schema}, None, None, max_workers, batch_size, write_mode)
 with output_dataset.get_writer() as writer:
