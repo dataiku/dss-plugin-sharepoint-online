@@ -131,12 +131,8 @@
             "name": "write_mode",
             "label": "Write mode",
             "type": "SELECT",
-            "defaultValue": "create",
+            "defaultValue": "append",
             "selectChoices": [
-                {
-                    "value": "create",
-                    "label": "Create a new list"
-                },
                 {
                     "value": "append",
                     "label": "Append to existing list"
