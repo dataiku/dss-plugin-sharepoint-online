@@ -1,4 +1,5 @@
 import dataiku
+import pandas
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
 from safe_logger import SafeLogger
 from dss_constants import DSSConstants
@@ -11,6 +12,12 @@ logger.info('SharePoint Online append to list recipe v{}'.format(DSSConstants.PL
 
 def convert_date_format(json_row):
     #  Convert pandas timestamps to iso
+    for key in json_row:
+        value = json_row.get(key)
+        if pandas.isna(value):
+            json_row[key] = ""
+        elif type(value) == pandas.Timestamp:
+            json_row[key] = str(value.strftime(DSSConstants.DATE_FORMAT))
     return json_row
 
 
@@ -54,6 +61,7 @@ sharepoint_writer = client.get_writer({"columns": input_schema}, None, None, max
 with output_dataset.get_writer() as writer:
     for index, input_parameters_row in input_dataframe.iterrows():
         json_row = input_parameters_row.to_dict()
+        json_row = convert_date_format(json_row)
         sharepoint_writer.write_row_dict(json_row)
-        writer.write_row_dict(convert_date_format(json_row))
+        writer.write_row_dict(json_row)
     sharepoint_writer.close()
