@@ -108,6 +108,29 @@ class SharePointClient():
                 max_retries=SharePointConstants.MAX_RETRIES,
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
             )
+        elif config.get('auth_type') == DSSConstants.AUTH_APP_CERTIFICATE:
+            logger.info("SharePointClient:app-certificate")
+            login_details = config.get('app_certificate')
+            self.assert_login_details(DSSConstants.APP_CERTIFICATE_DETAILS, login_details)
+            self.setup_sharepoint_online_url(login_details)
+            self.setup_login_details(login_details)
+            self.apply_paths_overwrite(config)
+            self.tenant_id = login_details.get("tenant_id")
+            self.client_certificate = self.format_private_key(login_details.get("client_certificate"))
+            self.client_certificate_thumbprint = login_details.get("client_certificate_thumbprint")
+            self.passphrase = login_details.get("passphrase")
+            self.client_id = login_details.get("client_id")
+            self.sharepoint_access_token = self.get_certificate_app_access_token()
+            self.session.update_settings(session=SharePointSession(
+                    None,
+                    None,
+                    self.sharepoint_url,
+                    self.sharepoint_site,
+                    sharepoint_access_token=self.sharepoint_access_token
+                ),
+                max_retries=SharePointConstants.MAX_RETRIES,
+                base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
+            )
         else:
             raise SharePointClientError("The type of authentication is not selected")
         self.sharepoint_list_title = config.get("sharepoint_list_title")
@@ -817,6 +840,28 @@ class SharePointClient():
         )
         self.assert_response_ok(response, calling_method="get_site_app_access_token")
         json_response = response.json()
+        return json_response.get("access_token")
+
+    @staticmethod
+    def format_private_key(private_key):
+        """Formats the private key as the secret parameter replaces newlines with spaces."""
+        private_key = private_key.replace("-----BEGIN PRIVATE KEY-----", "")
+        private_key = private_key.replace("-----END PRIVATE KEY-----", "")
+        private_key = "\n".join(["-----BEGIN PRIVATE KEY-----", *private_key.split(), "-----END PRIVATE KEY-----"])
+        return private_key
+
+    def get_certificate_app_access_token(self):
+        import msal
+        app = msal.ConfidentialClientApplication(
+            self.client_id,
+            authority=f"https://login.microsoftonline.com/{self.tenant_id}",
+            client_credential={
+                "thumbprint": self.client_certificate_thumbprint,
+                "private_key": self.client_certificate,
+                "passphrase": self.passphrase,
+            },
+        )
+        json_response = app.acquire_token_for_client(scopes=[f"{self.sharepoint_origin}/.default"])
         return json_response.get("access_token")
 
     def get_view_id(self, list_title, view_title):
