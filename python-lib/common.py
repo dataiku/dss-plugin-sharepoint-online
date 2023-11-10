@@ -113,7 +113,7 @@ def merge_paths(first_path, second_path):
     path_2 = path_2.strip("/")
     joined_path = "/".join([path_1, path_2])
     return joined_path.strip("/")
-    
+
 
 class ItemsLimit():
     def __init__(self, records_limit=-1):

@@ -12,6 +12,7 @@ from xml.etree.ElementTree import Element, tostring
 from xml.dom import minidom
 from robust_session import RobustSession
 from sharepoint_constants import SharePointConstants
+from sharepoint_lists import SharePointListWriter, get_dss_type
 from dss_constants import DSSConstants
 from common import (
     is_email_address, get_value_from_path, parse_url,
@@ -31,6 +32,7 @@ class SharePointClientError(ValueError):
 class SharePointClient():
 
     def __init__(self, config):
+        self.config = config
         self.sharepoint_root = None
         self.sharepoint_url = None
         self.sharepoint_origin = None
@@ -38,6 +40,14 @@ class SharePointClient():
         self.session = RobustSession(status_codes_to_retry=[429, 503], attempt_session_reset_on_403=attempt_session_reset_on_403)
         self.number_dumped_logs = 0
         self.username_for_namespace_diag = None
+
+        self.dss_column_name = {}
+        self.column_ids = {}
+        self.column_names = {}
+        self.column_entity_property_name = {}
+        self.columns_to_format = []
+        self.column_sharepoint_type = {}
+
         if config.get('auth_type') == DSSConstants.AUTH_OAUTH:
             logger.info("SharePointClient:sharepoint_oauth")
             login_details = config.get('sharepoint_oauth')
@@ -186,7 +196,7 @@ class SharePointClient():
     def write_file_content(self, full_path, data):
         self.file_size = len(data)
 
-        #Preventive file check out, in case it already exists on SP's side
+        # Preventive file check out, in case it already exists on SP's side
         self.check_out_file(full_path)
 
         if self.file_size < SharePointConstants.MAX_FILE_SIZE_CONTINUOUS_UPLOAD:
@@ -809,6 +819,15 @@ class SharePointClient():
         json_response = response.json()
         return json_response.get("access_token")
 
+    def get_view_id(self, list_title, view_title):
+        if not list_title:
+            return None
+        views = self.get_list_views(list_title)
+        for view in views:
+            if view.get("Title") == view_title:
+                return view.get("Id")
+        raise ValueError("View '{}' does not exist in list '{}'.".format(view_title, list_title))
+
     def get_list_views(self, list_title):
         response = self.session.get(
             self.get_list_views_url(list_title),
@@ -829,6 +848,61 @@ class SharePointClient():
     @staticmethod
     def escape_path(path):
         return path.replace("'", "''")
+
+    def get_writer(self, dataset_schema, dataset_partitioning,
+                   partition_id, max_workers, batch_size, write_mode):
+        return SharePointListWriter(
+            self.config,
+            self,
+            dataset_schema,
+            dataset_partitioning,
+            partition_id,
+            max_workers=max_workers,
+            batch_size=batch_size,
+            write_mode=write_mode
+        )
+
+    def get_read_schema(self, display_metadata=False, metadata_to_retrieve=[]):
+        logger.info('get_read_schema')
+        sharepoint_columns = self.get_list_fields(self.sharepoint_list_title)
+        dss_columns = []
+        self.column_ids = {}
+        self.column_names = {}
+        self.column_entity_property_name = {}
+        self.columns_to_format = []
+        for column in sharepoint_columns:
+            logger.info("get_read_schema:{}/{}/{}/{}/{}/{}".format(
+                column[SharePointConstants.TITLE_COLUMN],
+                column[SharePointConstants.TYPE_AS_STRING],
+                column[SharePointConstants.STATIC_NAME],
+                column[SharePointConstants.INTERNAL_NAME],
+                column[SharePointConstants.ENTITY_PROPERTY_NAME],
+                self.is_column_displayable(column, display_metadata, metadata_to_retrieve)
+            ))
+            if self.is_column_displayable(column, display_metadata, metadata_to_retrieve):
+                sharepoint_type = get_dss_type(column[SharePointConstants.TYPE_AS_STRING])
+                self.column_sharepoint_type[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TYPE_AS_STRING]
+                if sharepoint_type is not None:
+                    dss_columns.append({
+                        SharePointConstants.NAME_COLUMN: column[SharePointConstants.TITLE_COLUMN],
+                        SharePointConstants.TYPE_COLUMN: sharepoint_type
+                    })
+                    self.column_ids[column[SharePointConstants.STATIC_NAME]] = sharepoint_type
+                    self.column_names[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TITLE_COLUMN]
+                    self.column_entity_property_name[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.ENTITY_PROPERTY_NAME]
+                    self.dss_column_name[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TITLE_COLUMN]
+                    self.dss_column_name[column[SharePointConstants.ENTITY_PROPERTY_NAME]] = column[SharePointConstants.TITLE_COLUMN]
+                if sharepoint_type == "date":
+                    self.columns_to_format.append((column[SharePointConstants.STATIC_NAME], sharepoint_type))
+        logger.info("get_read_schema: Schema updated with {}".format(dss_columns))
+        return {
+            SharePointConstants.COLUMNS: dss_columns
+        }
+
+    def is_column_displayable(self, column, display_metadata=False, metadata_to_retrieve=[]):
+        if display_metadata and (column['StaticName'] in metadata_to_retrieve):
+            return True
+        return (not column[SharePointConstants.HIDDEN_COLUMN])
 
 
 class SharePointSession():
