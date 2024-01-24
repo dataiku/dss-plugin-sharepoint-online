@@ -1,9 +1,18 @@
 # Changelog
 
+## [Version 1.1.1](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.1) - Bugfix release - 2024-01-24
+
+- Fix path creation inside read-only parent directory
+- Updated code-env descriptor for DSS 12
+
 ## [Version 1.1.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.0) - Feature release - 2023-11-10
 
 - Adding an **Append to list** recipe
 - Updated code-env descriptor for DSS 12
+
+## [Version 1.0.16](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.16) - Bugfix release - 2024-01-24
+
+- Fix path creation inside read-only parent directory
 
 ## [Version 1.0.15](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.15) - Feature release - 2023-11-10
 
