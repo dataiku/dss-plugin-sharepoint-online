@@ -1,4 +1,5 @@
 import time
+import copy
 from safe_logger import SafeLogger
 from dss_constants import DSSConstants
 
@@ -24,12 +25,14 @@ class RobustSession():
         self.connection_kwargs = {}
         self.connection_library = None
         self.attempt_session_reset_on_403 = attempt_session_reset_on_403
+        self.default_headers = {}
 
-    def update_settings(self, session=None, status_codes_to_retry=None, max_retries=None, base_retry_timer_sec=None):
+    def update_settings(self, session=None, status_codes_to_retry=None, max_retries=None, base_retry_timer_sec=None, default_headers=None):
         self.session = session or self.session
         self.status_codes_to_retry = status_codes_to_retry or self.status_codes_to_retry
         self.max_retries = max_retries or self.max_retries
         self.base_retry_timer_sec = base_retry_timer_sec or self.base_retry_timer_sec
+        self.default_headers = default_headers or self.default_headers
 
     def connect(self, connection_library=None, *args, **kwargs):
         self.connection_library = connection_library or self.connection_library
@@ -47,8 +50,13 @@ class RobustSession():
             return response
 
     def post(self, url, dku_rs_off=False, **kwargs):
+        if self.default_headers:
+            headers = copy.deepcopy(self.default_headers)
+            headers.update(kwargs.get("headers", {}))
+            kwargs["headers"] = headers
         if dku_rs_off:
-            return self.session.post(url, **kwargs)
+            response = self.session.post(url, **kwargs)
+            return response
         else:
             kwargs["url"] = url
             response = self.request_with_403_retry("post", **kwargs)

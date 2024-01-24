@@ -67,6 +67,22 @@ class SharePointClient():
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
             )
         elif config.get('auth_type') == DSSConstants.AUTH_LOGIN:
+            def get_form_digest_value(session):
+                logger.info("Getting form digest value")
+                response = session.post(
+                    url="https://{}/{}/_api/contextinfo".format(self.sharepoint_url, self.sharepoint_site),
+                    timeout=SharePointConstants.TIMEOUT_SEC
+                )
+                form_digest_value = get_value_from_path(
+                    response.json(),
+                    [
+                        SharePointConstants.RESULTS_CONTAINER_V2,
+                        SharePointConstants.GET_CONTEXT_WEB_INFORMATION,
+                        SharePointConstants.FORM_DIGEST_VALUE
+                    ]
+                )
+                logger.info("Form digest value {}".format(form_digest_value))
+                return form_digest_value
             logger.info("SharePointClient:sharepoint_sharepy")
             login_details = config.get('sharepoint_sharepy')
             self.assert_login_details(DSSConstants.LOGIN_DETAILS, login_details)
@@ -87,6 +103,9 @@ class SharePointClient():
                 username=username,
                 password=password
             )
+            self.form_digest_value = get_form_digest_value(self.session)
+            default_headers = {"X-RequestDigest": self.form_digest_value}
+            self.session.update_settings(default_headers=default_headers)
         elif config.get('auth_type') == DSSConstants.AUTH_SITE_APP:
             logger.info("SharePointClient:site_app_permissions")
             login_details = config.get('site_app_permissions')
