@@ -6,7 +6,6 @@ import shutil
 from sharepoint_client import SharePointClient
 from dss_constants import DSSConstants
 from sharepoint_items import loop_sharepoint_items, has_sharepoint_items, extract_item_from, get_size, get_last_modified, get_name, assert_path_is_not_root
-from sharepoint_items import create_path
 from common import get_rel_path, get_lnt_path
 from safe_logger import SafeLogger
 
@@ -229,7 +228,21 @@ class SharePointFSProvider(FSProvider):
         shutil.copyfileobj(stream, bio)
         bio.seek(0)
         data = bio.read()
-        create_path(self.client, full_path)
+        self.create_path(path)
         response = self.client.write_file_content(full_path, data)
         logger.info("write:response={}".format(response))
         self.client.check_in_file(full_path)
+
+    def create_path(self, file_path):
+        path, _ = os.path.split(file_path)
+        path_elements = path.split("/")
+        path = ""
+        for path_element in path_elements:
+            path = get_lnt_path(path + "/" + path_element)
+            logger.info("Checking that {} exists".format(self.get_full_path(path)))
+            item = self.stat(path)
+            if item is None:
+                logger.info("{} does not exist, creating it.".format(self.get_full_path(path)))
+                self.client.create_folder(self.get_full_path(path))
+            else:
+                logger.info("{} exists, no need to create it.".format(self.get_full_path(path)))
