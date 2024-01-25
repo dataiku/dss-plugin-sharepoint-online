@@ -2,6 +2,7 @@ import time
 import copy
 from safe_logger import SafeLogger
 from dss_constants import DSSConstants
+from common import update_dict_in_kwargs
 
 
 logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)
@@ -50,10 +51,7 @@ class RobustSession():
             return response
 
     def post(self, url, dku_rs_off=False, **kwargs):
-        if self.default_headers:
-            headers = copy.deepcopy(self.default_headers)
-            headers.update(kwargs.get("headers", {}))
-            kwargs["headers"] = headers
+        kwargs = update_dict_in_kwargs(kwargs, "headers", self.default_headers)
         if dku_rs_off:
             response = self.session.post(url, **kwargs)
             return response

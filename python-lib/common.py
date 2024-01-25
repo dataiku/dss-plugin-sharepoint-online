@@ -115,6 +115,21 @@ def merge_paths(first_path, second_path):
     return joined_path.strip("/")
 
 
+def update_dict_in_kwargs(kwargs, key_to_update, update):
+    if not update:
+        return kwargs
+    if isinstance(update, dict) and isinstance(kwargs, dict):
+        updated_kwargs = {}
+        updated_dict = {}
+        updated_dict.update(kwargs.get(key_to_update, {}))
+        updated_dict.update(update)
+        updated_kwargs.update(kwargs)
+        updated_kwargs[key_to_update] = updated_dict
+        return updated_kwargs
+    logger.warning("The update is not a dict")
+    return kwargs
+
+
 class ItemsLimit():
     def __init__(self, records_limit=-1):
         self.has_no_limit = (records_limit == -1)
