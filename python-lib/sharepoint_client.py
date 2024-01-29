@@ -67,22 +67,6 @@ class SharePointClient():
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
             )
         elif config.get('auth_type') == DSSConstants.AUTH_LOGIN:
-            def get_form_digest_value(session):
-                logger.info("Getting form digest value")
-                response = session.post(
-                    url="https://{}/{}/_api/contextinfo".format(self.sharepoint_url, self.sharepoint_site),
-                    timeout=SharePointConstants.TIMEOUT_SEC
-                )
-                form_digest_value = get_value_from_path(
-                    response.json(),
-                    [
-                        SharePointConstants.RESULTS_CONTAINER_V2,
-                        SharePointConstants.GET_CONTEXT_WEB_INFORMATION,
-                        SharePointConstants.FORM_DIGEST_VALUE
-                    ]
-                )
-                logger.info("Form digest value {}".format(form_digest_value))
-                return form_digest_value
             logger.info("SharePointClient:sharepoint_sharepy")
             login_details = config.get('sharepoint_sharepy')
             self.assert_login_details(DSSConstants.LOGIN_DETAILS, login_details)
@@ -103,8 +87,10 @@ class SharePointClient():
                 username=username,
                 password=password
             )
-            self.form_digest_value = get_form_digest_value(self.session)
-            default_headers = {"X-RequestDigest": self.form_digest_value}
+            self.form_digest_value = get_form_digest_value(self.sharepoint_url, self.sharepoint_site, session=self.session)
+            default_headers = None
+            if self.form_digest_value:
+                default_headers = {"X-RequestDigest": self.form_digest_value}
             self.session.update_settings(default_headers=default_headers)
         elif config.get('auth_type') == DSSConstants.AUTH_SITE_APP:
             logger.info("SharePointClient:site_app_permissions")
@@ -931,7 +917,7 @@ class SharePointSession():
         self.sharepoint_site = sharepoint_site
         self.sharepoint_access_token = sharepoint_access_token
         requests.adapters.DEFAULT_RETRIES = max_retry
-        self.form_digest_value = self.get_form_digest_value()
+        self.form_digest_value = get_form_digest_value(sharepoint_url, sharepoint_site, sharepoint_access_token=self.sharepoint_access_token)
 
     def get(self, url, headers=None, params=None):
         retries_limit = ItemsLimit(SharePointConstants.MAX_RETRIES)
@@ -966,21 +952,35 @@ class SharePointSession():
     def get_authorization_bearer(self):
         return "Bearer {}".format(self.sharepoint_access_token)
 
-    def get_form_digest_value(self):
-        logger.info("Getting form digest value")
+
+def get_form_digest_value(sharepoint_url, sharepoint_site, session=None, sharepoint_access_token=None):
+    def get_contextinfo_url():
+        return "https://{}/{}/_api/contextinfo".format(
+            sharepoint_url, sharepoint_site
+        )
+
+    logger.info("Getting form digest value")
+    if session is None:
         session = RobustSession(session=requests, status_codes_to_retry=[429, 503])
         session.update_settings(
             max_retries=SharePointConstants.MAX_RETRIES,
             base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
         )
-        headers = {**DSSConstants.JSON_HEADERS, **{"Authorization": self.get_authorization_bearer()}}
+    form_digest_value = None
+    try:
+        if sharepoint_access_token:
+            headers = {**DSSConstants.JSON_HEADERS, **{"Authorization": "Bearer {}".format(sharepoint_access_token)}}
+            response = session.post(
+                url=get_contextinfo_url(),
+                headers=headers,
+                timeout=SharePointConstants.TIMEOUT_SEC
+            )
+        else:
+            response = session.post(
+                url=get_contextinfo_url(),
+                timeout=SharePointConstants.TIMEOUT_SEC
+            )
 
-        # Treat this as a response = requests.post(
-        response = session.post(
-            url=self.get_contextinfo_url(),
-            headers=headers,
-            timeout=SharePointConstants.TIMEOUT_SEC
-        )
         form_digest_value = get_value_from_path(
             response.json(),
             [
@@ -989,13 +989,10 @@ class SharePointSession():
                 SharePointConstants.FORM_DIGEST_VALUE
             ]
         )
-        logger.info("Form digest value {}".format(form_digest_value))
-        return form_digest_value
-
-    def get_contextinfo_url(self):
-        return "https://{}/{}/_api/contextinfo".format(
-            self.sharepoint_url, self.sharepoint_site
-        )
+    except Exception as error:
+        logger.warning("Issue while retrieving form digest value ({})".format(error))
+    logger.info("Form digest value {}".format(form_digest_value))
+    return form_digest_value
 
 
 class SuppressFilter(logging.Filter):
