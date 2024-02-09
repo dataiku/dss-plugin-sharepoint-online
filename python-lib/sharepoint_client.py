@@ -88,9 +88,7 @@ class SharePointClient():
                 password=password
             )
             self.form_digest_value = get_form_digest_value(self.sharepoint_url, self.sharepoint_site, session=self.session)
-            default_headers = None
-            if self.form_digest_value:
-                default_headers = {"X-RequestDigest": self.form_digest_value}
+            default_headers = {"X-RequestDigest": self.form_digest_value} if self.form_digest_value else None
             self.session.update_settings(default_headers=default_headers)
         elif config.get('auth_type') == DSSConstants.AUTH_SITE_APP:
             logger.info("SharePointClient:site_app_permissions")
