@@ -37,3 +37,6 @@ def test_run_sharepoint_online_file_overwrite(user_dss_clients):
 
 def test_run_sharepoint_online_append_to_list_recipe(user_dss_clients):
     dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="APPENDTOLISTRECIPE")
+
+def test_run_sharepoint_online_update_individual_list_rows(user_dss_clients):
+    dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="UPDATEINDIVIDUALLISTROWS")
