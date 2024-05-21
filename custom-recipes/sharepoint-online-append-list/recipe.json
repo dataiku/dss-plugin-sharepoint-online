@@ -131,14 +131,25 @@
             "name": "write_mode",
             "label": "Write mode",
             "type": "SELECT",
-            "defaultValue": "append",
             "selectChoices": [
                 {
                     "value": "append",
                     "label": "Append to existing list"
+                },
+                {
+                    "value": "update",
+                    "label": "Update items in existing list"
                 }
             ],
-            "visibilityCondition": false
+            "defaultValue": "append",
+            "visibilityCondition": "model.advanced_parameters == true"
+        },
+        {
+            "name": "columns_to_update",
+            "label": "Columns to update",
+            "type": "COLUMNS",
+            "columnRole": "input_dataset",
+            "visibilityCondition": "model.advanced_parameters == true && model.write_mode == 'update'"
         },
         {
             "name": "max_workers",
