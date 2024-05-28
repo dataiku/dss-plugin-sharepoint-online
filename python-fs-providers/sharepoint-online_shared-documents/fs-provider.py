@@ -6,7 +6,6 @@ import shutil
 from sharepoint_client import SharePointClient
 from dss_constants import DSSConstants
 from sharepoint_items import loop_sharepoint_items, has_sharepoint_items, extract_item_from, get_size, get_last_modified, get_name, assert_path_is_not_root
-from sharepoint_items import create_path
 from common import get_rel_path, get_lnt_path
 from safe_logger import SafeLogger
 
