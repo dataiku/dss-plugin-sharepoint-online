@@ -229,7 +229,7 @@ class SharePointFSProvider(FSProvider):
         shutil.copyfileobj(stream, bio)
         bio.seek(0)
         data = bio.read()
-        create_path(self.client, full_path)
+        self.client.create_path(full_path)
         response = self.client.write_file_content(full_path, data)
         logger.info("write:response={}".format(response))
         self.client.check_in_file(full_path)
