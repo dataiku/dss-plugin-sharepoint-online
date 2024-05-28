@@ -21,35 +21,9 @@ def convert_date_format(json_row):
     return json_row
 
 
-def newprocess_nones(input_row, columns_types):
-    output_row = {}
-    for key in input_row:
-        column_value = input_row.get(key)
-        if key == "ID":
-            output_row[key] = str(column_value)
-            continue
-        column_type = columns_types.get(key, "string")
-        if column_type in ["int"] and (not column_value or pandas.isna(column_value)):
-            continue
-        output_row[key] = str(column_value)
-    return output_row
-
-def process_nones(json_row, columns_types):
-    for key in json_row:
-        value = json_row.get(key)
-        if not isinstance(value, str):
-            json_row[key] = "{}".format(value)
-        if not value or pandas.isna(value):
-            target_type = columns_types.get(key)
-            if target_type in ["int", "bigint", "float"]:
-                json_row[key] = None
-    return json_row
-
-
 input_dataset_names = get_input_names_for_role('input_dataset')
 input_dataset = dataiku.Dataset(input_dataset_names[0])
 input_dataframe = input_dataset.get_dataframe()
-
 input_schema = input_dataset.read_schema()
 output_dataset_names = get_output_names_for_role('api_output')
 output_dataset = dataiku.Dataset(output_dataset_names[0])
