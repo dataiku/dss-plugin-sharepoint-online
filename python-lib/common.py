@@ -130,6 +130,59 @@ def update_dict_in_kwargs(kwargs, key_to_update, update):
     return kwargs
 
 
+def run_oauth_diagnosis(jwt_token):
+    censored_token = diagnose_jwt(jwt_token)
+    kernel_external_ip = get_kernel_external_ip()
+    ip_in_jwt = censored_token.get("ipaddr", "")
+    if ip_in_jwt != kernel_external_ip:
+        logger.error("The plugin external IP address ({}) does not match the IP allowed in the SSO token ({})".format(
+            ip_in_jwt,
+            kernel_external_ip
+        ))
+
+
+def diagnose_jwt(jwt_token):
+    keys_to_report = ["aud", "exp", "app_displayname", "appid", "ipaddr", "name", "scp", "unique_name", "upn"]
+    decoded_token = decode_jwt(jwt_token)
+    censored_token = {}
+    for key_to_report in keys_to_report:
+        censored_token[key_to_report] = decoded_token.get(key_to_report)
+    logger.info("Decoded token: {}".format(censored_token))
+    return censored_token
+
+
+def decode_jwt(jwt_token):
+    try:
+        import base64
+        import json
+        sub_tokens = jwt_token.split('.')
+        if len(sub_tokens)<2:
+            logger.error("JWT format is wrong")
+            return {}
+        token_of_interest = sub_tokens[1]
+        padded_token = token_of_interest + "="*divmod(len(token_of_interest),4)[1]
+        decoded_token = base64.urlsafe_b64decode(padded_token.encode('utf-8'))
+        json_token = json.loads(decoded_token)
+        return json_token
+    except Exception as error:
+        logger.error("Could not decode JWT token ({})".format(error))
+    return {}
+
+
+def get_kernel_external_ip():
+    try:
+        import requests
+        response = requests.get("https://api64.ipify.org?format=json")
+        if response.status_code >= 400:
+            logger.error("Error {} trying to check kernel's external ip:{}".format(response.status_code, response.content))
+        json_response = response.json()
+        kernel_external_ip = json_response.get("ip", "")
+        return kernel_external_ip
+    except Exception as error:
+        logger.error("Could not fetch kernel's remote ip ({})".format(error))
+    return ""
+
+
 class ItemsLimit():
     def __init__(self, records_limit=-1):
         self.has_no_limit = (records_limit == -1)
