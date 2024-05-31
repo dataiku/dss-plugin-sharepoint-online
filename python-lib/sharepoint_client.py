@@ -17,7 +17,7 @@ from dss_constants import DSSConstants
 from common import (
     is_email_address, get_value_from_path, parse_url,
     get_value_from_paths, is_request_performed, ItemsLimit,
-    is_empty_path, merge_paths
+    is_empty_path, merge_paths, run_oauth_diagnosis
 )
 from safe_logger import SafeLogger
 
@@ -56,6 +56,8 @@ class SharePointClient():
             self.apply_paths_overwrite(config)
             self.setup_sharepoint_online_url(login_details)
             self.sharepoint_access_token = login_details['sharepoint_oauth']
+            self.auth_token_for_diag =self.sharepoint_access_token
+            self.jwt_diag_done = False
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
@@ -740,6 +742,7 @@ class SharePointClient():
                 logger.error("403 error. Checking for federated namespace.")
                 self.assert_non_federated_namespace()
                 logger.error("User does not belong to federated namespace.")
+                self.assert_valid_jwt_token()
                 raise SharePointClientError("403 Forbidden. Please check your account credentials. ({})".format(calling_method))
             raise SharePointClientError("Error {} ({})".format(status_code, calling_method))
         if not no_json:
@@ -768,6 +771,11 @@ class SharePointClient():
                     + "Dataiku might not be able to use it to access SharePoint-Online. "
                     + "Please contact your administrator to configure a Single Sign On or an App token access."
                 )
+
+    def assert_valid_jwt_token(self):
+        if self.auth_token_for_diag and not self.jwt_diag_done:
+            self.jwt_diag_done = True
+            run_oauth_diagnosis(self.auth_token_for_diag)
 
     @staticmethod
     def get_enriched_error_message(response):
