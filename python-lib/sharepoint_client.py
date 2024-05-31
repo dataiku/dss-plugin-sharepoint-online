@@ -265,6 +265,12 @@ class SharePointClient():
         return response
 
     def create_path(self, file_full_path):
+        """
+        Ensure the path of folders that will contain the file specified in file_full_path exists.
+         I.e. create all missing folders along the path.
+         Does not create the last element in the end of the path as that is the file we will add later
+         (unless it ends in / in which case a folder will be created for that also).
+        """
         full_path, filename = os.path.split(file_full_path)
         tokens = full_path.split("/")
         path = ""
