@@ -139,6 +139,8 @@ def run_oauth_diagnosis(jwt_token):
             ip_in_jwt,
             kernel_external_ip
         ))
+    else:
+        logger.info("IP addresses in the OAuath token and the plugin kernel match")
 
 
 def diagnose_jwt(jwt_token):
