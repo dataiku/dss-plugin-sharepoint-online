@@ -17,7 +17,7 @@ from dss_constants import DSSConstants
 from common import (
     is_email_address, get_value_from_path, parse_url,
     get_value_from_paths, is_request_performed, ItemsLimit,
-    is_empty_path, merge_paths, run_oauth_diagnostic
+    is_empty_path, merge_paths, run_oauth_diagnostic, get_lnt_path
 )
 from safe_logger import SafeLogger
 
@@ -264,8 +264,26 @@ class SharePointClient():
         response = self.session.post(
             self.get_add_folder_url(full_path)
         )
-        self.assert_response_ok(response, calling_method="create_folder")
         return response
+
+    def create_path(self, file_full_path):
+        """
+        Ensure the path of folders that will contain the file specified in file_full_path exists.
+         I.e. create all missing folders along the path.
+         Does not create the last element in the end of the path as that is the file we will add later
+         (unless it ends in / in which case a folder will be created for that also).
+        """
+        full_path, filename = os.path.split(file_full_path)
+        tokens = full_path.split("/")
+        path = ""
+        previous_status = None
+        for token in tokens:
+            previous_path = path
+            path = get_lnt_path(path + "/" + token)
+            response = self.create_folder(path)
+            status_code = response.status_code
+            if previous_status == 403 and status_code == 404:
+                logger.error("Could not create folder for '{}'. Check your write permission for the folder {}.".format(path, previous_path))
 
     def move_file(self, full_from_path, full_to_path):
         get_move_url = self.get_move_url(

@@ -6,7 +6,6 @@ import shutil
 from sharepoint_client import SharePointClient
 from dss_constants import DSSConstants
 from sharepoint_items import loop_sharepoint_items, has_sharepoint_items, extract_item_from, get_size, get_last_modified, get_name, assert_path_is_not_root
-from sharepoint_items import create_path
 from common import get_rel_path, get_lnt_path
 from safe_logger import SafeLogger
 
@@ -229,7 +228,7 @@ class SharePointFSProvider(FSProvider):
         shutil.copyfileobj(stream, bio)
         bio.seek(0)
         data = bio.read()
-        create_path(self.client, full_path)
+        self.client.create_path(full_path)
         response = self.client.write_file_content(full_path, data)
         logger.info("write:response={}".format(response))
         self.client.check_in_file(full_path)
