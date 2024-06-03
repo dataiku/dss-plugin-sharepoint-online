@@ -17,7 +17,7 @@ from dss_constants import DSSConstants
 from common import (
     is_email_address, get_value_from_path, parse_url,
     get_value_from_paths, is_request_performed, ItemsLimit,
-    is_empty_path, merge_paths, run_oauth_diagnosis
+    is_empty_path, merge_paths, run_oauth_diagnostic
 )
 from safe_logger import SafeLogger
 
@@ -775,7 +775,7 @@ class SharePointClient():
     def assert_valid_jwt_token(self):
         if self.auth_token_for_diag and not self.jwt_diag_done:
             self.jwt_diag_done = True
-            run_oauth_diagnosis(self.auth_token_for_diag)
+            run_oauth_diagnostic(self.auth_token_for_diag)
 
     @staticmethod
     def get_enriched_error_message(response):

@@ -130,7 +130,7 @@ def update_dict_in_kwargs(kwargs, key_to_update, update):
     return kwargs
 
 
-def run_oauth_diagnosis(jwt_token):
+def run_oauth_diagnostic(jwt_token):
     censored_token = diagnose_jwt(jwt_token)
     kernel_external_ip = get_kernel_external_ip()
     ip_in_jwt = censored_token.get("ipaddr", "")
@@ -140,7 +140,7 @@ def run_oauth_diagnosis(jwt_token):
             kernel_external_ip
         ))
     else:
-        logger.info("IP addresses in the OAuath token and the plugin kernel match")
+        logger.info("IP addresses in the OAuth token and the plugin kernel match")
 
 
 def diagnose_jwt(jwt_token):
