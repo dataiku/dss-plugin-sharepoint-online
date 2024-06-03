@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.1.2](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.2) - Bugfix release - 2024-05-28
+
+- Fix path creation inside read-only parent directory
+
 ## [Version 1.1.1](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.1) - Bugfix release - 2024-01-24
 
 - Fix file creation when using username / password authentication

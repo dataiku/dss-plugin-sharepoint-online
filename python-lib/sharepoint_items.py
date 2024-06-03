@@ -62,12 +62,3 @@ def assert_path_is_not_root(path):
     path = get_rel_path(path)
     if path == "" or path == "/":
         raise ValueError("Cannot delete root path")
-
-
-def create_path(client, file_full_path):
-    full_path, filename = os.path.split(file_full_path)
-    tokens = full_path.split("/")
-    path = ""
-    for token in tokens:
-        path = get_lnt_path(path + "/" + token)
-        client.create_folder(path)
