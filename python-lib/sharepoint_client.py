@@ -17,7 +17,7 @@ from dss_constants import DSSConstants
 from common import (
     is_email_address, get_value_from_path, parse_url,
     get_value_from_paths, is_request_performed, ItemsLimit,
-    is_empty_path, merge_paths
+    is_empty_path, merge_paths, format_private_key, format_certificate_thumbprint
 )
 from safe_logger import SafeLogger
 
@@ -116,8 +116,8 @@ class SharePointClient():
             self.setup_login_details(login_details)
             self.apply_paths_overwrite(config)
             self.tenant_id = login_details.get("tenant_id")
-            self.client_certificate = self.format_private_key(login_details.get("client_certificate"))
-            self.client_certificate_thumbprint = login_details.get("client_certificate_thumbprint")
+            self.client_certificate = format_private_key(login_details.get("client_certificate"))
+            self.client_certificate_thumbprint = format_certificate_thumbprint(login_details.get("client_certificate_thumbprint"))
             self.passphrase = login_details.get("passphrase")
             self.client_id = login_details.get("client_id")
             self.sharepoint_access_token = self.get_certificate_app_access_token()
@@ -841,14 +841,6 @@ class SharePointClient():
         self.assert_response_ok(response, calling_method="get_site_app_access_token")
         json_response = response.json()
         return json_response.get("access_token")
-
-    @staticmethod
-    def format_private_key(private_key):
-        """Formats the private key as the secret parameter replaces newlines with spaces."""
-        private_key = private_key.replace("-----BEGIN PRIVATE KEY-----", "")
-        private_key = private_key.replace("-----END PRIVATE KEY-----", "")
-        private_key = "\n".join(["-----BEGIN PRIVATE KEY-----", *private_key.split(), "-----END PRIVATE KEY-----"])
-        return private_key
 
     def get_certificate_app_access_token(self):
         import msal

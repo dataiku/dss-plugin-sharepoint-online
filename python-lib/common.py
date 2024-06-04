@@ -115,6 +115,29 @@ def merge_paths(first_path, second_path):
     return joined_path.strip("/")
 
 
+def format_private_key(private_key):
+    """Formats the private key as the secret parameter replaces newlines with spaces."""
+    private_key = private_key.strip(" ")
+    if private_key.startswith(SharePointConstants.CLEAR_KEY_START):
+        start_marker = SharePointConstants.CLEAR_KEY_START
+        end_marker = SharePointConstants.CLEAR_KEY_END
+    else:
+        start_marker = SharePointConstants.ENCRYPTED_KEY_START
+        end_marker = SharePointConstants.ENCRYPTED_KEY_END
+    private_key = private_key.replace(start_marker, "")
+    private_key = private_key.replace(end_marker, "")
+    private_key = "\n".join([start_marker, *private_key.split(), end_marker])
+    return private_key
+
+
+def format_certificate_thumbprint(certificate_thumbprint):
+    if ":" in certificate_thumbprint:
+        certificate_thumbprint = certificate_thumbprint.replace(":", "")
+    elif " " in certificate_thumbprint:
+        certificate_thumbprint = certificate_thumbprint.replace(" ", "")
+    return certificate_thumbprint
+
+
 class ItemsLimit():
     def __init__(self, records_limit=-1):
         self.has_no_limit = (records_limit == -1)

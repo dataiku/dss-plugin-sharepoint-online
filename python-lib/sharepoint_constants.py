@@ -1,9 +1,13 @@
 class SharePointConstants(object):
+    CLEAR_KEY_END = "-----END PRIVATE KEY-----"
+    CLEAR_KEY_START = "-----BEGIN PRIVATE KEY-----"
     COLUMNS = 'columns'
     COMMENT_COLUMN = 'comment'
     DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
     DEFAULT_VIEW_ENDPOINT = "DefaultView/ViewFields"
     DEFAULT_WAIT_BEFORE_RETRY = 60
+    ENCRYPTED_KEY_END = "-----END ENCRYPTED PRIVATE KEY-----"
+    ENCRYPTED_KEY_START = "-----BEGIN ENCRYPTED PRIVATE KEY-----"
     ENTITY_PROPERTY_NAME = 'EntityPropertyName'
     ERROR_CONTAINER = 'error'
     EXPENDABLES_FIELDS = {"Author": "Title", "Editor": "Title"}
