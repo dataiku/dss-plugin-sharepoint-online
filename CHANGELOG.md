@@ -1,9 +1,13 @@
 # Changelog
 
-## [Version 1.1.2](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.2) - Feature and bugfix release - 2024-05-21
+## [Version 1.1.3](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.3) - Feature and bugfix release - 2024-05-21
 
 - Update of individual list records
 - Fix access to list with special characters in name
+
+## [Version 1.1.2](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.2) - Bugfix release - 2024-05-28
+
+- Fix path creation inside read-only parent directory
 
 ## [Version 1.1.1](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.1) - Bugfix release - 2024-01-24
 
