@@ -3,6 +3,7 @@
 ## [Version 1.1.3](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.3) - Feature release - 2024-06-04
 
 - Restrict site path, root directory override and write mode on presets
+- Add login with Azure AD app certificate
 
 ## [Version 1.1.2](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.2) - Bugfix release - 2024-05-28
 
@@ -25,6 +26,7 @@
 ## [Version 1.0.15](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.15) - Feature release - 2023-11-10
 
 - Adding an **Append to list** recipe
+- Adding app certificate login
 
 ## [Version 1.0.14](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.0.14) - Bugfix release - 2023-04-18
 

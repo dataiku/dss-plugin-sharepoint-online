@@ -1,6 +1,15 @@
 class DSSConstants(object):
+    APP_CERTIFICATE_DETAILS = {
+        "sharepoint_tenant": "The tenant name is missing",
+        "sharepoint_site": "The site name is missing",
+        "tenant_id": "The tenant ID is missing. See documentation on how to obtain this information",
+        "client_id": "The client ID is missing",
+        "client_certificate_thumbprint": "The client certificate thumbprint is missing",
+        "client_certificate": "The client certificate is missing"
+    }
     APPLICATION_JSON = "application/json;odata=verbose"
     APPLICATION_JSON_NOMETADATA = "application/json;odata=nometadata"
+    AUTH_APP_CERTIFICATE = "app-certificate"
     AUTH_LOGIN = "login"
     AUTH_OAUTH = "oauth"
     AUTH_SITE_APP = "site-app-permissions"
@@ -28,8 +37,8 @@ class DSSConstants(object):
         "sharepoint_oauth": "The access token is missing"
     }
     PATH = 'path'
-    PLUGIN_VERSION = "1.1.2-beta.2"
-    SECRET_PARAMETERS_KEYS = ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"]
+    PLUGIN_VERSION = "1.1.3-beta.3"
+    SECRET_PARAMETERS_KEYS = ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret", "client_certificate", "passphrase"]
     SITE_APP_DETAILS = {
         "sharepoint_tenant": "The tenant name is missing",
         "sharepoint_site": "The site name is missing",
