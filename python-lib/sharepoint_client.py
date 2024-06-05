@@ -978,7 +978,6 @@ class SharePointClient():
         return (not column[SharePointConstants.HIDDEN_COLUMN])
 
     def assert_can_write(self):
-        print("ALX:config={}".format(self.config))
         auth_details = get_auth_details(self.config)
         cannot_write = auth_details.get("cannot_write", False)
         if cannot_write:
@@ -1076,18 +1075,18 @@ def assert_can_overwrite_root(config):
     auth_details = get_auth_details(config)
     cannot_overwrite_root = auth_details.get("cannot_overwrite_root", False)
     if cannot_overwrite_root:
-        raise SharePointClientError("The root path cannot be overwritten on this preset")
+        raise SharePointClientError("Root path overwrite is not allowed on this preset")
 
 
 def assert_can_overwrite_site(config):
     auth_details = get_auth_details(config)
     cannot_overwrite_site = auth_details.get("cannot_overwrite_site", False)
     if cannot_overwrite_site:
-        raise SharePointClientError("The site cannot be overwritten on this preset")
+        raise SharePointClientError("Site path overwrite is not allowed on this preset")
 
 
 def get_auth_details(config):
-    KEY_TO_AUTH_DETAILS = {"oauth": "sharepoint_oauth", "login": "sharepoint_sharepy", "site-app-permissions": "site_app_permissions"}
+    KEY_TO_AUTH_DETAILS = {"oauth": "sharepoint_oauth", "login": "sharepoint_sharepy", "site-app-permissions": "site_app_permissions", "app-certificate": "app_certificate"}
     auth_type = config.get("auth_type", None)
     key_to_auth_details = KEY_TO_AUTH_DETAILS.get(auth_type, None)
     if not key_to_auth_details:
