@@ -21,6 +21,13 @@ def convert_date_format(json_row):
     return json_row
 
 
+def get_write_mode(config):
+    write_mode = config.get("write_mode", "append")
+    if write_mode == "create":
+        write_mode = "append"
+    return write_mode
+
+
 input_dataset_names = get_input_names_for_role('input_dataset')
 input_dataset = dataiku.Dataset(input_dataset_names[0])
 input_dataframe = input_dataset.get_dataframe()
@@ -43,7 +50,7 @@ column_sharepoint_type = {}
 expand_lookup = config.get("expand_lookup", False)
 metadata_to_retrieve = config.get("metadata_to_retrieve", [])
 advanced_parameters = config.get("advanced_parameters", False)
-write_mode = config.get("write_mode", "append")
+write_mode = get_write_mode(config)
 columns_to_update = config.get("columns_to_update", [])
 if columns_to_update and "ID" not in columns_to_update:
     columns_to_update.append("ID")
