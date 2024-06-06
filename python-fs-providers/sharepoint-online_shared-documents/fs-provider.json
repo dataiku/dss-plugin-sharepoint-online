@@ -24,7 +24,7 @@
                 },
                 {
                     "value": "app-certificate",
-                    "label": "Azure App (certificate)"
+                    "label": "Certificates"
                 }
             ]
         },
@@ -51,7 +51,7 @@
         },
         {
             "name": "app_certificate",
-            "label": "Azure App (certificate)",
+            "label": "Certificates",
             "type": "PRESET",
             "parameterSetId": "app-certificate",
             "visibilityCondition": "model.auth_type == 'app-certificate'"
