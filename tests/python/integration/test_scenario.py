@@ -43,9 +43,9 @@ def test_run_sharepoint_online_write_file_in_path_w_ro_parent(user_dss_clients):
     dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="SC169288_WRITE_FILE_WITH_RO_PARENT_FOLDER")
 
 
-def test_run_sharepoint_online_(user_dss_clients):
+def test_run_sharepoint_online_certificate_auth(user_dss_clients):
     dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="CERTIFICATEAUTH")
 
 
-def test_run_sharepoint_online_(user_dss_clients):
+def test_run_sharepoint_online_encrypted_certificate_auth(user_dss_clients):
     dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="ENCRYPTEDCERTIFICATEAUTH")
