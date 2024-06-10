@@ -1,9 +1,13 @@
 # Changelog
 
-## [Version 1.1.3](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.3) - Feature and bugfix release - 2024-05-21
+## [Version 1.1.4](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.4) - Feature and bugfix release - 2024-05-21
 
 - Update of individual list records
 - Fix access to list with special characters in name
+
+## [Version 1.1.3](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.3) - Feature release - 2024-06-04
+
+- Add login with Azure AD app certificate
 
 ## [Version 1.1.2](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.2) - Bugfix release - 2024-05-28
 
