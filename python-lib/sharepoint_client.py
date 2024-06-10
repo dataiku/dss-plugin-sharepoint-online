@@ -17,7 +17,8 @@ from dss_constants import DSSConstants
 from common import (
     is_email_address, get_value_from_path, parse_url,
     get_value_from_paths, is_request_performed, ItemsLimit,
-    is_empty_path, merge_paths, get_lnt_path
+    is_empty_path, merge_paths, get_lnt_path,
+    format_private_key, format_certificate_thumbprint
 )
 from safe_logger import SafeLogger
 
@@ -101,6 +102,29 @@ class SharePointClient():
             self.client_secret = login_details.get("client_secret")
             self.client_id = login_details.get("client_id")
             self.sharepoint_access_token = self.get_site_app_access_token()
+            self.session.update_settings(session=SharePointSession(
+                    None,
+                    None,
+                    self.sharepoint_url,
+                    self.sharepoint_site,
+                    sharepoint_access_token=self.sharepoint_access_token
+                ),
+                max_retries=SharePointConstants.MAX_RETRIES,
+                base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
+            )
+        elif config.get('auth_type') == DSSConstants.AUTH_APP_CERTIFICATE:
+            logger.info("SharePointClient:app-certificate")
+            login_details = config.get('app_certificate')
+            self.assert_login_details(DSSConstants.APP_CERTIFICATE_DETAILS, login_details)
+            self.setup_sharepoint_online_url(login_details)
+            self.setup_login_details(login_details)
+            self.apply_paths_overwrite(config)
+            self.tenant_id = login_details.get("tenant_id")
+            self.client_certificate = format_private_key(login_details.get("client_certificate"))
+            self.client_certificate_thumbprint = format_certificate_thumbprint(login_details.get("client_certificate_thumbprint"))
+            self.passphrase = login_details.get("passphrase")
+            self.client_id = login_details.get("client_id")
+            self.sharepoint_access_token = self.get_certificate_app_access_token()
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
@@ -838,6 +862,20 @@ class SharePointClient():
         )
         self.assert_response_ok(response, calling_method="get_site_app_access_token")
         json_response = response.json()
+        return json_response.get("access_token")
+
+    def get_certificate_app_access_token(self):
+        import msal
+        app = msal.ConfidentialClientApplication(
+            self.client_id,
+            authority=f"https://login.microsoftonline.com/{self.tenant_id}",
+            client_credential={
+                "thumbprint": self.client_certificate_thumbprint,
+                "private_key": self.client_certificate,
+                "passphrase": self.passphrase,
+            },
+        )
+        json_response = app.acquire_token_for_client(scopes=[f"{self.sharepoint_origin}/.default"])
         return json_response.get("access_token")
 
     def get_view_id(self, list_title, view_title):

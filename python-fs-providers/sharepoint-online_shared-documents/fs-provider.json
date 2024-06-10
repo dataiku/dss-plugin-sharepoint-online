@@ -21,6 +21,10 @@
                 {
                     "value": "site-app-permissions",
                     "label": "Site App Permissions"
+                },
+                {
+                    "value": "app-certificate",
+                    "label": "Certificates"
                 }
             ]
         },
@@ -44,6 +48,13 @@
             "type": "PRESET",
             "parameterSetId": "site-app-permissions",
             "visibilityCondition": "model.auth_type == 'site-app-permissions'"
+        },
+        {
+            "name": "app_certificate",
+            "label": "Certificates",
+            "type": "PRESET",
+            "parameterSetId": "app-certificate",
+            "visibilityCondition": "model.auth_type == 'app-certificate'"
         },
         {
             "name": "advanced_parameters",
