@@ -155,19 +155,22 @@ def update_dict_in_kwargs(kwargs, key_to_update, update):
 
 def run_oauth_diagnostic(jwt_token):
     censored_token = diagnose_jwt(jwt_token)
-    kernel_external_ip = get_kernel_external_ip()
+    
     ip_in_jwt = censored_token.get("ipaddr", "")
-    if ip_in_jwt != kernel_external_ip:
-        logger.error("The plugin external IP address ({}) does not match the IP allowed in the SSO token ({})".format(
-            ip_in_jwt,
-            kernel_external_ip
-        ))
+    if not ip_in_jwt:
+        logger.info("No IP address in the JWT token")
     else:
-        logger.info("IP addresses in the OAuth token and the plugin kernel match")
+        kernel_external_ip = get_kernel_external_ip()
+        if not kernel_external_ip:
+            return
+        if ip_in_jwt != kernel_external_ip:
+            logger.error("The plugin external IP address does not match the IP allowed in the JWT token")
+        else:
+            logger.info("IP addresses in the OAuth token and the plugin kernel match")
 
 
 def diagnose_jwt(jwt_token):
-    keys_to_report = ["aud", "exp", "app_displayname", "appid", "ipaddr", "name", "scp", "unique_name", "upn"]
+    keys_to_report = ["aud", "exp", "app_displayname", "appid", "ipaddr", "name", "scp", "unique_name", "upn", "roles"]
     decoded_token = decode_jwt(jwt_token)
     censored_token = {}
     for key_to_report in keys_to_report:
