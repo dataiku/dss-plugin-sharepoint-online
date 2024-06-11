@@ -21,6 +21,13 @@ def convert_date_format(json_row):
     return json_row
 
 
+def get_write_mode(config):
+    write_mode = config.get("write_mode", "append")
+    if write_mode == "create":
+        write_mode = "append"
+    return write_mode
+
+
 input_dataset_names = get_input_names_for_role('input_dataset')
 input_dataset = dataiku.Dataset(input_dataset_names[0])
 input_dataframe = input_dataset.get_dataframe()
@@ -43,7 +50,11 @@ column_sharepoint_type = {}
 expand_lookup = config.get("expand_lookup", False)
 metadata_to_retrieve = config.get("metadata_to_retrieve", [])
 advanced_parameters = config.get("advanced_parameters", False)
-write_mode = "append"
+write_mode = get_write_mode(config)
+columns_to_update = config.get("columns_to_update", [])
+if columns_to_update and "ID" not in columns_to_update:
+    columns_to_update.append("ID")
+
 if not advanced_parameters:
     max_workers = 1  # no multithread per default
     batch_size = 100
@@ -57,11 +68,13 @@ metadata_to_retrieve.append("Title")
 display_metadata = len(metadata_to_retrieve) > 0
 client = SharePointClient(config)
 
-sharepoint_writer = client.get_writer({"columns": input_schema}, None, None, max_workers, batch_size, write_mode)
+sharepoint_writer = client.get_writer({"columns": input_schema}, None, None, max_workers,
+                                      batch_size, write_mode, columns_to_update)
+
+
 with output_dataset.get_writer() as writer:
     for index, input_parameters_row in input_dataframe.iterrows():
-        json_row = input_parameters_row.to_dict()
-        json_row = convert_date_format(json_row)
-        sharepoint_writer.write_row_dict(json_row)
-        writer.write_row_dict(json_row)
+        straighten_json_row = sharepoint_writer.pandas_row_to_json(input_parameters_row)
+        sharepoint_writer.write_row_dict(straighten_json_row)
+        writer.write_row_dict(sharepoint_writer.fix_dates_for_pandas_output(input_parameters_row))
     sharepoint_writer.close()
