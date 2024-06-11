@@ -231,8 +231,10 @@ class SharePointListWriter(object):
             item = self.build_row_dictionary(row, self.columns_to_update)
             item_id = item.pop("ID", None)
             if item_id is None:
-                raise Exception("Item in column 'ID' cannot be left empty")
-            kwargs.append(self.client.get_update_list_item_kwargs(self.web_name, self.list_item_entity_type_full_name, item_id, item))
+                kwargs.append(self.client.get_add_list_item_kwargs(self.web_name, item))
+                # raise Exception("Item in column 'ID' cannot be left empty")
+            else:
+                kwargs.append(self.client.get_update_list_item_kwargs(self.web_name, self.list_item_entity_type_full_name, item_id, item))
         self.client.process_batch(kwargs)
         logger.info("{} items written".format(len(kwargs)))
 
