@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.1.4](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.4) - Feature release - 2024-06-19
+
+- Enables the "Append instead of overwrite" checkbox in sync recipes for SharePoint lists
+
 ## [Version 1.1.3](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.3) - Feature release - 2024-06-04
 
 - Add login with Azure AD app certificate
