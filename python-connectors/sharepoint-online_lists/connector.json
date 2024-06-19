@@ -5,7 +5,8 @@
         "icon": "icon-cloud"
     },
     "readable": true,
-    "writable": false,
+    "writable": true,
+    "supportAppend": true,
     "params": [
         {
             "name": "auth_type",
