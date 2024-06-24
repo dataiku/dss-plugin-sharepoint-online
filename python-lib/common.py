@@ -155,11 +155,12 @@ def update_dict_in_kwargs(kwargs, key_to_update, update):
 
 def run_oauth_diagnostic(jwt_token):
     censored_token = diagnose_jwt(jwt_token)
-    
     ip_in_jwt = censored_token.get("ipaddr", "")
     if not ip_in_jwt:
         logger.info("No IP address in the JWT token")
     else:
+        # Retrieve the plugin's external IP to check it matches the one
+        # stored in the JWT token
         kernel_external_ip = get_kernel_external_ip()
         if not kernel_external_ip:
             return
@@ -170,6 +171,8 @@ def run_oauth_diagnostic(jwt_token):
 
 
 def diagnose_jwt(jwt_token):
+    # Display ebough details about the JWT token to allow debugging
+    # without making it possible to reuse it
     keys_to_report = ["aud", "exp", "app_displayname", "appid", "ipaddr", "name", "scp", "unique_name", "upn", "roles"]
     decoded_token = decode_jwt(jwt_token)
     censored_token = {}

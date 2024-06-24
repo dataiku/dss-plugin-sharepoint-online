@@ -816,6 +816,7 @@ class SharePointClient():
                 )
 
     def run_jwt_validity_test(self):
+        # Called following 403 error
         if self.auth_token_for_diag and not self.jwt_diag_done:
             self.jwt_diag_done = True
             run_oauth_diagnostic(self.auth_token_for_diag)
