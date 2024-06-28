@@ -782,9 +782,7 @@ class SharePointClient():
             if status_code == 404:
                 raise SharePointClientError("Not found. Please check tenant, site type or site name. ({})".format(calling_method))
             if status_code == 403:
-                logger.error("403 error. Checking for federated namespace.")
                 self.assert_non_federated_namespace()
-                logger.error("User does not belong to federated namespace.")
                 self.run_jwt_validity_test()
                 raise SharePointClientError("403 Forbidden. Please check your account credentials. ({})".format(calling_method))
             raise SharePointClientError("Error {} ({})".format(status_code, calling_method))
@@ -794,6 +792,7 @@ class SharePointClient():
     def assert_non_federated_namespace(self):
         # Called following 403 error
         if self.username_for_namespace_diag:
+            logger.error("403 error. Checking for federated namespace.")
             # username / password login was used to login
             # we check if the email used as username belongs to a federated namespace
             json_response = ""
@@ -814,11 +813,13 @@ class SharePointClient():
                     + "Dataiku might not be able to use it to access SharePoint-Online. "
                     + "Please contact your administrator to configure a Single Sign On or an App token access."
                 )
+            logger.error("User does not belong to federated namespace.")
 
     def run_jwt_validity_test(self):
         # Called following 403 error
         if self.auth_token_for_diag and not self.jwt_diag_done:
             self.jwt_diag_done = True
+            logger.info("403 Error. Running diag on auth token")
             run_oauth_diagnostic(self.auth_token_for_diag)
 
     @staticmethod
