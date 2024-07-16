@@ -296,7 +296,7 @@ class SharePointClient():
          (unless it ends in / in which case a folder will be created for that also).
         """
         full_path, filename = os.path.split(file_full_path)
-        tokens = full_path.split("/")
+        tokens = full_path.strip("/").split("/")
         path = ""
         previous_status = None
         for token in tokens:
