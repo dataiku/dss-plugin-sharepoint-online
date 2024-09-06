@@ -23,7 +23,6 @@ class SharePointListsConnector(Connector):
         self.expand_lookup = config.get("expand_lookup", False)
         self.metadata_to_retrieve = config.get("metadata_to_retrieve", [])
         advanced_parameters = config.get("advanced_parameters", False)
-        self.write_mode = "create"
         if not advanced_parameters:
             self.max_workers = 1  # no multithread per default
             self.batch_size = 100
@@ -112,9 +111,11 @@ class SharePointListsConnector(Connector):
         return row
 
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
-                   partition_id=None):
+                   partition_id=None, write_mode="OVERWRITE"):
         assert_list_title(self.sharepoint_list_title)
-        return self.client.get_writer(dataset_schema, dataset_partitioning, partition_id, self.max_workers, self.batch_size, self.write_mode)
+        if write_mode != "APPEND":
+            write_mode = SharePointConstants.WRITE_MODE_CREATE
+        return self.client.get_writer(dataset_schema, dataset_partitioning, partition_id, self.max_workers, self.batch_size, write_mode)
 
     def get_partitioning(self):
         logger.info('get_partitioning')
