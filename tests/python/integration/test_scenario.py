@@ -49,3 +49,7 @@ def test_run_sharepoint_online_certificate_auth(user_dss_clients):
 
 def test_run_sharepoint_online_encrypted_certificate_auth(user_dss_clients):
     dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="ENCRYPTEDCERTIFICATEAUTH")
+
+
+def test_run_sharepoint_online_write_preset_without_root_folder(user_dss_clients):
+    dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="SC194128NOROOTFOLDERPRESETS")

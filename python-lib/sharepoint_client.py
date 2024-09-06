@@ -296,7 +296,7 @@ class SharePointClient():
          (unless it ends in / in which case a folder will be created for that also).
         """
         full_path, filename = os.path.split(file_full_path)
-        tokens = full_path.split("/")
+        tokens = full_path.strip("/").split("/")
         path = ""
         previous_status = None
         for token in tokens:
@@ -773,7 +773,7 @@ class SharePointClient():
             logger.error("dump={}".format(response.content))
             enriched_error_message = self.get_enriched_error_message(response)
             if enriched_error_message is not None:
-                raise SharePointClientError("Error ({}): {}".format(calling_method, enriched_error_message))
+                raise SharePointClientError("Error {} ({}): {}".format(status_code, calling_method, enriched_error_message))
             if status_code == 400:
                 raise SharePointClientError("({}){}".format(calling_method, response.text))
             if status_code == 404:
@@ -819,7 +819,9 @@ class SharePointClient():
                 json_response,
                 [
                     ["error", "message", "value"],
-                    ["error_description"]
+                    ["error_description"],
+                    ["error","message"],
+                    ["odata.error","message","value"]
                 ]
             )
             if error_message:
