@@ -1,4 +1,5 @@
 import datetime
+import pandas
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from sharepoint_constants import SharePointConstants
 from dss_constants import DSSConstants
@@ -54,6 +55,8 @@ def assert_list_title(list_title):
 
 
 def dss_to_sharepoint_date(date):
+    if "T" not in date or "Z" not in date:
+        return date
     return format_date(date, DSSConstants.DATE_FORMAT, SharePointConstants.DATE_FORMAT)
 
 
@@ -78,9 +81,18 @@ def format_date(date, from_format, to_format):
         return date
 
 
+def get_columns_types(input_schema):
+    columns_types = {}
+    for column_schema in input_schema:
+        column_name = column_schema.get("name", "")
+        column_type = column_schema.get("type", "string")
+        columns_types[column_name] = column_type
+    return columns_types
+
+
 class SharePointListWriter(object):
 
-    def __init__(self, config, client, dataset_schema, dataset_partitioning, partition_id, max_workers=5, batch_size=100, write_mode="create"):
+    def __init__(self, config, client, dataset_schema, dataset_partitioning, partition_id, max_workers=5, batch_size=100, write_mode="create", columns_to_update=[]):
         self.client = client
         self.config = config
         self.dataset_schema = dataset_schema
@@ -89,10 +101,13 @@ class SharePointListWriter(object):
         self.buffer = []
         logger.info('init SharepointListWriter with {} workers and batch size of {}'.format(max_workers, batch_size))
         self.columns = dataset_schema[SharePointConstants.COLUMNS]
+        self.dss_columns_types = get_columns_types(self.columns)
         self.sharepoint_column_ids = {}
         self.sharepoint_existing_column_names = {}
         self.sharepoint_existing_column_entity_property_names = {}
         self.web_name = self.client.sharepoint_list_title
+        self.write_mode = write_mode
+        self.columns_to_update = columns_to_update
 
         if write_mode == SharePointConstants.WRITE_MODE_CREATE:
             logger.info('flush:recycle_list "{}"'.format(self.client.sharepoint_list_title))
@@ -132,14 +147,52 @@ class SharePointListWriter(object):
     def write_row_dict(self, row_dict):
         row = []
         for element in row_dict:
-            row.append(str(row_dict.get(element)))
+            row.append(row_dict.get(element))
         self.write_row(row)
 
+    def pandas_row_to_json(self, input_pandas_row):
+        input_row = input_pandas_row.to_dict()
+        # Now lets fix what has been savaged by the panda
+        output_row = {}
+        for key in input_row:
+            target_type = self.dss_columns_types.get(key)
+            value = input_row.get(key)
+            if not value or pandas.isna(value):
+                straighten_value = None
+            elif target_type in ["int", "bigint"]:
+                if isinstance(value, int):
+                    straighten_value = str(value)
+                else:
+                    # If there was one NaN in the int column, the whole column has been converted in float
+                    # Because, obviously...
+                    straighten_value = str(int(value))
+            else:
+                straighten_value = str(value)
+            output_row[key] = straighten_value
+        return output_row
+
+    def fix_dates_for_pandas_output(self, input_pandas_row):
+        input_row = input_pandas_row.to_dict()
+        fixed_output_row = {}
+        for key in input_row:
+            target_type = self.dss_columns_types.get(key)
+            value = input_row.get(key)
+            if pandas.isna(value):
+                fixed_output_row[key] = None
+            elif target_type == "date":
+                fixed_output_row[key] = value.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+            else:
+                fixed_output_row[key] = value
+        return fixed_output_row
+
     def flush(self):
-        if self.max_workers > 1:
-            self.upload_rows_multithreaded()
+        if self.write_mode == "update":
+            self.update_rows()
         else:
-            self.upload_rows()
+            if self.max_workers > 1:
+                self.upload_rows_multithreaded()
+            else:
+                self.upload_rows()
 
     def upload_rows_multithreaded(self):
         logger.info("Starting multithreaded rows adding")
@@ -171,6 +224,20 @@ class SharePointListWriter(object):
         self.client.process_batch(kwargs)
         logger.info("{} items written".format(len(kwargs)))
 
+    def update_rows(self):
+        logger.info("Starting updating items")
+        kwargs = []
+        for row in self.buffer:
+            item = self.build_row_dictionary(row, self.columns_to_update)
+            item_id = item.pop("ID", None)
+            if item_id is None:
+                kwargs.append(self.client.get_add_list_item_kwargs(self.web_name, item))
+                # raise Exception("Item in column 'ID' cannot be left empty")
+            else:
+                kwargs.append(self.client.get_update_list_item_kwargs(self.web_name, self.list_item_entity_type_full_name, item_id, item))
+        self.client.process_batch(kwargs)
+        logger.info("{} items written".format(len(kwargs)))
+
     def create_sharepoint_columns(self):
         """ Create the list's columns on SP, retrieve their SP id and map it to their DSS column name """
         logger.info("create_sharepoint_columns")
@@ -198,9 +265,12 @@ class SharePointListWriter(object):
             else:
                 self.sharepoint_column_ids[dss_column_name] = dss_column_name
 
-    def build_row_dictionary(self, row):
+    def build_row_dictionary(self, row, columns_to_update=None):
         ret = {}
         for column, structure in zip(row, self.columns):
+            if columns_to_update:
+                if structure[SharePointConstants.NAME_COLUMN] not in columns_to_update:
+                    continue
             key_to_use = self.sharepoint_existing_column_names.get(
                 structure[SharePointConstants.NAME_COLUMN],
                 self.sharepoint_column_ids[structure[SharePointConstants.NAME_COLUMN]]
