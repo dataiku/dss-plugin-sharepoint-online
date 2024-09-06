@@ -1,9 +1,10 @@
 # Changelog
 
-## [Version 1.1.4](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.4) - Feature and bugfix release - 2024-05-21
+## [Version 1.1.4](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.4) - Feature and bugfix release - 2024-07-16
 
 - Update of individual list records
 - Fix access to list with special characters in name
+- Fix writing when using presets with no root folder defined
 
 ## [Version 1.1.3](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.3) - Feature release - 2024-06-04
 
