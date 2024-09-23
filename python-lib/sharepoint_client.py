@@ -67,9 +67,6 @@ class SharePointClient():
                 max_retries=SharePointConstants.MAX_RETRIES,
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
             )
-            self.form_digest_value = get_form_digest_value(self.sharepoint_url, self.sharepoint_site, session=self.session)
-            default_headers = {"X-RequestDigest": self.form_digest_value} if self.form_digest_value else None
-            self.session.update_settings(default_headers=default_headers)
         elif config.get('auth_type') == DSSConstants.AUTH_LOGIN:
             logger.info("SharePointClient:sharepoint_sharepy")
             login_details = config.get('sharepoint_sharepy')
