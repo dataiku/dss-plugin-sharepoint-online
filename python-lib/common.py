@@ -168,6 +168,11 @@ def assert_valid_sharepoint_path(sharepoint_path):
             )
 
 
+def assert_no_percent_in_path(path):
+    if isinstance(path, str) and "%" in path:
+        raise Exception("This plugin cannot move/rename an item if its path contains '%'")
+
+
 class ItemsLimit():
     def __init__(self, records_limit=-1):
         self.has_no_limit = (records_limit == -1)
