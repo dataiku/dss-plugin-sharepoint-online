@@ -207,6 +207,9 @@ class SharePointListWriter(object):
             )
             if column and structure.get("type") == "date":
                 ret[key_to_use] = dss_to_sharepoint_date(column)
+            elif column and structure.get("type") == "string":
+                # max length of a string on SharePoint is 255
+                ret[key_to_use] = column[:255]
             else:
                 ret[key_to_use] = column
         return ret
