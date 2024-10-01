@@ -18,7 +18,7 @@ from common import (
     is_email_address, get_value_from_path, parse_url,
     get_value_from_paths, is_request_performed, ItemsLimit,
     is_empty_path, merge_paths, get_lnt_path,
-    format_private_key, format_certificate_thumbprint, url_encode, assert_no_percent_in_path
+    format_private_key, format_certificate_thumbprint, url_encode
 )
 from safe_logger import SafeLogger
 
@@ -307,9 +307,7 @@ class SharePointClient():
             if previous_status == 403 and status_code == 404:
                 logger.error("Could not create folder for '{}'. Check your write permission for the folder {}.".format(path, previous_path))
 
-    def move_file(self, full_from_path, full_to_path):
-        assert_no_percent_in_path(full_from_path)
-        assert_no_percent_in_path(full_to_path)
+    def move_file(self, full_from_path, full_to_path):        
         get_move_url = self.get_move_url(
             full_from_path,
             full_to_path
