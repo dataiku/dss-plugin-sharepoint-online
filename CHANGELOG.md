@@ -3,6 +3,7 @@
 ## [Version 1.1.4](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.4) - Feature release - 2024-07-16
 
 - Fix writing when using presets with no root folder defined
+- Fix read and write issues with file names / paths containing # or %
 
 ## [Version 1.1.2](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.2) - Bugfix release - 2024-05-28
 
