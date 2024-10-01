@@ -4,6 +4,7 @@
 
 - Fix writing when using presets with no root folder defined
 - Limit string length to the 255 characters SharePoint limit
+- Fix read and write issues with file names / paths containing # or %
 
 ## [Version 1.1.2](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.2) - Bugfix release - 2024-05-28
 
