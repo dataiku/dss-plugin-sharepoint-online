@@ -1,8 +1,14 @@
 # Changelog
 
-## [Version 1.1.4](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.4) - Feature release - 2024-06-10
+## [Version 1.1.5](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.5) - Feature release - 2024-10-15
 
 - Restrict site path, root directory override and write mode on presets
+
+## [Version 1.1.4](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.4) - Feature release - 2024-07-16
+
+- Fix writing when using presets with no root folder defined
+- Limit string length to the 255 characters SharePoint limit
+- Fix read and write issues with file names / paths containing # or %
 
 ## [Version 1.1.3](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.3) - Feature release - 2024-06-04
 
