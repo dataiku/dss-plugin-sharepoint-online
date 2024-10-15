@@ -153,6 +153,26 @@ def update_dict_in_kwargs(kwargs, key_to_update, update):
     return kwargs
 
 
+def url_encode(string_to_encode):
+    return urlparse.quote(string_to_encode.encode("utf-8"))
+
+
+def assert_valid_sharepoint_path(sharepoint_path):
+    for forbidden_char in SharePointConstants.FORBIDDEN_PATH_CHARS:
+        if forbidden_char in sharepoint_path:
+            raise Exception("Illegal char '{}' in path '{}'. SharePoint forbids the use of {} in file or folder names.".format(
+                    forbidden_char,
+                    sharepoint_path,
+                    " ".join(SharePointConstants.FORBIDDEN_PATH_CHARS)
+                )
+            )
+
+
+def assert_no_percent_in_path(path):
+    if isinstance(path, str) and "%" in path:
+        raise Exception("This plugin cannot move/rename an item if its path contains '%'")
+
+
 class ItemsLimit():
     def __init__(self, records_limit=-1):
         self.has_no_limit = (records_limit == -1)

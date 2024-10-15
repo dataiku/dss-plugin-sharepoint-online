@@ -15,6 +15,7 @@ class SharePointConstants(object):
     FILE = 0
     FILE_SYSTEM_OBJECT_TYPE = "FileSystemObjectType"
     FILE_UPLOAD_CHUNK_SIZE = 131072000
+    FORBIDDEN_PATH_CHARS = ['"', '*', ':', '<', '>', '?', '\\', '|']
     FORM_DIGEST_VALUE = "FormDigestValue"
     GET_CONTEXT_WEB_INFORMATION = "GetContextWebInformation"
     GET_FOLDER_URL_STRUCTURE = "{0}/{1}/_api/Web/GetFolderByServerRelativeUrl('/{1}/{2}{3}')"

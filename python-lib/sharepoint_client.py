@@ -18,7 +18,7 @@ from common import (
     is_email_address, get_value_from_path, parse_url,
     get_value_from_paths, is_request_performed, ItemsLimit,
     is_empty_path, merge_paths, get_lnt_path,
-    format_private_key, format_certificate_thumbprint
+    format_private_key, format_certificate_thumbprint, url_encode
 )
 from safe_logger import SafeLogger
 
@@ -307,7 +307,7 @@ class SharePointClient():
             if previous_status == 403 and status_code == 404:
                 logger.error("Could not create folder for '{}'. Check your write permission for the folder {}.".format(path, previous_path))
 
-    def move_file(self, full_from_path, full_to_path):
+    def move_file(self, full_from_path, full_to_path):        
         get_move_url = self.get_move_url(
             full_from_path,
             full_to_path
@@ -743,21 +743,24 @@ class SharePointClient():
     def get_folder_url(self, full_path):
         if full_path == '/':
             full_path = ""
-        return self.get_base_url() + "/GetFolderByServerRelativeUrl({})".format(
-            self.get_site_path(full_path.replace("#", "%23"))
+        return self.get_base_url() + "/GetFolderByServerRelativePath(decodedurl='{}')".format(
+            url_encode(self.get_site_path(full_path))
         )
 
     def get_file_url(self, full_path):
-        return self.get_base_url() + "/GetFileByServerRelativePath(decodedUrl={})".format(
-            self.get_site_path(full_path)
+        return self.get_base_url() + "/GetFileByServerRelativePath(decodedurl='{}')".format(
+            url_encode(self.get_site_path(full_path))
         )
 
     def get_file_content_url(self, full_path):
         return self.get_file_url(full_path.replace("#", "%23")) + "/$value"
 
     def get_move_url(self, from_path, to_path):
-        return self.get_file_url(from_path) + "/moveto(newurl={},flags=1)".format(
-            self.get_site_path(to_path)
+        # Using the new method leads to 403.
+        # Old method left in place. As a result, moving/renaming a file containing % in its path/name is still not possible.
+        # return self.get_file_url(from_path) + "/movetousingpath(newPath='{}',moveOperations=1)".format(
+        return self.get_file_url(from_path) + "/moveto(newurl='{}',flags=1)".format(
+            url_encode(self.get_site_path(to_path))
         )
 
     def get_recycle_file_url(self, full_path):
@@ -773,7 +776,7 @@ class SharePointClient():
         return self.get_file_url(full_path) + "/CheckOut()"
 
     def get_site_path(self, full_path):
-        return "'/{}/{}{}'".format(
+        return "/{}/{}{}".format(
             self.escape_path(self.sharepoint_site),
             self.escape_path(self.sharepoint_root),
             self.escape_path(full_path)
@@ -781,12 +784,16 @@ class SharePointClient():
 
     def get_add_folder_url(self, full_path):
         path = merge_paths(self.sharepoint_root, full_path)
-        return self.get_base_url() + "/Folders/add('{}')".format(
-            path
+        return self.get_base_url() + "/Folders/AddUsingPath(decodedurl='{}')".format(
+            url_encode(path)
         )
 
     def get_file_add_url(self, full_path, file_name):
-        return self.get_folder_url(full_path) + "/Files/add(url='{}',overwrite=true)".format(self.escape_path(file_name))
+        return self.get_folder_url(full_path) + "/Files/AddUsingPath(decodedurl='{}',overwrite=true)".format(
+            url_encode(
+                self.escape_path(file_name)
+            )
+        )
 
     def get_list_default_view_url(self, list_title):
         return os.path.join(
