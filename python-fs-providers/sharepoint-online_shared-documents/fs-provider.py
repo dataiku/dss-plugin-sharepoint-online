@@ -6,7 +6,7 @@ import shutil
 from sharepoint_client import SharePointClient
 from dss_constants import DSSConstants
 from sharepoint_items import loop_sharepoint_items, has_sharepoint_items, extract_item_from, get_size, get_last_modified, get_name, assert_path_is_not_root
-from common import get_rel_path, get_lnt_path
+from common import get_rel_path, get_lnt_path, assert_valid_sharepoint_path, assert_no_percent_in_path
 from safe_logger import SafeLogger
 
 try:
@@ -45,6 +45,7 @@ class SharePointFSProvider(FSProvider):
         logger.info('close')
 
     def stat(self, path):
+        assert_valid_sharepoint_path(path)
         full_path = get_lnt_path(self.get_full_path(path))
         logger.info('stat:path="{}", full_path="{}"'.format(path, full_path))
         files = self.client.get_files(full_path)
@@ -86,6 +87,7 @@ class SharePointFSProvider(FSProvider):
         return False
 
     def browse(self, path):
+        assert_valid_sharepoint_path(path)
         path = get_rel_path(path)
         full_path = get_lnt_path(self.get_full_path(path))
         logger.info('browse:path="{}", full_path="{}"'.format(path, full_path))
@@ -149,6 +151,7 @@ class SharePointFSProvider(FSProvider):
         return ret
 
     def enumerate(self, path, first_non_empty):
+        assert_valid_sharepoint_path(path)
         full_path = get_lnt_path(self.get_full_path(path))
         logger.info('enumerate:path="{}",fullpath="{}", first_non_empty="{}"'.format(path, full_path, first_non_empty))
         path_to_item, item_name = os.path.split(full_path)
@@ -183,6 +186,7 @@ class SharePointFSProvider(FSProvider):
         return paths
 
     def delete_recursive(self, path):
+        assert_valid_sharepoint_path(path)
         full_path = self.get_full_path(path)
         logger.info('delete_recursive:path={},fullpath={}'.format(path, full_path))
         assert_path_is_not_root(full_path)
@@ -206,6 +210,10 @@ class SharePointFSProvider(FSProvider):
         return 0
 
     def move(self, from_path, to_path):
+        assert_valid_sharepoint_path(from_path)
+        assert_no_percent_in_path(from_path)
+        assert_valid_sharepoint_path(to_path)
+        assert_no_percent_in_path(to_path)
         full_from_path = self.get_full_path(from_path)
         full_to_path = self.get_full_path(to_path)
         logger.info('move:from={},to={}'.format(full_from_path, full_to_path))
@@ -215,6 +223,7 @@ class SharePointFSProvider(FSProvider):
         return True
 
     def read(self, path, stream, limit):
+        assert_valid_sharepoint_path(path)
         full_path = self.get_full_path(path)
         logger.info('read:full_path={}'.format(full_path))
         response = self.client.get_file_content(full_path)
@@ -222,6 +231,7 @@ class SharePointFSProvider(FSProvider):
         shutil.copyfileobj(bio, stream)
 
     def write(self, path, stream):
+        assert_valid_sharepoint_path(path)
         full_path = self.get_full_path(path)
         logger.info('write:path="{}", full_path="{}"'.format(path, full_path))
         bio = BytesIO()
