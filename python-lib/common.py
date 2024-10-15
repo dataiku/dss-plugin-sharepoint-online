@@ -187,11 +187,11 @@ def decode_jwt(jwt_token):
         import base64
         import json
         sub_tokens = jwt_token.split('.')
-        if len(sub_tokens)<2:
+        if len(sub_tokens) < 2:
             logger.error("JWT format is wrong")
             return {}
         token_of_interest = sub_tokens[1]
-        padded_token = token_of_interest + "="*divmod(len(token_of_interest),4)[1]
+        padded_token = token_of_interest + "="*divmod(len(token_of_interest), 4)[1]
         decoded_token = base64.urlsafe_b64decode(padded_token.encode('utf-8'))
         json_token = json.loads(decoded_token)
         return json_token
@@ -212,6 +212,26 @@ def get_kernel_external_ip():
     except Exception as error:
         logger.error("Could not fetch kernel's remote ip ({})".format(error))
     return ""
+
+
+def url_encode(string_to_encode):
+    return urlparse.quote(string_to_encode.encode("utf-8"))
+
+
+def assert_valid_sharepoint_path(sharepoint_path):
+    for forbidden_char in SharePointConstants.FORBIDDEN_PATH_CHARS:
+        if forbidden_char in sharepoint_path:
+            raise Exception("Illegal char '{}' in path '{}'. SharePoint forbids the use of {} in file or folder names.".format(
+                    forbidden_char,
+                    sharepoint_path,
+                    " ".join(SharePointConstants.FORBIDDEN_PATH_CHARS)
+                )
+            )
+
+
+def assert_no_percent_in_path(path):
+    if isinstance(path, str) and "%" in path:
+        raise Exception("This plugin cannot move/rename an item if its path contains '%'")
 
 
 class ItemsLimit():
