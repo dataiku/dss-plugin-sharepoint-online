@@ -542,6 +542,21 @@ class SharePointClient():
             "checkInComment": None
         }
 
+    def get_update_list_item_kwargs(self, list_title, list_item_entity_type_full_name, item_id, item_update):
+        # https://sharepoint.stackexchange.com/questions/250659/how-implement-rest-queries-in-sharepoint
+        list_item_update_info = self.get_list_item_update(item_update, list_item_entity_type_full_name)
+        headers = DSSConstants.JSON_HEADERS
+        headers["X-HTTP-Method"] = "MERGE"
+        headers["If-Match"] = "*"
+        update_item_url = self.get_update_item_url(list_title, item_id)
+        kwargs = {
+            "verb": "PATCH",
+            "url": update_item_url,
+            "headers": headers,
+            "json": list_item_update_info
+        }
+        return kwargs
+
     @staticmethod
     def get_form_value(field_name, field_value):
         return {
@@ -563,6 +578,17 @@ class SharePointClient():
                 "DecodedUrl": "/{}/Lists/{}".format(self.sharepoint_site, list_title)
             }
         }
+
+    @staticmethod
+    def get_list_item_update(item, list_item_entity_type_full_name):
+        # https://learn.microsoft.com/en-us/sharepoint/dev/sp-add-ins/working-with-lists-and-list-items-with-rest
+        ret = {}
+        ret["__metadata"] = {
+            "type": "{}".format(list_item_entity_type_full_name)
+        }
+        for field_name in item:
+            ret[field_name] = item.get(field_name)
+        return ret
 
     def process_batch(self, kwargs_array):
         batch_id = self.get_random_guid()
@@ -628,6 +654,7 @@ class SharePointClient():
         logger.info("Batch error analysis")
         statuses = re.findall('HTTP/1.1 (.*?) ', str(response.content))
         dump_response_content = False
+        reason_to_raise = None
         for status, kwarg in zip(statuses, kwargs_array):
             if not status.startswith("20"):
                 if dump_response_content:
@@ -644,6 +671,7 @@ class SharePointClient():
         error_messages = re.findall('"ErrorMessage":"(.*?)}', str(response.content))
         for error_message in error_messages:
             logger.warning("Error:'{}'".format(error_message))
+            reason_to_raise = error_message
         if dump_response_content:
             if self.number_dumped_logs == 0:
                 logger.warning("response.content={}".format(response.content))
@@ -652,6 +680,8 @@ class SharePointClient():
             self.number_dumped_logs += 1
         else:
             logger.info("Batch error analysis OK")
+        if reason_to_raise:
+            raise SharePointClientError("There was at least one issue during batch processing ({}). Look into the logs for more details.".format(reason_to_raise))
 
     def get_base_url(self):
         return "{}/{}/_api/Web".format(
@@ -689,6 +719,13 @@ class SharePointClient():
             self.escape_path(list_title)
         )
 
+    def get_update_item_url(self, list_title, item_id):
+        return self.get_base_url() + "/GetList(@a1)/items({})?@a1='/{}/Lists/{}'".format(
+            item_id,
+            self.sharepoint_site,
+            self.escape_path(list_title)
+        )
+
     def get_list_fields_url(self, list_title):
         return self.get_lists_by_title_url(list_title) + "/fields"
 
@@ -716,7 +753,7 @@ class SharePointClient():
         )
 
     def get_file_content_url(self, full_path):
-        return self.get_file_url(full_path) + "/$value"
+        return self.get_file_url(full_path.replace("#", "%23")) + "/$value"
 
     def get_move_url(self, from_path, to_path):
         # Using the new method leads to 403.
@@ -918,7 +955,7 @@ class SharePointClient():
         return path.replace("'", "''")
 
     def get_writer(self, dataset_schema, dataset_partitioning,
-                   partition_id, max_workers, batch_size, write_mode):
+                   partition_id, max_workers, batch_size, write_mode, columns_to_update=[]):
         return SharePointListWriter(
             self.config,
             self,
@@ -927,7 +964,8 @@ class SharePointClient():
             partition_id,
             max_workers=max_workers,
             batch_size=batch_size,
-            write_mode=write_mode
+            write_mode=write_mode,
+            columns_to_update=columns_to_update
         )
 
     def get_read_schema(self, display_metadata=False, metadata_to_retrieve=[]):
