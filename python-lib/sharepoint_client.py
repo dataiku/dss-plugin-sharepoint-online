@@ -17,7 +17,7 @@ from dss_constants import DSSConstants
 from common import (
     is_email_address, get_value_from_path, parse_url,
     get_value_from_paths, is_request_performed, ItemsLimit,
-    is_empty_path, merge_paths, get_lnt_path,
+    is_empty_path, merge_paths, run_oauth_diagnostic, get_lnt_path,
     format_private_key, format_certificate_thumbprint, url_encode
 )
 from safe_logger import SafeLogger
@@ -41,6 +41,7 @@ class SharePointClient():
         self.session = RobustSession(status_codes_to_retry=[429, 503], attempt_session_reset_on_403=attempt_session_reset_on_403)
         self.number_dumped_logs = 0
         self.username_for_namespace_diag = None
+        self.jwt_diag_done = False
 
         self.dss_column_name = {}
         self.column_ids = {}
@@ -57,6 +58,7 @@ class SharePointClient():
             self.apply_paths_overwrite(config)
             self.setup_sharepoint_online_url(login_details)
             self.sharepoint_access_token = login_details['sharepoint_oauth']
+            self.auth_token_for_diag =self.sharepoint_access_token
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
@@ -125,6 +127,7 @@ class SharePointClient():
             self.passphrase = login_details.get("passphrase")
             self.client_id = login_details.get("client_id")
             self.sharepoint_access_token = self.get_certificate_app_access_token()
+            self.auth_token_for_diag =self.sharepoint_access_token
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
@@ -786,9 +789,8 @@ class SharePointClient():
             if status_code == 404:
                 raise SharePointClientError("Not found. Please check tenant, site type or site name. ({})".format(calling_method))
             if status_code == 403:
-                logger.error("403 error. Checking for federated namespace.")
                 self.assert_non_federated_namespace()
-                logger.error("User does not belong to federated namespace.")
+                self.run_jwt_validity_test()
                 raise SharePointClientError("403 Forbidden. Please check your account credentials. ({})".format(calling_method))
             raise SharePointClientError("Error {} ({})".format(status_code, calling_method))
         if not no_json:
@@ -797,6 +799,7 @@ class SharePointClient():
     def assert_non_federated_namespace(self):
         # Called following 403 error
         if self.username_for_namespace_diag:
+            logger.error("403 error. Checking for federated namespace.")
             # username / password login was used to login
             # we check if the email used as username belongs to a federated namespace
             json_response = ""
@@ -817,6 +820,14 @@ class SharePointClient():
                     + "Dataiku might not be able to use it to access SharePoint-Online. "
                     + "Please contact your administrator to configure a Single Sign On or an App token access."
                 )
+            logger.error("User does not belong to federated namespace.")
+
+    def run_jwt_validity_test(self):
+        # Called following 403 error
+        if self.auth_token_for_diag and not self.jwt_diag_done:
+            self.jwt_diag_done = True
+            logger.info("403 Error. Running diag on auth token")
+            run_oauth_diagnostic(self.auth_token_for_diag)
 
     @staticmethod
     def get_enriched_error_message(response):
