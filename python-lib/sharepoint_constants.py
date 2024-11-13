@@ -54,6 +54,19 @@ class SharePointConstants(object):
         "User": "array",
         "Thumbnail": "object"
     }
+    TYPES_WITH_COMPUTED = {
+        "Text": "string",
+        "Number": "string",
+        "DateTime": "date",
+        "Boolean": "string",
+        "URL": "object",
+        "Location": "object",
+        "Computed": "string",
+        "Attachments": None,
+        "Calculated": "string",
+        "User": "array",
+        "Thumbnail": "object"
+    }
     TYPE_AS_STRING = 'TypeAsString'
     TYPE_COLUMN = 'type'
     VALUE = 'value'
