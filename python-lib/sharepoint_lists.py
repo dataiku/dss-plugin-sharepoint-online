@@ -16,8 +16,11 @@ def extract_results(response):
     return response[SharePointConstants.RESULTS_CONTAINER_V2][SharePointConstants.RESULTS]
 
 
-def get_dss_type(sharepoint_type):
-    return SharePointConstants.TYPES.get(sharepoint_type, DSSConstants.FALLBACK_TYPE)
+def get_dss_type(sharepoint_type, with_computed=False):
+    if with_computed:
+        return SharePointConstants.TYPES_WITH_COMPUTED.get(sharepoint_type, DSSConstants.FALLBACK_TYPE)
+    else:
+        return SharePointConstants.TYPES.get(sharepoint_type, DSSConstants.FALLBACK_TYPE)
 
 
 def get_sharepoint_type(dss_type):
