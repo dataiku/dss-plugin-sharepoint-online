@@ -41,6 +41,7 @@ class SharePointClient():
         self.session = RobustSession(status_codes_to_retry=[429, 503], attempt_session_reset_on_403=attempt_session_reset_on_403)
         self.number_dumped_logs = 0
         self.username_for_namespace_diag = None
+        self.are_metadata_columns_visible = config.get("advanced_parameters", False) and config.get("are_metadata_columns_visible", False)
 
         self.dss_column_name = {}
         self.column_ids = {}
@@ -948,7 +949,10 @@ class SharePointClient():
                 self.is_column_displayable(column, display_metadata, metadata_to_retrieve)
             ))
             if self.is_column_displayable(column, display_metadata, metadata_to_retrieve):
-                sharepoint_type = get_dss_type(column[SharePointConstants.TYPE_AS_STRING])
+                sharepoint_type = get_dss_type(
+                    column[SharePointConstants.TYPE_AS_STRING],
+                    with_computed=self.are_metadata_columns_visible
+                )
                 self.column_sharepoint_type[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TYPE_AS_STRING]
                 if sharepoint_type is not None:
                     dss_columns.append({
@@ -968,6 +972,8 @@ class SharePointClient():
         }
 
     def is_column_displayable(self, column, display_metadata=False, metadata_to_retrieve=[]):
+        if self.are_metadata_columns_visible:
+            return True
         if display_metadata and (column['StaticName'] in metadata_to_retrieve):
             return True
         return (not column[SharePointConstants.HIDDEN_COLUMN])

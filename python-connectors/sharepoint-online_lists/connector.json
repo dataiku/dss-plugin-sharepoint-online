@@ -105,8 +105,8 @@
         },
         {
             "name": "advanced_parameters",
-            "label": "Show advanced parameters",
-            "description": "",
+            "label": " ",
+            "description": "Show advanced parameters",
             "type": "BOOLEAN",
             "defaultValue": false
         },
@@ -123,6 +123,14 @@
             "description": "Read data from a specific view",
             "type": "STRING",
             "defaultValue": "",
+            "visibilityCondition": "model.advanced_parameters == true"
+        },
+        {
+            "name": "are_metadata_columns_visible",
+            "label": " ",
+            "description": "Render all metadata columns",
+            "type": "BOOLEAN",
+            "defaultValue": false,
             "visibilityCondition": "model.advanced_parameters == true"
         },
         {
