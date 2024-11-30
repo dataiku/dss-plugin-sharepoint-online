@@ -162,8 +162,10 @@ class SharePointClient():
         sharepoint_root_overwrite = config.get("sharepoint_root_overwrite", "").strip("/")
         sharepoint_site_overwrite = config.get("sharepoint_site_overwrite", "").strip("/")
         if advanced_parameters and sharepoint_root_overwrite:
+            assert_can_overwrite_root(config)
             self.sharepoint_root = sharepoint_root_overwrite
         if advanced_parameters and sharepoint_site_overwrite:
+            assert_can_overwrite_site(config)
             self.sharepoint_site = sharepoint_site_overwrite
 
     def setup_sharepoint_online_url(self, login_details):
@@ -221,6 +223,7 @@ class SharePointClient():
         return response
 
     def write_file_content(self, full_path, data):
+        self.assert_can_write()
         self.file_size = len(data)
 
         # Preventive file check out, in case it already exists on SP's side
@@ -281,6 +284,7 @@ class SharePointClient():
         return response
 
     def create_folder(self, full_path):
+        self.assert_can_write()
         if is_empty_path(full_path) and is_empty_path(self.sharepoint_root):
             return
         response = self.session.post(
@@ -307,7 +311,8 @@ class SharePointClient():
             if previous_status == 403 and status_code == 404:
                 logger.error("Could not create folder for '{}'. Check your write permission for the folder {}.".format(path, previous_path))
 
-    def move_file(self, full_from_path, full_to_path):        
+    def move_file(self, full_from_path, full_to_path):
+        self.assert_can_write()
         get_move_url = self.get_move_url(
             full_from_path,
             full_to_path
@@ -317,23 +322,27 @@ class SharePointClient():
         return response.json()
 
     def check_in_file(self, full_path):
+        self.assert_can_write()
         logger.info("Checking in {}.".format(full_path))
         file_check_in_url = self.get_file_check_in_url(full_path)
         self.session.post(file_check_in_url)
         return
 
     def check_out_file(self, full_path):
+        self.assert_can_write()
         logger.info("Checking out {}.".format(full_path))
         file_check_out_url = self.get_file_check_out_url(full_path)
         self.session.post(file_check_out_url)
         return
 
     def recycle_file(self, full_path):
+        self.assert_can_write()
         recycle_file_url = self.get_recycle_file_url(full_path)
         response = self.session.post(recycle_file_url)
         self.assert_response_ok(response, calling_method="recycle_file")
 
     def recycle_folder(self, full_path):
+        self.assert_can_write()
         recycle_folder_url = self.get_recycle_folder_url(full_path)
         response = self.session.post(recycle_folder_url)
         self.assert_response_ok(response, calling_method="recycle_folder")
@@ -380,6 +389,7 @@ class SharePointClient():
         return response.json().get("ListData", {})
 
     def create_list(self, list_name):
+        self.assert_can_write()
         headers = DSSConstants.JSON_HEADERS
         data = {
             '__metadata': {
@@ -400,6 +410,7 @@ class SharePointClient():
         return json.get(SharePointConstants.RESULTS_CONTAINER_V2, {})
 
     def recycle_list(self, list_name):
+        self.assert_can_write()
         headers = DSSConstants.JSON_HEADERS
         response = self.session.post(
             self.get_lists_by_title_url(list_name)+"/recycle()",
@@ -428,6 +439,7 @@ class SharePointClient():
         return get_value_from_path(json_response, [SharePointConstants.RESULTS_CONTAINER_V2, "Name"])
 
     def create_custom_field_via_id(self, list_id, field_title, field_type=None):
+        self.assert_can_write()
         field_type = SharePointConstants.FALLBACK_TYPE if field_type is None else field_type
         schema_xml = self.get_schema_xml(field_title, field_type)
         body = {
@@ -458,6 +470,7 @@ class SharePointClient():
         return json_response.get(SharePointConstants.RESULTS_CONTAINER_V2, {"Items": {"results": []}}).get("Items", {"results": []}).get("results", [])
 
     def add_column_to_list_default_view(self, column_name, list_name):
+        self.assert_can_write()
         escaped_column_name = self.escape_path(column_name)
         list_default_view_url = os.path.join(
             self.get_list_default_view_url(list_name),
@@ -919,6 +932,7 @@ class SharePointClient():
 
     def get_writer(self, dataset_schema, dataset_partitioning,
                    partition_id, max_workers, batch_size, write_mode):
+        self.assert_can_write()
         return SharePointListWriter(
             self.config,
             self,
@@ -971,6 +985,12 @@ class SharePointClient():
         if display_metadata and (column['StaticName'] in metadata_to_retrieve):
             return True
         return (not column[SharePointConstants.HIDDEN_COLUMN])
+
+    def assert_can_write(self):
+        auth_details = get_auth_details(self.config)
+        cannot_write = auth_details.get("cannot_write", False)
+        if cannot_write:
+            raise SharePointClientError("This preset is read only")
 
 
 class SharePointSession():
@@ -1058,6 +1078,29 @@ def get_form_digest_value(sharepoint_url, sharepoint_site, session=None, sharepo
         logger.warning("Issue while retrieving form digest value ({})".format(error))
     logger.info("Form digest value {}".format(form_digest_value))
     return form_digest_value
+
+
+def assert_can_overwrite_root(config):
+    auth_details = get_auth_details(config)
+    cannot_overwrite_root = auth_details.get("cannot_overwrite_root", False)
+    if cannot_overwrite_root:
+        raise SharePointClientError("Root path overwrite is not allowed on this preset")
+
+
+def assert_can_overwrite_site(config):
+    auth_details = get_auth_details(config)
+    cannot_overwrite_site = auth_details.get("cannot_overwrite_site", False)
+    if cannot_overwrite_site:
+        raise SharePointClientError("Site path overwrite is not allowed on this preset")
+
+
+def get_auth_details(config):
+    KEY_TO_AUTH_DETAILS = {"oauth": "sharepoint_oauth", "login": "sharepoint_sharepy", "site-app-permissions": "site_app_permissions", "app-certificate": "app_certificate"}
+    auth_type = config.get("auth_type", None)
+    key_to_auth_details = KEY_TO_AUTH_DETAILS.get(auth_type, None)
+    if not key_to_auth_details:
+        return {}
+    return config.get(key_to_auth_details, {})
 
 
 class SuppressFilter(logging.Filter):

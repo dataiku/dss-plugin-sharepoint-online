@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.1.5](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.5) - Feature release - 2024-10-15
+
+- Restrict site path, root directory override and write mode on presets
+
 ## [Version 1.1.4](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.4) - Feature release - 2024-07-16
 
 - Fix writing when using presets with no root folder defined

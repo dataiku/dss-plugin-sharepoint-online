@@ -35,6 +35,13 @@
             "mandatory": true
         },
         {
+            "name": "cannot_overwrite_site",
+            "label": " ",
+            "type": "BOOLEAN",
+            "description": "Site path cannot be overwritten",
+            "mandatory": true
+        },
+        {
             "name": "sharepoint_root",
             "label": "Root directory",
             "type": "STRING",
@@ -42,10 +49,24 @@
             "defaultValue": "Shared Documents"
         },
         {
+            "name": "cannot_overwrite_root",
+            "label": " ",
+            "type": "BOOLEAN",
+            "description": "Root directory cannot be overwritten",
+            "mandatory": true
+        },
+        {
             "name": "authorizationEndpoint",
             "label": "Authorization endpoint",
             "type": "STRING",
             "description": "See documentation",
+            "mandatory": true
+        },
+        {
+            "name": "cannot_write",
+            "label": "Read only",
+            "type": "BOOLEAN",
+            "description": "This preset is read only",
             "mandatory": true
         }
     ]
