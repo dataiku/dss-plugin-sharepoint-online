@@ -138,6 +138,7 @@ class SharePointClient():
         else:
             raise SharePointClientError("The type of authentication is not selected")
         self.sharepoint_list_title = config.get("sharepoint_list_title")
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
         try:
             from urllib3.connectionpool import log
             log.addFilter(SuppressFilter())
