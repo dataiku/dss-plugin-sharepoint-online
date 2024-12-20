@@ -1025,7 +1025,7 @@ def get_form_digest_value(sharepoint_url, sharepoint_site, session=None, sharepo
 
     logger.info("Getting form digest value")
     if session is None:
-        session = RobustSession(session=requests, status_codes_to_retry=[429, 503])
+        session = RobustSession(session=requests, status_codes_to_retry=[429, 500, 503])
         session.update_settings(
             max_retries=SharePointConstants.MAX_RETRIES,
             base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
