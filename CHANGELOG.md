@@ -3,6 +3,7 @@
 ## [Version 1.1.5](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.5) - Bugfix release - 2024-12-04
 
 - Reduce log verbosity around retry functions
+- Retry every connection in case of a HTTP error 500
 
 ## [Version 1.1.4](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.4) - Feature release - 2024-07-16
 
