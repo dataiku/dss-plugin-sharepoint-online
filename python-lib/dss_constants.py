@@ -37,7 +37,7 @@ class DSSConstants(object):
         "sharepoint_oauth": "The access token is missing"
     }
     PATH = 'path'
-    PLUGIN_VERSION = "1.1.4"
+    PLUGIN_VERSION = "1.1.5-beta.1"
     SECRET_PARAMETERS_KEYS = ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret", "client_certificate", "passphrase"]
     SITE_APP_DETAILS = {
         "sharepoint_tenant": "The tenant name is missing",
@@ -58,5 +58,6 @@ class DSSConstants(object):
         "bigint": "Integer",
         "smallint": "Integer",
         "tinyint": "Integer",
-        "date": "DateTime"
+        "date": "DateTime",
+        "datetimenotz": "DateTime"
     }
