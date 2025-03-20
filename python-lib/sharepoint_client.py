@@ -7,6 +7,8 @@ import uuid
 import time
 import json
 import re
+import dataiku
+import dataikuapi
 
 from xml.etree.ElementTree import Element, tostring
 from xml.dom import minidom
@@ -125,6 +127,28 @@ class SharePointClient():
             self.passphrase = login_details.get("passphrase")
             self.client_id = login_details.get("client_id")
             self.sharepoint_access_token = self.get_certificate_app_access_token()
+            self.session.update_settings(session=SharePointSession(
+                    None,
+                    None,
+                    self.sharepoint_url,
+                    self.sharepoint_site,
+                    sharepoint_access_token=self.sharepoint_access_token
+                ),
+                max_retries=SharePointConstants.MAX_RETRIES,
+                base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
+            )
+        elif config.get('auth_type') == "dss-connection":
+            connection_name = config.get("dss_connection")
+            print("ALX:connection_name={}".format(connection_name))
+            client = dataiku.api_client()
+            print("ALX:client={}".format(client))
+            connection = client.get_connection(connection_name)
+            print("ALX:connection={}".format(connection))
+            connection_info = connection.get_info()
+            print("ALX:connection_info={}".format(connection_info))
+            credentials = connection_info.get_oauth2_credential()
+            print("ALX:credentials={}".format(credentials))
+            self.sharepoint_access_token = credentials.get("accessToken")
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
@@ -344,6 +368,16 @@ class SharePointClient():
             list_fields_url
         )
         self.assert_response_ok(response, calling_method="get_list_fields")
+        json_response = response.json()
+        if self.is_response_empty(json_response):
+            return None
+        return self.extract_results(json_response)
+
+    def search_list(self, list_title, column_to_query, query):
+        list_search_url = self.get_list_search_url(list_title, column_to_query, query)
+        response = self.session.get(
+            list_search_url
+        )
         json_response = response.json()
         if self.is_response_empty(json_response):
             return None
@@ -691,6 +725,13 @@ class SharePointClient():
 
     def get_list_fields_url(self, list_title):
         return self.get_lists_by_title_url(list_title) + "/fields"
+    
+    def get_list_search_url(self, list_title, column_to_query, query):
+        return self.get_lists_by_title_url(list_title) + "/Items?expand=File&$filter=substringof('{}',{})".format(
+            query,
+            column_to_query
+        )
+    # /Items?$expand=File&$filter=substringof('T15', Title)
 
     def get_lists_add_field_url(self, list_title):
         return self.get_base_url() + "/GetList(@a1)/Fields/CreateFieldAsXml?@a1='/{}/Lists/{}'".format(
@@ -930,7 +971,7 @@ class SharePointClient():
             write_mode=write_mode
         )
 
-    def get_read_schema(self, display_metadata=False, metadata_to_retrieve=[]):
+    def get_read_schema(self, display_metadata=False, metadata_to_retrieve=[], add_description=False):
         logger.info('get_read_schema')
         sharepoint_columns = self.get_list_fields(self.sharepoint_list_title)
         dss_columns = []
@@ -951,10 +992,18 @@ class SharePointClient():
                 sharepoint_type = get_dss_type(column[SharePointConstants.TYPE_AS_STRING])
                 self.column_sharepoint_type[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TYPE_AS_STRING]
                 if sharepoint_type is not None:
-                    dss_columns.append({
-                        SharePointConstants.NAME_COLUMN: column[SharePointConstants.TITLE_COLUMN],
-                        SharePointConstants.TYPE_COLUMN: sharepoint_type
-                    })
+                    if add_description:
+                        column_record = {
+                            SharePointConstants.NAME_COLUMN: column["InternalName"],
+                            SharePointConstants.TYPE_COLUMN: sharepoint_type,
+                            "description": column.get("Description")
+                        }
+                    else:
+                        column_record = {
+                            SharePointConstants.NAME_COLUMN: column[SharePointConstants.TITLE_COLUMN],
+                            SharePointConstants.TYPE_COLUMN: sharepoint_type
+                        }
+                    dss_columns.append(column_record)
                     self.column_ids[column[SharePointConstants.STATIC_NAME]] = sharepoint_type
                     self.column_names[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.TITLE_COLUMN]
                     self.column_entity_property_name[column[SharePointConstants.STATIC_NAME]] = column[SharePointConstants.ENTITY_PROPERTY_NAME]
