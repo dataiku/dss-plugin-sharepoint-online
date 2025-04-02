@@ -186,28 +186,47 @@ class SharePointClient():
         )
 
     def get_folders(self, path):
-        response = self.session.get(self.get_folder_url(path) + "/Folders")
+        url = self.get_folder_url() + "/Folders/{}".format(
+            self.get_path_as_query_string(path)
+        )
+        response = self.session.get(url)
         self.assert_response_ok(response, calling_method="get_folders")
         return response.json()
 
     def get_files(self, path):
-        response = self.session.get(self.get_folder_url(path) + "/Files")
+        response = self.session.get(self.get_folder_url() + "/Files/{}".format(
+                self.get_path_as_query_string(path)
+            )
+        )
         self.assert_response_ok(response, calling_method="get_files")
         return response.json()
 
     def get_item_fields(self, path):
-        response = self.session.get(self.get_folder_url(path) + "/ListItemAllFields")
+        response = self.session.get(self.get_folder_url() + "/ListItemAllFields{}".format(
+            self.get_path_as_query_string(path)
+        ))
         self.assert_response_ok(response, calling_method="get_item_fields")
         return response.json()
 
     def get_start_upload_url(self, path, upload_id):
-        return self.get_file_url(path) + "/startupload(uploadId=guid'{}')".format(upload_id)
+        return self.get_file_url() + "/startupload(uploadId=guid'{}'){}".format(
+            upload_id,
+            self.get_path_as_query_string(path)
+        )
 
     def get_continue_upload_url(self, path, upload_id, file_offset):
-        return self.get_file_url(path) + "/continueupload(uploadId=guid'{}',fileOffset={})".format(upload_id, file_offset)
+        return self.get_file_url() + "/continueupload(uploadId=guid'{}',fileOffset={}){}".format(
+            upload_id,
+            file_offset,
+            self.get_path_as_query_string(path)
+        )
 
     def get_finish_upload_url(self, path, upload_id, file_offset):
-        return self.get_file_url(path) + "/finishupload(uploadId=guid'{}',fileOffset={})".format(upload_id, file_offset)
+        return self.get_file_url() + "/finishupload(uploadId=guid'{}',fileOffset={}){}".format(
+            upload_id,
+            file_offset,
+            self.get_path_as_query_string(path)
+        )
 
     def is_file(self, path):
         item_fields = self.get_item_fields(path)
@@ -704,65 +723,90 @@ class SharePointClient():
             list_id
         )
 
-    def get_folder_url(self, full_path):
-        if full_path == '/':
-            full_path = ""
-        return self.get_base_url() + "/GetFolderByServerRelativePath(decodedurl='{}')".format(
-            url_encode(self.get_site_path(full_path))
-        )
+    def get_folder_url(self, full_path=None):
+        if full_path:
+            if full_path == '/':
+                full_path = ""
+            return self.get_base_url() + "/GetFolderByServerRelativePath(decodedurl='{}')".format(
+                url_encode(self.get_site_path(full_path))
+            )
+        else:
+            return self.get_base_url() + "/GetFolderByServerRelativePath(decodedurl=@a1)"
 
-    def get_file_url(self, full_path):
-        return self.get_base_url() + "/GetFileByServerRelativePath(decodedurl='{}')".format(
-            url_encode(self.get_site_path(full_path))
-        )
+    def get_file_url(self, full_path=None):
+        if full_path:
+            return self.get_base_url() + "/GetFileByServerRelativePath(decodedurl='{}')".format(
+                url_encode(self.get_site_path(full_path))
+            )
+        else:
+            return self.get_base_url() + "/GetFileByServerRelativePath(decodedurl=@a1)"
 
     def get_file_content_url(self, full_path):
-        return self.get_file_url(full_path) + "/$value"
+        return self.get_file_url() + "/$value{}".format(
+            self.get_path_as_query_string(full_path)
+        )
 
     def get_move_url(self, from_path, to_path):
         # Using the new method leads to 403.
         # Old method left in place. As a result, moving/renaming a file containing % in its path/name is still not possible.
         # return self.get_file_url(from_path) + "/movetousingpath(newPath='{}',moveOperations=1)".format(
-        return self.get_file_url(from_path) + "/moveto(newurl='{}',flags=1)".format(
+        return self.get_file_url() + "/moveto(newurl=@a2,flags=1)?@a1='{}'&@a2='{}'".format(
+            url_encode(self.get_site_path(from_path)),
             url_encode(self.get_site_path(to_path))
         )
 
     def get_recycle_file_url(self, full_path):
-        return self.get_file_url(full_path) + "/recycle()"
+        return self.get_file_url() + "/recycle(){}".format(
+            self.get_path_as_query_string(full_path)
+        )
 
     def get_recycle_folder_url(self, full_path):
-        return self.get_folder_url(full_path) + "/recycle()"
+        return self.get_folder_url() + "/recycle(){}".format(
+            self.get_path_as_query_string(full_path)
+        )
 
     def get_file_check_in_url(self, full_path):
-        return self.get_file_url(full_path) + "/CheckIn()"
+        return self.get_file_url() + "/CheckIn(){}".format(
+            self.get_path_as_query_string(full_path)
+        )
 
     def get_file_check_out_url(self, full_path):
-        return self.get_file_url(full_path) + "/CheckOut()"
+        return self.get_file_url() + "/CheckOut(){}".format(
+            self.get_path_as_query_string(full_path)
+        )
 
     def get_site_path(self, full_path):
         return "/{}/{}{}".format(
             self.escape_path(self.sharepoint_site),
             self.escape_path(self.sharepoint_root),
             self.escape_path(full_path)
-        )
+        ).replace("//", "/")
 
     def get_add_folder_url(self, full_path):
-        path = merge_paths(self.sharepoint_root, full_path)
-        return self.get_base_url() + "/Folders/AddUsingPath(decodedurl='{}')".format(
-            url_encode(path)
+        return self.get_base_url() + "/Folders/AddUsingPath(decodedurl=@a1){}".format(
+            self.get_path_as_query_string(full_path)
         )
 
     def get_file_add_url(self, full_path, file_name):
-        return self.get_folder_url(full_path) + "/Files/AddUsingPath(decodedurl='{}',overwrite=true)".format(
+        return self.get_folder_url() + "/Files/AddUsingPath(decodedurl='{}',overwrite=true){}".format(
             url_encode(
                 self.escape_path(file_name)
-            )
+            ),
+            self.get_path_as_query_string(full_path)
         )
 
     def get_list_default_view_url(self, list_title):
         return os.path.join(
             self.get_lists_by_title_url(list_title),
             SharePointConstants.DEFAULT_VIEW_ENDPOINT
+        )
+
+    def get_path_as_query_string(self, path):
+        if path:
+            if path == '/':
+                path = ""
+        return "?@a1='{}'".format(
+            url_encode(self.get_site_path(path))
         )
 
     @staticmethod
