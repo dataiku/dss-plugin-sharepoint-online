@@ -186,50 +186,46 @@ class SharePointClient():
         )
 
     def get_folders(self, path):
-        # response = self.session.get(self.get_folder_url(path) + "/Folders")
-        url = self.get_base_url() + "/GetFolderByServerRelativePath(decodedurl=@a1)/Folders/?@a1='{}'".format(
-            self.get_site_path(path)
+        url = self.get_folder_url() + "/Folders/{}".format(
+            self.get_path_as_query_string(path)
         )
         response = self.session.get(url)
         self.assert_response_ok(response, calling_method="get_folders")
         return response.json()
 
     def get_files(self, path):
-        # response = self.session.get(self.get_folder_url(path) + "/Files")
-        response = self.session.get(self.get_folder_url() + "/Files/?@a1='{}'".format(
-                self.get_site_path(path)
+        response = self.session.get(self.get_folder_url() + "/Files/{}".format(
+                self.get_path_as_query_string(path)
             )
         )
         self.assert_response_ok(response, calling_method="get_files")
         return response.json()
 
     def get_item_fields(self, path):
-        # response = self.session.get(self.get_folder_url(path) + "/ListItemAllFields")
-        response = self.session.get(self.get_folder_url() + "/ListItemAllFields?@a1='{}'".format(
-            url_encode(self.get_site_path(path))
+        response = self.session.get(self.get_folder_url() + "/ListItemAllFields{}".format(
+            self.get_path_as_query_string(path)
         ))
         self.assert_response_ok(response, calling_method="get_item_fields")
         return response.json()
 
     def get_start_upload_url(self, path, upload_id):
-        return self.get_file_url() + "/startupload(uploadId=guid'{}')?@a1='{}'".format(
+        return self.get_file_url() + "/startupload(uploadId=guid'{}'){}".format(
             upload_id,
-            url_encode(self.get_site_path(path))
+            self.get_path_as_query_string(path)
         )
 
     def get_continue_upload_url(self, path, upload_id, file_offset):
-        return self.get_file_url() + "/continueupload(uploadId=guid'{}',fileOffset={})?@a1='{}'".format(
+        return self.get_file_url() + "/continueupload(uploadId=guid'{}',fileOffset={}){}".format(
             upload_id,
             file_offset,
-            url_encode(self.get_site_path(path))
+            self.get_path_as_query_string(path)
         )
 
     def get_finish_upload_url(self, path, upload_id, file_offset):
-        # return self.get_file_url(path) + "/finishupload(uploadId=guid'{}',fileOffset={})".format(upload_id, file_offset)
-        return self.get_file_url() + "/finishupload(uploadId=guid'{}',fileOffset={})?@a1='{}'".format(
+        return self.get_file_url() + "/finishupload(uploadId=guid'{}',fileOffset={}){}".format(
             upload_id,
             file_offset,
-            url_encode(self.get_site_path(path))
+            self.get_path_as_query_string(path)
         )
 
     def is_file(self, path):
@@ -784,7 +780,7 @@ class SharePointClient():
             self.escape_path(self.sharepoint_site),
             self.escape_path(self.sharepoint_root),
             self.escape_path(full_path)
-        )
+        ).replace("//", "/")
 
     def get_add_folder_url(self, full_path):
         return self.get_base_url() + "/Folders/AddUsingPath(decodedurl=@a1){}".format(
