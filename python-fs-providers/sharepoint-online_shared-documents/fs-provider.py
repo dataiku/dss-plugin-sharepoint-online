@@ -204,10 +204,35 @@ class SharePointFSProvider(FSProvider):
             return 1
 
         if folder is not None:
+            file_count = self.delete(get_lnt_path(full_path))
+            logger.info("deleting folder '{}'".format(get_lnt_path(full_path)))
             self.client.recycle_folder(get_lnt_path(full_path))
-            return 1
+            return file_count
 
-        return 0
+        return file_count
+
+    def delete(self, path, file_count=0):
+        # logger.info("call delete '{}'".format(path))
+        files = self.client.get_files(path)
+        files = self.client.extract_results(files)
+        for file in files:
+            file_name = file.get("Name")
+            if file_name:
+                file_path = "/".join([path, file_name])
+                logger.info("deleting file '{}'".format(get_lnt_path(file_path)))
+                self.client.recycle_file(get_lnt_path(file_path))
+                file_count += 1
+        folders = self.client.get_folders(path)
+        folders = self.client.extract_results(folders)
+        for folder in folders:
+            folder_name = folder.get("Name")
+            if folder_name:
+                folder_path = "/".join([path, folder_name])
+                # logger.info("deleting content of folder '{}'".format(get_lnt_path(folder_path)))
+                file_count = self.delete(get_lnt_path(folder_path), file_count)
+                logger.info("deleting folder '{}'".format(get_lnt_path(folder_path)))
+                self.client.recycle_folder(get_lnt_path(folder_path))
+        return file_count
 
     def move(self, from_path, to_path):
         assert_valid_sharepoint_path(from_path)

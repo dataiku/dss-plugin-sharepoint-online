@@ -802,8 +802,7 @@ class SharePointClient():
         )
 
     def get_path_as_query_string(self, path):
-        if path:
-            if path == '/':
+        if path is None or path == '/':
                 path = ""
         return "?@a1='{}'".format(
             url_encode(self.get_site_path(path))
