@@ -209,7 +209,7 @@ class SharePointFSProvider(FSProvider):
             self.client.recycle_folder(get_lnt_path(full_path))
             return file_count
 
-        return file_count
+        return 0
 
     def delete(self, path, file_count=0):
         # logger.info("call delete '{}'".format(path))
