@@ -93,9 +93,12 @@ class RobustSession():
         while (not successful_func) and (attempt_number <= self.max_retries):
             try:
                 attempt_number += 1
-                logger.info("RobustSession:retry:attempt {} #{}".format(func, attempt_number))
+                if attempt_number > 1:
+                    # Only log if there seems to be an issue
+                    logger.info("RobustSession:retry:attempt {} #{}".format(func, attempt_number))
                 response = func(*args, **kwargs)
-                logger.info("RobustSession:retry:Response={}".format(response))
+                if attempt_number > 1:
+                    logger.info("RobustSession:retry:Response={}".format(response))
                 if hasattr(response, 'status_code'):
                     if response.status_code < 400:
                         successful_func = True
