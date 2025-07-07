@@ -1031,6 +1031,7 @@ class SharePointSession():
         retries_limit = ItemsLimit(SharePointConstants.MAX_RETRIES)
         headers = headers or {}
         headers["Accept"] = DSSConstants.APPLICATION_JSON
+        headers["User-Agent"] = DSSConstants.USER_AGENT
         headers["Authorization"] = self.get_authorization_bearer()
         response = None
         while not is_request_performed(response) and not retries_limit.is_reached():
@@ -1043,6 +1044,7 @@ class SharePointSession():
         default_headers = {
            "Accept": DSSConstants.APPLICATION_JSON_NOMETADATA,
            "Content-Type": DSSConstants.APPLICATION_JSON_NOMETADATA,
+           "User-Agent": DSSConstants.USER_AGENT,
            "Authorization": self.get_authorization_bearer()
         }
         if self.form_digest_value:
