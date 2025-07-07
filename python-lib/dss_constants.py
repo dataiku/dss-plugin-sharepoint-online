@@ -37,7 +37,7 @@ class DSSConstants(object):
         "sharepoint_oauth": "The access token is missing"
     }
     PATH = 'path'
-    PLUGIN_VERSION = "1.1.6"
+    PLUGIN_VERSION = "1.1.7-beta.2"
     SECRET_PARAMETERS_KEYS = ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret", "client_certificate", "passphrase"]
     SITE_APP_DETAILS = {
         "sharepoint_tenant": "The tenant name is missing",
@@ -60,3 +60,4 @@ class DSSConstants(object):
         "tinyint": "Integer",
         "date": "DateTime"
     }
+    USER_AGENT = "Dataiku SharePoint Plugin"

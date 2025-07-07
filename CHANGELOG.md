@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.1.7](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.7) - Bugfix release - 2025-07-07
+
+- Custom user agent
+
 ## [Version 1.1.6](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.6) - Bugfix release - 2025-04-01
 
 - Fix issue with 255+ chars file paths. The new limit is 400 chars, imposed by SharePoint's API.
