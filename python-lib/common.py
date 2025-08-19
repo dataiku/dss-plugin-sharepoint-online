@@ -173,6 +173,21 @@ def assert_no_percent_in_path(path):
         raise Exception("This plugin cannot move/rename an item if its path contains '%'")
 
 
+def assert_not_forbidden_dataset_type(dataset, forbiden_type, plugin_name):
+    try:
+        dataset_config = dataset.get_config()
+    except Exception:
+        return
+    if dataset_config:
+        dataset_type = dataset_config.get("type")
+        if dataset_type == forbiden_type:
+            raise Exception(
+                "This append recipe outputs to a {} dataset. This is likely to be an error, please refer to the documentation.".format(
+                    plugin_name
+                )
+            )
+
+
 class ItemsLimit():
     def __init__(self, records_limit=-1):
         self.has_no_limit = (records_limit == -1)
