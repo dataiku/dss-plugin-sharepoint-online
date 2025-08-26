@@ -28,15 +28,15 @@ input_dataframe = input_dataset.get_dataframe()
 input_schema = input_dataset.read_schema()
 output_dataset_names = get_output_names_for_role('api_output')
 output_dataset = dataiku.Dataset(output_dataset_names[0])
+config = get_recipe_config()
+sharepoint_list_title = config.get("sharepoint_list_title")
 # This recipe principle is often misunderstood and many users output it to the dataset that they mean to append to
 # We check that this is not the case here and if so fail with error message pointing to the doc
-assert_not_forbidden_dataset_type(output_dataset, "CustomPython_sharepoint-online_lists", "SharePoint")
+assert_not_forbidden_dataset_type(output_dataset, "CustomPython_sharepoint-online_lists", sharepoint_list_title, "SharePoint")
 
 output_dataset.write_schema(input_schema)
-config = get_recipe_config()
 dku_flow_variables = dataiku.get_flow_variables()
 
-sharepoint_list_title = config.get("sharepoint_list_title")
 auth_type = config.get('auth_type')
 logger.info('init:sharepoint_list_title={}, auth_type={}'.format(sharepoint_list_title, auth_type))
 column_ids = {}
