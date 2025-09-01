@@ -143,6 +143,7 @@ class SharePointClient():
             self.apply_paths_overwrite(config)
             self.tenant_id = login_details.get("tenant_id")
             self.client_id = login_details.get("client_id")
+            self.sharepoint_tenant = login_details.get("sharepoint_tenant")
             username = login_details.get("username")
             password = login_details.get("password")
             self.sharepoint_access_token = self.get_username_password_access_token(username, password)
@@ -964,11 +965,12 @@ class SharePointClient():
         result = app.acquire_token_by_username_password(
             '{}'.format(username),
             '{}'.format(password),
-            scopes=["User.Read AllSites.Read"]
+            scopes=["https://{}.sharepoint.com/.default".format(self.sharepoint_tenant)]
         )
         access_token = result.get("access_token")
         error_description = result.get("error_description")
         if error_description:
+            logger.error("Dumping: {}".format(result))
             raise ("Error: {}".format(error_description))
         return access_token
 
