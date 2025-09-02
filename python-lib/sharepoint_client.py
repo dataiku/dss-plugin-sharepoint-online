@@ -17,7 +17,7 @@ from dss_constants import DSSConstants
 from common import (
     is_email_address, get_value_from_path, parse_url,
     get_value_from_paths, is_request_performed, ItemsLimit,
-    is_empty_path, merge_paths, get_lnt_path,
+    is_empty_path, get_lnt_path,
     format_private_key, format_certificate_thumbprint, url_encode
 )
 from safe_logger import SafeLogger
@@ -125,6 +125,28 @@ class SharePointClient():
             self.passphrase = login_details.get("passphrase")
             self.client_id = login_details.get("client_id")
             self.sharepoint_access_token = self.get_certificate_app_access_token()
+            self.session.update_settings(session=SharePointSession(
+                    None,
+                    None,
+                    self.sharepoint_url,
+                    self.sharepoint_site,
+                    sharepoint_access_token=self.sharepoint_access_token
+                ),
+                max_retries=SharePointConstants.MAX_RETRIES,
+                base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
+            )
+        elif config.get('auth_type') == DSSConstants.AUTH_APP_USERNAME_PASSWORD:
+            logger.info("SharePointClient:app-username-password")
+            login_details = config.get('app_username_password')
+            self.setup_sharepoint_online_url(login_details)
+            self.setup_login_details(login_details)
+            self.apply_paths_overwrite(config)
+            self.tenant_id = login_details.get("tenant_id")
+            self.client_id = login_details.get("client_id")
+            self.sharepoint_tenant = login_details.get("sharepoint_tenant")
+            username = login_details.get("username")
+            password = login_details.get("password")
+            self.sharepoint_access_token = self.get_username_password_access_token(username, password)
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
@@ -932,6 +954,26 @@ class SharePointClient():
         json_response = app.acquire_token_for_client(scopes=[f"{self.sharepoint_origin}/.default"])
         return json_response.get("access_token")
 
+    def get_username_password_access_token(self, username, password):
+        import msal
+        authority_url = 'https://login.microsoftonline.com/{}'.format(self.tenant_id)
+        app = msal.PublicClientApplication(
+            authority=authority_url,
+            client_id=self.client_id,
+            client_credential=None
+        )
+        result = app.acquire_token_by_username_password(
+            '{}'.format(username),
+            '{}'.format(password),
+            scopes=["https://{}.sharepoint.com/.default".format(self.sharepoint_tenant)]
+        )
+        access_token = result.get("access_token")
+        error_description = result.get("error_description")
+        if error_description:
+            logger.error("Dumping: {}".format(result))
+            raise ("Error: {}".format(error_description))
+        return access_token
+
     def get_view_id(self, list_title, view_title):
         if not list_title:
             return None
@@ -1082,13 +1124,11 @@ def get_form_digest_value(sharepoint_url, sharepoint_site, session=None, sharepo
                 url=get_contextinfo_url(),
                 headers=headers,
                 timeout=SharePointConstants.TIMEOUT_SEC,
-                dku_rs_off=True
             )
         else:
             response = session.post(
                 url=get_contextinfo_url(),
                 timeout=SharePointConstants.TIMEOUT_SEC,
-                dku_rs_off=True
             )
 
         form_digest_value = get_value_from_path(

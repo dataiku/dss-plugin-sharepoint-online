@@ -1,5 +1,10 @@
 # Changelog
 
+## [Version 1.1.8](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.8) - Feature and bugfix release - 2025-08-29
+
+- Add support for MSAL username / password authentication
+- Activate retry on error 429 when retrieving the form digest value
+
 ## [Version 1.1.7](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.7) - Feature release - 2025-08-13
 
 - Enables the "Append instead of overwrite" checkbox in sync recipes for SharePoint lists

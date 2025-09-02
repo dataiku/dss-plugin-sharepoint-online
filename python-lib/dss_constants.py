@@ -10,6 +10,7 @@ class DSSConstants(object):
     APPLICATION_JSON = "application/json;odata=verbose"
     APPLICATION_JSON_NOMETADATA = "application/json;odata=nometadata"
     AUTH_APP_CERTIFICATE = "app-certificate"
+    AUTH_APP_USERNAME_PASSWORD = "app-username-password"
     AUTH_LOGIN = "login"
     AUTH_OAUTH = "oauth"
     AUTH_SITE_APP = "site-app-permissions"
@@ -37,7 +38,7 @@ class DSSConstants(object):
         "sharepoint_oauth": "The access token is missing"
     }
     PATH = 'path'
-    PLUGIN_VERSION = "1.1.7"
+    PLUGIN_VERSION = "1.1.8"
     SECRET_PARAMETERS_KEYS = ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret", "client_certificate", "passphrase"]
     SITE_APP_DETAILS = {
         "sharepoint_tenant": "The tenant name is missing",
