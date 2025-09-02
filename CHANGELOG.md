@@ -4,6 +4,7 @@
 
 - Add support for MSAL username / password authentication
 - Activate retry on error 429 when retrieving the form digest value
+- Failing when the "append recipe" incorrectly outputs to the targeted dataset
 
 ## [Version 1.1.7](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.7) - Feature release - 2025-08-13
 
