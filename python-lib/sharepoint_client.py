@@ -1124,13 +1124,11 @@ def get_form_digest_value(sharepoint_url, sharepoint_site, session=None, sharepo
                 url=get_contextinfo_url(),
                 headers=headers,
                 timeout=SharePointConstants.TIMEOUT_SEC,
-                dku_rs_off=True
             )
         else:
             response = session.post(
                 url=get_contextinfo_url(),
                 timeout=SharePointConstants.TIMEOUT_SEC,
-                dku_rs_off=True
             )
 
         form_digest_value = get_value_from_path(
