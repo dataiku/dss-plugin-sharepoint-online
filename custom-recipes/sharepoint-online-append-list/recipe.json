@@ -1,6 +1,6 @@
 {
     "meta": {
-        "label": "Append to list",
+        "label": "Append to list (legacy)",
         "description": "Append new rows to an existing list",
         "icon": "icon-cloud"
     },
