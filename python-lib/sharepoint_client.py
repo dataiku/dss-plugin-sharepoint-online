@@ -7,6 +7,7 @@ import uuid
 import time
 import json
 import re
+import calendar
 
 from xml.etree.ElementTree import Element, tostring
 from xml.dom import minidom
@@ -420,6 +421,40 @@ class SharePointClient():
         )
         self.assert_response_ok(response, calling_method="get_list_items")
         return response.json().get("ListData", {})
+
+    def get_list_last_modified(self, list_title, params=None):
+        params = params or {}
+        data = {
+            "parameters": {
+                "__metadata": {
+                    "type": "SP.RenderListDataParameters"
+                },
+                "RenderOptions": SharePointConstants.RENDER_OPTIONS,
+                "AllowMultipleValueFilterForTaxonomyFields": True,
+                "AddRequiredFields": True
+            }
+        }
+        headers = DSSConstants.JSON_HEADERS
+        response = self.session.post(
+            self.get_list_data_as_stream(list_title),
+            params=params,
+            headers=headers,
+            json=data
+        )
+        self.assert_response_ok(response, calling_method="get_list_last_modified")
+        last_item_modified_time = response.json().get("lastItemModifiedTime")
+        last_item_modified_time_epoch = 0
+        if last_item_modified_time:
+            try:
+                last_item_modified_time_epoch = calendar.timegm(
+                    time.strptime(last_item_modified_time, "%Y-%m-%d %H:%M:%SZ")
+                ) * 1000
+            except Exception as error:
+                logger.error("Could not convert lastItemModifiedTime ({}): {}".format(
+                    last_item_modified_time,
+                    error
+                ))
+        return last_item_modified_time_epoch
 
     def create_list(self, list_name):
         headers = DSSConstants.JSON_HEADERS
