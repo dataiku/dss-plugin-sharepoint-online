@@ -106,4 +106,4 @@ if last_modified.is_not_set() or (remote_file_last_modified_epoch > last_modifie
     last_modified.set_value(remote_file_last_modified_epoch)
     trigger.fire()
 else:
-    logger.info("Remote spreadsheet has not been modified")
+    logger.info("Remote file has not been modified")
