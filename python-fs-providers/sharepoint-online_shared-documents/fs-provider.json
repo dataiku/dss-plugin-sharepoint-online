@@ -29,6 +29,10 @@
                 {
                     "value": "app-username-password",
                     "label": "User name / password"
+                },
+                {
+                    "value": "app-basic",
+                    "label": "Individual User name / password"
                 }
             ]
         },
@@ -66,6 +70,13 @@
             "type": "PRESET",
             "parameterSetId": "app-username-password",
             "visibilityCondition": "model.auth_type == 'app-username-password'"
+        },
+        {
+            "name": "app_basic",
+            "label": "App basic",
+            "type": "PRESET",
+            "parameterSetId": "app-basic",
+            "visibilityCondition": "model.auth_type == 'app-basic'"
         },
         {
             "name": "advanced_parameters",
