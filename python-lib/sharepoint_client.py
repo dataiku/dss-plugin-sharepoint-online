@@ -971,7 +971,7 @@ class SharePointClient():
         error_description = result.get("error_description")
         if error_description:
             logger.error("Dumping: {}".format(result))
-            raise ("Error: {}".format(error_description))
+            raise Exception("Error: {}".format(error_description))
         return access_token
 
     def get_view_id(self, list_title, view_title):
