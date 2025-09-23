@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.1.9](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.9) - Bugfix release - 2025-09-23
+
+- Fix handling of username / password error message
+
 ## [Version 1.1.8](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.8) - Feature and bugfix release - 2025-08-29
 
 - Add support for MSAL username / password authentication
