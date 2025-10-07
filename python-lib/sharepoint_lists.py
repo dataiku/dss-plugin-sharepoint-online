@@ -95,7 +95,6 @@ class SharePointListWriter(object):
         self.web_name = self.client.sharepoint_list_title
         self.write_mode = write_mode
 
-        self.client.get_read_schema(write_mode=write_mode)
         if write_mode == SharePointConstants.WRITE_MODE_CREATE:
             logger.info('flush:recycle_list "{}"'.format(self.client.sharepoint_list_title))
             self.client.recycle_list(self.client.sharepoint_list_title)
@@ -106,7 +105,9 @@ class SharePointListWriter(object):
             logger.info('New list "{}" created, type {}'.format(self.list_item_entity_type_full_name, self.entity_type_name))
             self.list_id = created_list.get("Id")
             self.web_name = self.client.get_web_name(created_list) or self.client.sharepoint_list_title
+            self.client.get_read_schema(write_mode=write_mode)
         else:
+            self.client.get_read_schema()
             list_metadata = self.client.get_list_metadata(self.client.sharepoint_list_title)
             self.web_name = self.client.get_web_name(list_metadata)
             self.entity_type_name = list_metadata.get("EntityTypeName")
@@ -116,7 +117,6 @@ class SharePointListWriter(object):
         self.max_workers = max_workers
         self.batch_size = batch_size
         self.working_batch_size = max_workers * batch_size
-        # self.client.get_read_schema()
 
         if write_mode != SharePointConstants.WRITE_MODE_CREATE:
             for column_id in self.client.column_names:
