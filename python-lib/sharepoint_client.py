@@ -1017,7 +1017,7 @@ class SharePointClient():
             write_mode=write_mode
         )
 
-    def get_read_schema(self, display_metadata=False, metadata_to_retrieve=[]):
+    def get_read_schema(self, display_metadata=False, metadata_to_retrieve=[], write_mode=None):
         logger.info('get_read_schema')
         sharepoint_columns = self.get_list_fields(self.sharepoint_list_title)
         dss_columns = []
@@ -1049,6 +1049,11 @@ class SharePointClient():
                     self.dss_column_name[column[SharePointConstants.ENTITY_PROPERTY_NAME]] = column[SharePointConstants.TITLE_COLUMN]
                 if sharepoint_type == "date":
                     self.columns_to_format.append((column[SharePointConstants.STATIC_NAME], sharepoint_type))
+                if column[SharePointConstants.TYPE_AS_STRING] == SharePointConstants.TYPE_NOTE:
+                    if write_mode == SharePointConstants.WRITE_MODE_CREATE:
+                        self.columns_to_format.append((column[SharePointConstants.COLUMN_TITLE], SharePointConstants.TYPE_NOTE))
+                    else:
+                        self.columns_to_format.append((column[SharePointConstants.STATIC_NAME], SharePointConstants.TYPE_NOTE))
         logger.info("get_read_schema: Schema updated with {}".format(dss_columns))
         return {
             SharePointConstants.COLUMNS: dss_columns

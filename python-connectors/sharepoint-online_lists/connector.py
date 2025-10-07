@@ -105,9 +105,10 @@ class SharePointListsConnector(Connector):
 
     def format_row(self, row):
         for column_to_format, type_to_process in self.client.columns_to_format:
-            value = row.get(column_to_format)
-            if value:
-                row[column_to_format] = sharepoint_to_dss_date(value)
+            if type_to_process == "date":
+                value = row.get(column_to_format)
+                if value:
+                    row[column_to_format] = sharepoint_to_dss_date(value)
         return row
 
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
