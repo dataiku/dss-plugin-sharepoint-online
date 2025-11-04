@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.1.10-beta.1](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.10-beta.1) - Patch release - 2025-10-04
+
+- Accept percent encoded spaces ("%20") in root directory preset overwrite
+
 ## [Version 1.1.9](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.9) - Bugfix release - 2025-09-23
 
 - Fix handling of username / password error message
