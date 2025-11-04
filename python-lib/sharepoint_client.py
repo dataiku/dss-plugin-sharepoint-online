@@ -183,6 +183,7 @@ class SharePointClient():
     def apply_paths_overwrite(self, config):
         advanced_parameters = config.get("advanced_parameters", False)
         sharepoint_root_overwrite = config.get("sharepoint_root_overwrite", "").strip("/")
+        sharepoint_root_overwrite = sharepoint_root_overwrite.replace("%20", " ")  # Fix for one customer
         sharepoint_site_overwrite = config.get("sharepoint_site_overwrite", "").strip("/")
         if advanced_parameters and sharepoint_root_overwrite:
             self.sharepoint_root = sharepoint_root_overwrite
