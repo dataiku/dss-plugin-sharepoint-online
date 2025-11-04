@@ -59,6 +59,11 @@ class RobustSession():
             response = self.request_with_403_retry("post", **kwargs)
             return response
 
+    def merge(self, url, dku_rs_off=False, **kwargs):
+        kwargs = update_dict_in_kwargs(kwargs, "headers", self.default_headers)
+        response = self.session.request("MERGE", url, **kwargs)
+        return response
+
     def request_with_403_retry(self, verb, **kwargs):
         """
         403 error code may be result of throttling, rendering the current sessions useless.

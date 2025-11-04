@@ -94,6 +94,7 @@ class SharePointListWriter(object):
         self.sharepoint_existing_column_entity_property_names = {}
         self.web_name = self.client.sharepoint_list_title
         self.write_mode = write_mode
+        self.tried_upgrade_to_note = False
 
         if write_mode == SharePointConstants.WRITE_MODE_CREATE:
             logger.info('flush:recycle_list "{}"'.format(self.client.sharepoint_list_title))
@@ -166,6 +167,7 @@ class SharePointListWriter(object):
 
     def upload_rows(self):
         logger.info("Starting adding items")
+        self.tried_upgrade_to_note = False
         kwargs = []
         for row in self.buffer:
             item = self.build_row_dictionary(row)
@@ -220,7 +222,21 @@ class SharePointListWriter(object):
                 if self.is_long_string(key_to_use_for_long_string):
                     ret[key_to_use] = column
                 else:
-                    ret[key_to_use] = column[:255]
+                    successfull_upgrade = False
+                    if len(column) > 255:
+                        if not self.tried_upgrade_to_note:
+                            try:
+                                self.client.update_column_type(self.list_id, key_to_use_for_long_string, new_field_type="SP.FieldMultiLineText")
+                                successfull_upgrade = True
+                                self.client.columns_to_format.append((key_to_use_for_long_string, SharePointConstants.TYPE_NOTE))
+                                logger.info("Field {} successfully upgraded to Note type".format(key_to_use_for_long_string))
+                            except Exception:
+                                logger.warning("Could not upgrade field {} to Note type".format(key_to_use_for_long_string))
+                                self.tried_upgrade_to_note = True
+                    if successfull_upgrade:
+                        ret[key_to_use] = column
+                    else:
+                        ret[key_to_use] = column[:255]
             else:
                 ret[key_to_use] = column
         return ret
