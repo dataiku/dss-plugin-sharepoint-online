@@ -211,6 +211,7 @@ class SharePointListWriter(object):
                 structure[SharePointConstants.NAME_COLUMN],
                 self.sharepoint_column_ids[structure[SharePointConstants.NAME_COLUMN]]
             )
+            column_display_name = structure[SharePointConstants.NAME_COLUMN]
             if self.write_mode == SharePointConstants.WRITE_MODE_CREATE:
                 key_to_use_for_long_string = structure[SharePointConstants.NAME_COLUMN]
             else:
@@ -226,7 +227,7 @@ class SharePointListWriter(object):
                     if len(column) > 255:
                         if not self.tried_upgrade_to_note:
                             try:
-                                self.client.update_column_type(self.list_id, key_to_use_for_long_string, new_field_type="SP.FieldMultiLineText")
+                                self.client.update_column_type(self.list_id, key_to_use_for_long_string, column_display_name, new_field_type="SP.FieldMultiLineText")
                                 successfull_upgrade = True
                                 self.client.columns_to_format.append((key_to_use_for_long_string, SharePointConstants.TYPE_NOTE))
                                 logger.info("Field {} successfully upgraded to Note type".format(key_to_use_for_long_string))

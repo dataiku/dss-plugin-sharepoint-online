@@ -488,9 +488,8 @@ class SharePointClient():
         self.assert_response_ok(response, calling_method="create_custom_field_via_id")
         return response
 
-    def update_column_type(self, list_id, field, new_field_type="SP.FieldMultiLineText"):
-        logger.info("updating field {} to type {}".format(field, new_field_type))
-        field_title = field
+    def update_column_type(self, list_id, field, column_name, new_field_type="SP.FieldMultiLineText"):
+        logger.info("updating field {}/{} to type {}".format(field, column_name, new_field_type))
         if not new_field_type:
             return None
         body = {
@@ -499,11 +498,11 @@ class SharePointClient():
             },
             "Description": "Updated Description of the field",
             "SchemaXml": "<Field AppendOnly='FALSE' ClientSideComponentId='00000000-0000-0000-0000-000000000000'"
-            + " Description='Updated Description of the field' DisplayName='{}' Format='Dropdown' IsModern='TRUE'".format(field_title)
+            + " Description='Updated Description of the field' DisplayName='{}' Format='Dropdown' IsModern='TRUE'".format(column_name)
             + " IsolateStyles='FALSE' Name='{}' RichText='FALSE' RichTextMode='Compatible' Title='{}' Type='Note'></Field>".format(
-                field_title, field_title
+                column_name, column_name
             ),
-            "Title": "{}".format(field_title)
+            "Title": "{}".format(column_name)
         }
         headers = DSSConstants.JSON_HEADERS
         url = "{}/Lists(guid'{}')/Fields/getByInternalNameOrTitle('{}')".format(self.get_base_url(), list_id, field)
