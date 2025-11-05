@@ -1,6 +1,6 @@
 # Changelog
 
-## [Version 1.2.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.2.2) - Feature release - 2025-11-05
+## [Version 1.2.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.2.0) - Feature release - 2025-11-05
 
 - Handles strings longer than 255 characters
     - In append mode, check whether the SharePoint column is single or multiple lines of text, and chunk accordingly the string to be uploaded
