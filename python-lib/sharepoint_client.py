@@ -37,6 +37,7 @@ class SharePointClient():
         self.sharepoint_root = None
         self.sharepoint_url = None
         self.sharepoint_origin = None
+        self.allow_string_recasting = config.get("advanced_parameters", False) and config.get("allow_string_recasting", False)
         attempt_session_reset_on_403 = config.get("advanced_parameters", False) and config.get("attempt_session_reset_on_403", False)
         self.session = RobustSession(status_codes_to_retry=[429, 503], attempt_session_reset_on_403=attempt_session_reset_on_403)
         self.number_dumped_logs = 0
@@ -1040,7 +1041,8 @@ class SharePointClient():
             partition_id,
             max_workers=max_workers,
             batch_size=batch_size,
-            write_mode=write_mode
+            write_mode=write_mode,
+            allow_string_recasting=self.allow_string_recasting
         )
 
     def get_read_schema(self, display_metadata=False, metadata_to_retrieve=[], write_mode=None):
