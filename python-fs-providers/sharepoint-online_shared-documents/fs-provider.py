@@ -32,8 +32,11 @@ class SharePointFSProvider(FSProvider):
         self.provider_root = "/"
         logger.info('SharePoint Online plugin fs v{}'.format(DSSConstants.PLUGIN_VERSION))
         logger.info('init:root={}'.format(self.root))
-
-        self.client = SharePointClient(config)
+        root_name_overwrite_legacy_mode = plugin_config.get("root_name_overwrite_legacy_mode", False)
+        self.client = SharePointClient(
+            config,
+            root_name_overwrite_legacy_mode=root_name_overwrite_legacy_mode
+        )
 
     # util methods
     def get_full_path(self, path):
