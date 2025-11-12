@@ -80,7 +80,10 @@ def format_date(date, from_format, to_format):
 
 class SharePointListWriter(object):
 
-    def __init__(self, config, client, dataset_schema, dataset_partitioning, partition_id, max_workers=5, batch_size=100, write_mode="create"):
+    def __init__(
+        self, config, client, dataset_schema, dataset_partitioning, partition_id,
+        max_workers=5, batch_size=100, write_mode="create", allow_string_recasting=False
+    ):
         self.client = client
         self.config = config
         self.dataset_schema = dataset_schema
@@ -95,6 +98,7 @@ class SharePointListWriter(object):
         self.web_name = self.client.sharepoint_list_title
         self.write_mode = write_mode
         self.tried_upgrade_to_note = False
+        self.allow_string_recasting = allow_string_recasting
 
         if write_mode == SharePointConstants.WRITE_MODE_CREATE:
             logger.info('flush:recycle_list "{}"'.format(self.client.sharepoint_list_title))
@@ -225,7 +229,7 @@ class SharePointListWriter(object):
                 else:
                     successfull_upgrade = False
                     if len(column) > 255:
-                        if not self.tried_upgrade_to_note:
+                        if not self.tried_upgrade_to_note and self.allow_string_recasting:
                             try:
                                 self.client.update_column_type(self.list_id, key_to_use_for_long_string, column_display_name, new_field_type="SP.FieldMultiLineText")
                                 successfull_upgrade = True

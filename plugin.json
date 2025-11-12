@@ -15,5 +15,14 @@
         ],
         "url": "https://www.dataiku.com/product/plugins/sharepoint-online/",
         "licenseInfo": "Apache Software License"
-    }
+    },
+    "params": [
+        {
+            "name": "root_name_overwrite_legacy_mode",
+            "label": "Legacy mode",
+            "description": "Treat %20 as spaces in root directory preset overwrite",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        }
+    ]
 }

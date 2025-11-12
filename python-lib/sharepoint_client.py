@@ -32,11 +32,13 @@ class SharePointClientError(ValueError):
 
 class SharePointClient():
 
-    def __init__(self, config):
+    def __init__(self, config, root_name_overwrite_legacy_mode=False):
         self.config = config
+        self.root_name_overwrite_legacy_mode = root_name_overwrite_legacy_mode
         self.sharepoint_root = None
         self.sharepoint_url = None
         self.sharepoint_origin = None
+        self.allow_string_recasting = config.get("advanced_parameters", False) and config.get("allow_string_recasting", False)
         attempt_session_reset_on_403 = config.get("advanced_parameters", False) and config.get("attempt_session_reset_on_403", False)
         self.session = RobustSession(status_codes_to_retry=[429, 503], attempt_session_reset_on_403=attempt_session_reset_on_403)
         self.number_dumped_logs = 0
@@ -183,6 +185,8 @@ class SharePointClient():
     def apply_paths_overwrite(self, config):
         advanced_parameters = config.get("advanced_parameters", False)
         sharepoint_root_overwrite = config.get("sharepoint_root_overwrite", "").strip("/")
+        if self.root_name_overwrite_legacy_mode:
+            sharepoint_root_overwrite = sharepoint_root_overwrite.replace("%20", " ")
         sharepoint_site_overwrite = config.get("sharepoint_site_overwrite", "").strip("/")
         if advanced_parameters and sharepoint_root_overwrite:
             self.sharepoint_root = sharepoint_root_overwrite
@@ -1040,7 +1044,8 @@ class SharePointClient():
             partition_id,
             max_workers=max_workers,
             batch_size=batch_size,
-            write_mode=write_mode
+            write_mode=write_mode,
+            allow_string_recasting=self.allow_string_recasting
         )
 
     def get_read_schema(self, display_metadata=False, metadata_to_retrieve=[], write_mode=None):

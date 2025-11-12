@@ -6,6 +6,10 @@
     - In append mode, check whether the SharePoint column is single or multiple lines of text, and chunk accordingly the string to be uploaded
     - In overwrite mode, initially recreate the columns as single line, and convert to multiple lines if a column contains a string longer than 255 characters
 
+## [Version 1.1.10](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.10) - Patch release - 2025-11-04
+
+- Add legacy mode to accept percent encoded spaces ("%20") in root directory preset overwrite
+
 ## [Version 1.1.9](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.9) - Bugfix release - 2025-09-23
 
 - Fix handling of username / password error message
