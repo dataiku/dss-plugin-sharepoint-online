@@ -181,6 +181,14 @@
             "type": "BOOLEAN",
             "defaultValue": false,
             "visibilityCondition": "model.advanced_parameters == true"
+        },
+        {
+            "name": "allow_string_recasting",
+            "label": "Allow multiple lines",
+            "description": "When writing, use 'multiple lines' columns when 256+ chars",
+            "type": "BOOLEAN",
+            "defaultValue": false,
+            "visibilityCondition": "model.advanced_parameters == true"
         }
     ]
 }

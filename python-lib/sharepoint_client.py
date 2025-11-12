@@ -38,6 +38,7 @@ class SharePointClient():
         self.sharepoint_root = None
         self.sharepoint_url = None
         self.sharepoint_origin = None
+        self.allow_string_recasting = config.get("advanced_parameters", False) and config.get("allow_string_recasting", False)
         attempt_session_reset_on_403 = config.get("advanced_parameters", False) and config.get("attempt_session_reset_on_403", False)
         self.session = RobustSession(status_codes_to_retry=[429, 503], attempt_session_reset_on_403=attempt_session_reset_on_403)
         self.number_dumped_logs = 0
@@ -491,6 +492,31 @@ class SharePointClient():
         self.assert_response_ok(response, calling_method="create_custom_field_via_id")
         return response
 
+    def update_column_type(self, list_id, field, column_name, new_field_type="SP.FieldMultiLineText"):
+        logger.info("updating field {}/{} to type {}".format(field, column_name, new_field_type))
+        if not new_field_type:
+            return None
+        body = {
+            "__metadata": {
+                "type": "{}".format(new_field_type)
+            },
+            "Description": "Updated Description of the field",
+            "SchemaXml": "<Field AppendOnly='FALSE' ClientSideComponentId='00000000-0000-0000-0000-000000000000'"
+            + " Description='Updated Description of the field' DisplayName='{}' Format='Dropdown' IsModern='TRUE'".format(column_name)
+            + " IsolateStyles='FALSE' Name='{}' RichText='FALSE' RichTextMode='Compatible' Title='{}' Type='Note'></Field>".format(
+                column_name, column_name
+            ),
+            "Title": "{}".format(column_name)
+        }
+        headers = DSSConstants.JSON_HEADERS
+        url = "{}/Lists(guid'{}')/Fields/getByInternalNameOrTitle('{}')".format(self.get_base_url(), list_id, field)
+        response = self.session.merge(
+            url,
+            headers=headers,
+            json=body
+        )
+        return response
+
     def get_list_default_view(self, list_name):
         list_default_view_url = self.get_list_default_view_url(list_name)
         response = self.session.get(
@@ -897,8 +923,8 @@ class SharePointClient():
                 [
                     ["error", "message", "value"],
                     ["error_description"],
-                    ["error","message"],
-                    ["odata.error","message","value"]
+                    ["error", "message"],
+                    ["odata.error", "message", "value"]
                 ]
             )
             if error_message:
@@ -907,6 +933,7 @@ class SharePointClient():
             logger.info("Error trying to extract error message: {}".format(error))
             logger.info("Response.content={}".format(response.content))
             return None
+        return None
 
     @staticmethod
     def assert_no_error_in_json(response, calling_method=""):
@@ -1017,10 +1044,11 @@ class SharePointClient():
             partition_id,
             max_workers=max_workers,
             batch_size=batch_size,
-            write_mode=write_mode
+            write_mode=write_mode,
+            allow_string_recasting=self.allow_string_recasting
         )
 
-    def get_read_schema(self, display_metadata=False, metadata_to_retrieve=[]):
+    def get_read_schema(self, display_metadata=False, metadata_to_retrieve=[], write_mode=None):
         logger.info('get_read_schema')
         sharepoint_columns = self.get_list_fields(self.sharepoint_list_title)
         dss_columns = []
@@ -1052,6 +1080,11 @@ class SharePointClient():
                     self.dss_column_name[column[SharePointConstants.ENTITY_PROPERTY_NAME]] = column[SharePointConstants.TITLE_COLUMN]
                 if sharepoint_type == "date":
                     self.columns_to_format.append((column[SharePointConstants.STATIC_NAME], sharepoint_type))
+                if column[SharePointConstants.TYPE_AS_STRING] == SharePointConstants.TYPE_NOTE:
+                    if write_mode == SharePointConstants.WRITE_MODE_CREATE:
+                        self.columns_to_format.append((column[SharePointConstants.COLUMN_TITLE], SharePointConstants.TYPE_NOTE))
+                    else:
+                        self.columns_to_format.append((column[SharePointConstants.STATIC_NAME], SharePointConstants.TYPE_NOTE))
         logger.info("get_read_schema: Schema updated with {}".format(dss_columns))
         return {
             SharePointConstants.COLUMNS: dss_columns
@@ -1096,6 +1129,22 @@ class SharePointSession():
         response = None
         while not is_request_performed(response) and not retries_limit.is_reached():
             response = requests.post(url, headers=default_headers, json=json, data=data, params=params, timeout=SharePointConstants.TIMEOUT_SEC)
+        return response
+
+    def request(self, method, url, headers=None, json=None, data=None, params=None):
+        retries_limit = ItemsLimit(SharePointConstants.MAX_RETRIES)
+        headers = headers or {}
+        default_headers = {
+           "Accept": DSSConstants.APPLICATION_JSON_NOMETADATA,
+           "Content-Type": DSSConstants.APPLICATION_JSON_NOMETADATA,
+           "Authorization": self.get_authorization_bearer()
+        }
+        if self.form_digest_value:
+            default_headers.update({"X-RequestDigest": self.form_digest_value})
+        default_headers.update(headers)
+        response = None
+        while not is_request_performed(response) and not retries_limit.is_reached():
+            response = requests.request(method, url, headers=default_headers, json=json, data=data, params=params, timeout=SharePointConstants.TIMEOUT_SEC)
         return response
 
     @staticmethod
