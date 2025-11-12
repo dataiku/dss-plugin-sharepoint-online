@@ -1,18 +1,28 @@
 {
     "id": "sharepoint-online",
-    "version": "1.1.9",
+    "version": "1.1.10",
     "meta": {
         "label": "SharePoint Online",
         "description": "Read and write data from/to your SharePoint Online account",
         "author": "Dataiku (Alex Bourret)",
         "icon": "icon-cloud",
+        "category": "Connect",
         "tags": [
-            "Connector",
-            "Cloud",
-            "Azure",
-            "Format"
+            "Data source",
+            "Export",
+            "Recipe",
+            "Dataset"
         ],
         "url": "https://www.dataiku.com/product/plugins/sharepoint-online/",
         "licenseInfo": "Apache Software License"
-    }
+    },
+    "params": [
+        {
+            "name": "root_name_overwrite_legacy_mode",
+            "label": "Legacy mode",
+            "description": "Treat %20 as spaces in root directory preset overwrite",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        }
+    ]
 }

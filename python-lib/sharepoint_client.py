@@ -32,8 +32,9 @@ class SharePointClientError(ValueError):
 
 class SharePointClient():
 
-    def __init__(self, config):
+    def __init__(self, config, root_name_overwrite_legacy_mode=False):
         self.config = config
+        self.root_name_overwrite_legacy_mode = root_name_overwrite_legacy_mode
         self.sharepoint_root = None
         self.sharepoint_url = None
         self.sharepoint_origin = None
@@ -184,6 +185,8 @@ class SharePointClient():
     def apply_paths_overwrite(self, config):
         advanced_parameters = config.get("advanced_parameters", False)
         sharepoint_root_overwrite = config.get("sharepoint_root_overwrite", "").strip("/")
+        if self.root_name_overwrite_legacy_mode:
+            sharepoint_root_overwrite = sharepoint_root_overwrite.replace("%20", " ")
         sharepoint_site_overwrite = config.get("sharepoint_site_overwrite", "").strip("/")
         if advanced_parameters and sharepoint_root_overwrite:
             self.sharepoint_root = sharepoint_root_overwrite
