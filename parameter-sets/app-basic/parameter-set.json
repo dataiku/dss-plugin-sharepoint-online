@@ -1,0 +1,55 @@
+{
+    "meta": {
+        "label": "App username password (user)",
+        "description": "",
+        "icon": "icon-cloud"
+    },
+    "defaultDefinableInline": false,
+    "defaultDefinableAtProjectLevel": false,
+    "pluginParams": [],
+    "params": [
+        {
+            "name": "sharepoint_tenant",
+            "label": "Tenant",
+            "type": "STRING",
+            "description": "As in <tenant>.sharepoint.com. Please refer to plugin doc.",
+            "mandatory": true
+        },
+        {
+            "name": "sharepoint_site",
+            "label": "Site path",
+            "type": "STRING",
+            "description": "sites/site_name/subsite...",
+            "mandatory": true
+        },
+        {
+            "name": "sharepoint_root",
+            "label": "Root directory",
+            "type": "STRING",
+            "description": "",
+            "defaultValue": "Shared Documents"
+        },
+        {
+            "name": "tenant_id",
+            "label": "Tenant ID",
+            "type": "STRING",
+            "description": "",
+            "mandatory": true
+        },
+        {
+            "name": "client_id",
+            "label": "Client ID",
+            "type": "STRING",
+            "description": "",
+            "mandatory": true
+        },
+        {
+            "name": "secure_token",
+            "type": "CREDENTIAL_REQUEST",
+            "label": "Azure Single Sign On",
+            "credentialRequestSettings": {
+                "type": "BASIC"
+            }
+        }
+    ]
+}
