@@ -59,6 +59,11 @@ class RobustSession():
             response = self.request_with_403_retry("post", **kwargs)
             return response
 
+    def merge(self, url, dku_rs_off=False, **kwargs):
+        kwargs = update_dict_in_kwargs(kwargs, "headers", self.default_headers)
+        response = self.session.request("MERGE", url, **kwargs)
+        return response
+
     def request_with_403_retry(self, verb, **kwargs):
         """
         403 error code may be result of throttling, rendering the current sessions useless.
@@ -93,9 +98,12 @@ class RobustSession():
         while (not successful_func) and (attempt_number <= self.max_retries):
             try:
                 attempt_number += 1
-                logger.info("RobustSession:retry:attempt {} #{}".format(func, attempt_number))
+                if attempt_number > 1:
+                    # Only log if there seems to be an issue
+                    logger.info("RobustSession:retry:attempt {} #{}".format(func, attempt_number))
                 response = func(*args, **kwargs)
-                logger.info("RobustSession:retry:Response={}".format(response))
+                if attempt_number > 1:
+                    logger.info("RobustSession:retry:Response={}".format(response))
                 if hasattr(response, 'status_code'):
                     if response.status_code < 400:
                         successful_func = True

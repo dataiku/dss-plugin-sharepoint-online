@@ -2,6 +2,7 @@ class SharePointConstants(object):
     CLEAR_KEY_END = "-----END PRIVATE KEY-----"
     CLEAR_KEY_START = "-----BEGIN PRIVATE KEY-----"
     COLUMNS = 'columns'
+    COLUMN_TITLE = 'Title'
     COMMENT_COLUMN = 'comment'
     DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
     DEFAULT_VIEW_ENDPOINT = "DefaultView/ViewFields"
@@ -56,6 +57,7 @@ class SharePointConstants(object):
     }
     TYPE_AS_STRING = 'TypeAsString'
     TYPE_COLUMN = 'type'
+    TYPE_NOTE = 'Note'
     VALUE = 'value'
     WRITE_MODE_CREATE = "create"
     WAIT_TIME_BEFORE_RETRY_SEC = 2
