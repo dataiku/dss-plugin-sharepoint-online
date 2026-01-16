@@ -17,7 +17,7 @@ from dss_constants import DSSConstants
 from common import (
     is_email_address, get_value_from_path, parse_url,
     get_value_from_paths, is_request_performed, ItemsLimit,
-    is_empty_path, merge_paths, get_lnt_path,
+    is_empty_path, get_lnt_path,
     format_private_key, format_certificate_thumbprint, url_encode
 )
 from safe_logger import SafeLogger
@@ -32,11 +32,13 @@ class SharePointClientError(ValueError):
 
 class SharePointClient():
 
-    def __init__(self, config):
+    def __init__(self, config, root_name_overwrite_legacy_mode=False):
         self.config = config
+        self.root_name_overwrite_legacy_mode = root_name_overwrite_legacy_mode
         self.sharepoint_root = None
         self.sharepoint_url = None
         self.sharepoint_origin = None
+        self.allow_string_recasting = config.get("advanced_parameters", False) and config.get("allow_string_recasting", False)
         attempt_session_reset_on_403 = config.get("advanced_parameters", False) and config.get("attempt_session_reset_on_403", False)
         self.session = RobustSession(status_codes_to_retry=[429, 503], attempt_session_reset_on_403=attempt_session_reset_on_403)
         self.number_dumped_logs = 0
@@ -135,9 +137,32 @@ class SharePointClient():
                 max_retries=SharePointConstants.MAX_RETRIES,
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
             )
+        elif config.get('auth_type') == DSSConstants.AUTH_APP_USERNAME_PASSWORD:
+            logger.info("SharePointClient:app-username-password")
+            login_details = config.get('app_username_password')
+            self.setup_sharepoint_online_url(login_details)
+            self.setup_login_details(login_details)
+            self.apply_paths_overwrite(config)
+            self.tenant_id = login_details.get("tenant_id")
+            self.client_id = login_details.get("client_id")
+            self.sharepoint_tenant = login_details.get("sharepoint_tenant")
+            username = login_details.get("username")
+            password = login_details.get("password")
+            self.sharepoint_access_token = self.get_username_password_access_token(username, password)
+            self.session.update_settings(session=SharePointSession(
+                    None,
+                    None,
+                    self.sharepoint_url,
+                    self.sharepoint_site,
+                    sharepoint_access_token=self.sharepoint_access_token
+                ),
+                max_retries=SharePointConstants.MAX_RETRIES,
+                base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
+            )
         else:
             raise SharePointClientError("The type of authentication is not selected")
         self.sharepoint_list_title = config.get("sharepoint_list_title")
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
         try:
             from urllib3.connectionpool import log
             log.addFilter(SuppressFilter())
@@ -160,6 +185,8 @@ class SharePointClient():
     def apply_paths_overwrite(self, config):
         advanced_parameters = config.get("advanced_parameters", False)
         sharepoint_root_overwrite = config.get("sharepoint_root_overwrite", "").strip("/")
+        if self.root_name_overwrite_legacy_mode:
+            sharepoint_root_overwrite = sharepoint_root_overwrite.replace("%20", " ")
         sharepoint_site_overwrite = config.get("sharepoint_site_overwrite", "").strip("/")
         if advanced_parameters and sharepoint_root_overwrite:
             self.sharepoint_root = sharepoint_root_overwrite
@@ -185,28 +212,47 @@ class SharePointClient():
         )
 
     def get_folders(self, path):
-        response = self.session.get(self.get_folder_url(path) + "/Folders")
+        url = self.get_folder_url() + "/Folders/{}".format(
+            self.get_path_as_query_string(path)
+        )
+        response = self.session.get(url)
         self.assert_response_ok(response, calling_method="get_folders")
         return response.json()
 
     def get_files(self, path):
-        response = self.session.get(self.get_folder_url(path) + "/Files")
+        response = self.session.get(self.get_folder_url() + "/Files/{}".format(
+                self.get_path_as_query_string(path)
+            )
+        )
         self.assert_response_ok(response, calling_method="get_files")
         return response.json()
 
     def get_item_fields(self, path):
-        response = self.session.get(self.get_folder_url(path) + "/ListItemAllFields")
+        response = self.session.get(self.get_folder_url() + "/ListItemAllFields{}".format(
+            self.get_path_as_query_string(path)
+        ))
         self.assert_response_ok(response, calling_method="get_item_fields")
         return response.json()
 
     def get_start_upload_url(self, path, upload_id):
-        return self.get_file_url(path) + "/startupload(uploadId=guid'{}')".format(upload_id)
+        return self.get_file_url() + "/startupload(uploadId=guid'{}'){}".format(
+            upload_id,
+            self.get_path_as_query_string(path)
+        )
 
     def get_continue_upload_url(self, path, upload_id, file_offset):
-        return self.get_file_url(path) + "/continueupload(uploadId=guid'{}',fileOffset={})".format(upload_id, file_offset)
+        return self.get_file_url() + "/continueupload(uploadId=guid'{}',fileOffset={}){}".format(
+            upload_id,
+            file_offset,
+            self.get_path_as_query_string(path)
+        )
 
     def get_finish_upload_url(self, path, upload_id, file_offset):
-        return self.get_file_url(path) + "/finishupload(uploadId=guid'{}',fileOffset={})".format(upload_id, file_offset)
+        return self.get_file_url() + "/finishupload(uploadId=guid'{}',fileOffset={}){}".format(
+            upload_id,
+            file_offset,
+            self.get_path_as_query_string(path)
+        )
 
     def is_file(self, path):
         item_fields = self.get_item_fields(path)
@@ -444,6 +490,31 @@ class SharePointClient():
             json=body
         )
         self.assert_response_ok(response, calling_method="create_custom_field_via_id")
+        return response
+
+    def update_column_type(self, list_id, field, column_name, new_field_type="SP.FieldMultiLineText"):
+        logger.info("updating field {}/{} to type {}".format(field, column_name, new_field_type))
+        if not new_field_type:
+            return None
+        body = {
+            "__metadata": {
+                "type": "{}".format(new_field_type)
+            },
+            "Description": "Updated Description of the field",
+            "SchemaXml": "<Field AppendOnly='FALSE' ClientSideComponentId='00000000-0000-0000-0000-000000000000'"
+            + " Description='Updated Description of the field' DisplayName='{}' Format='Dropdown' IsModern='TRUE'".format(column_name)
+            + " IsolateStyles='FALSE' Name='{}' RichText='FALSE' RichTextMode='Compatible' Title='{}' Type='Note'></Field>".format(
+                column_name, column_name
+            ),
+            "Title": "{}".format(column_name)
+        }
+        headers = DSSConstants.JSON_HEADERS
+        url = "{}/Lists(guid'{}')/Fields/getByInternalNameOrTitle('{}')".format(self.get_base_url(), list_id, field)
+        response = self.session.merge(
+            url,
+            headers=headers,
+            json=body
+        )
         return response
 
     def get_list_default_view(self, list_name):
@@ -740,65 +811,90 @@ class SharePointClient():
             list_id
         )
 
-    def get_folder_url(self, full_path):
-        if full_path == '/':
-            full_path = ""
-        return self.get_base_url() + "/GetFolderByServerRelativePath(decodedurl='{}')".format(
-            url_encode(self.get_site_path(full_path))
-        )
+    def get_folder_url(self, full_path=None):
+        if full_path:
+            if full_path == '/':
+                full_path = ""
+            return self.get_base_url() + "/GetFolderByServerRelativePath(decodedurl='{}')".format(
+                url_encode(self.get_site_path(full_path))
+            )
+        else:
+            return self.get_base_url() + "/GetFolderByServerRelativePath(decodedurl=@a1)"
 
-    def get_file_url(self, full_path):
-        return self.get_base_url() + "/GetFileByServerRelativePath(decodedurl='{}')".format(
-            url_encode(self.get_site_path(full_path))
-        )
+    def get_file_url(self, full_path=None):
+        if full_path:
+            return self.get_base_url() + "/GetFileByServerRelativePath(decodedurl='{}')".format(
+                url_encode(self.get_site_path(full_path))
+            )
+        else:
+            return self.get_base_url() + "/GetFileByServerRelativePath(decodedurl=@a1)"
 
     def get_file_content_url(self, full_path):
-        return self.get_file_url(full_path.replace("#", "%23")) + "/$value"
+        return self.get_file_url() + "/$value{}".format(
+            self.get_path_as_query_string(full_path)
+        )
 
     def get_move_url(self, from_path, to_path):
         # Using the new method leads to 403.
         # Old method left in place. As a result, moving/renaming a file containing % in its path/name is still not possible.
         # return self.get_file_url(from_path) + "/movetousingpath(newPath='{}',moveOperations=1)".format(
-        return self.get_file_url(from_path) + "/moveto(newurl='{}',flags=1)".format(
+        return self.get_file_url() + "/moveto(newurl=@a2,flags=1)?@a1='{}'&@a2='{}'".format(
+            url_encode(self.get_site_path(from_path)),
             url_encode(self.get_site_path(to_path))
         )
 
     def get_recycle_file_url(self, full_path):
-        return self.get_file_url(full_path) + "/recycle()"
+        return self.get_file_url() + "/recycle(){}".format(
+            self.get_path_as_query_string(full_path)
+        )
 
     def get_recycle_folder_url(self, full_path):
-        return self.get_folder_url(full_path) + "/recycle()"
+        return self.get_folder_url() + "/recycle(){}".format(
+            self.get_path_as_query_string(full_path)
+        )
 
     def get_file_check_in_url(self, full_path):
-        return self.get_file_url(full_path) + "/CheckIn()"
+        return self.get_file_url() + "/CheckIn(){}".format(
+            self.get_path_as_query_string(full_path)
+        )
 
     def get_file_check_out_url(self, full_path):
-        return self.get_file_url(full_path) + "/CheckOut()"
+        return self.get_file_url() + "/CheckOut(){}".format(
+            self.get_path_as_query_string(full_path)
+        )
 
     def get_site_path(self, full_path):
         return "/{}/{}{}".format(
             self.escape_path(self.sharepoint_site),
             self.escape_path(self.sharepoint_root),
             self.escape_path(full_path)
-        )
+        ).replace("//", "/")
 
     def get_add_folder_url(self, full_path):
-        path = merge_paths(self.sharepoint_root, full_path)
-        return self.get_base_url() + "/Folders/AddUsingPath(decodedurl='{}')".format(
-            url_encode(path)
+        return self.get_base_url() + "/Folders/AddUsingPath(decodedurl=@a1){}".format(
+            self.get_path_as_query_string(full_path)
         )
 
     def get_file_add_url(self, full_path, file_name):
-        return self.get_folder_url(full_path) + "/Files/AddUsingPath(decodedurl='{}',overwrite=true)".format(
+        return self.get_folder_url() + "/Files/AddUsingPath(decodedurl='{}',overwrite=true){}".format(
             url_encode(
                 self.escape_path(file_name)
-            )
+            ),
+            self.get_path_as_query_string(full_path)
         )
 
     def get_list_default_view_url(self, list_title):
         return os.path.join(
             self.get_lists_by_title_url(list_title),
             SharePointConstants.DEFAULT_VIEW_ENDPOINT
+        )
+
+    def get_path_as_query_string(self, path):
+        if path:
+            if path == '/':
+                path = ""
+        return "?@a1='{}'".format(
+            url_encode(self.get_site_path(path))
         )
 
     @staticmethod
@@ -864,8 +960,8 @@ class SharePointClient():
                 [
                     ["error", "message", "value"],
                     ["error_description"],
-                    ["error","message"],
-                    ["odata.error","message","value"]
+                    ["error", "message"],
+                    ["odata.error", "message", "value"]
                 ]
             )
             if error_message:
@@ -874,6 +970,7 @@ class SharePointClient():
             logger.info("Error trying to extract error message: {}".format(error))
             logger.info("Response.content={}".format(response.content))
             return None
+        return None
 
     @staticmethod
     def assert_no_error_in_json(response, calling_method=""):
@@ -924,6 +1021,26 @@ class SharePointClient():
         json_response = app.acquire_token_for_client(scopes=[f"{self.sharepoint_origin}/.default"])
         return json_response.get("access_token")
 
+    def get_username_password_access_token(self, username, password):
+        import msal
+        authority_url = 'https://login.microsoftonline.com/{}'.format(self.tenant_id)
+        app = msal.PublicClientApplication(
+            authority=authority_url,
+            client_id=self.client_id,
+            client_credential=None
+        )
+        result = app.acquire_token_by_username_password(
+            '{}'.format(username),
+            '{}'.format(password),
+            scopes=["https://{}.sharepoint.com/.default".format(self.sharepoint_tenant)]
+        )
+        access_token = result.get("access_token")
+        error_description = result.get("error_description")
+        if error_description:
+            logger.error("Dumping: {}".format(result))
+            raise Exception("Error: {}".format(error_description))
+        return access_token
+
     def get_view_id(self, list_title, view_title):
         if not list_title:
             return None
@@ -965,10 +1082,10 @@ class SharePointClient():
             max_workers=max_workers,
             batch_size=batch_size,
             write_mode=write_mode,
-            columns_to_update=columns_to_update
+            allow_string_recasting=self.allow_string_recasting
         )
 
-    def get_read_schema(self, display_metadata=False, metadata_to_retrieve=[]):
+    def get_read_schema(self, display_metadata=False, metadata_to_retrieve=[], write_mode=None):
         logger.info('get_read_schema')
         sharepoint_columns = self.get_list_fields(self.sharepoint_list_title)
         dss_columns = []
@@ -1000,6 +1117,11 @@ class SharePointClient():
                     self.dss_column_name[column[SharePointConstants.ENTITY_PROPERTY_NAME]] = column[SharePointConstants.TITLE_COLUMN]
                 if sharepoint_type == "date":
                     self.columns_to_format.append((column[SharePointConstants.STATIC_NAME], sharepoint_type))
+                if column[SharePointConstants.TYPE_AS_STRING] == SharePointConstants.TYPE_NOTE:
+                    if write_mode == SharePointConstants.WRITE_MODE_CREATE:
+                        self.columns_to_format.append((column[SharePointConstants.COLUMN_TITLE], SharePointConstants.TYPE_NOTE))
+                    else:
+                        self.columns_to_format.append((column[SharePointConstants.STATIC_NAME], SharePointConstants.TYPE_NOTE))
         logger.info("get_read_schema: Schema updated with {}".format(dss_columns))
         return {
             SharePointConstants.COLUMNS: dss_columns
@@ -1046,6 +1168,22 @@ class SharePointSession():
             response = requests.post(url, headers=default_headers, json=json, data=data, params=params, timeout=SharePointConstants.TIMEOUT_SEC)
         return response
 
+    def request(self, method, url, headers=None, json=None, data=None, params=None):
+        retries_limit = ItemsLimit(SharePointConstants.MAX_RETRIES)
+        headers = headers or {}
+        default_headers = {
+           "Accept": DSSConstants.APPLICATION_JSON_NOMETADATA,
+           "Content-Type": DSSConstants.APPLICATION_JSON_NOMETADATA,
+           "Authorization": self.get_authorization_bearer()
+        }
+        if self.form_digest_value:
+            default_headers.update({"X-RequestDigest": self.form_digest_value})
+        default_headers.update(headers)
+        response = None
+        while not is_request_performed(response) and not retries_limit.is_reached():
+            response = requests.request(method, url, headers=default_headers, json=json, data=data, params=params, timeout=SharePointConstants.TIMEOUT_SEC)
+        return response
+
     @staticmethod
     def close():
         logger.info("Closing SharePointSession.")
@@ -1062,7 +1200,7 @@ def get_form_digest_value(sharepoint_url, sharepoint_site, session=None, sharepo
 
     logger.info("Getting form digest value")
     if session is None:
-        session = RobustSession(session=requests, status_codes_to_retry=[429, 503])
+        session = RobustSession(session=requests, status_codes_to_retry=[429, 500, 503])
         session.update_settings(
             max_retries=SharePointConstants.MAX_RETRIES,
             base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
@@ -1075,13 +1213,11 @@ def get_form_digest_value(sharepoint_url, sharepoint_site, session=None, sharepo
                 url=get_contextinfo_url(),
                 headers=headers,
                 timeout=SharePointConstants.TIMEOUT_SEC,
-                dku_rs_off=True
             )
         else:
             response = session.post(
                 url=get_contextinfo_url(),
                 timeout=SharePointConstants.TIMEOUT_SEC,
-                dku_rs_off=True
             )
 
         form_digest_value = get_value_from_path(

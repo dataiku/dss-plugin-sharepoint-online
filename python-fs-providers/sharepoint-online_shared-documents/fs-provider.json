@@ -12,7 +12,7 @@
             "selectChoices": [
                 {
                     "value": "login",
-                    "label": "User name / password"
+                    "label": "User name / password (deprecated)"
                 },
                 {
                     "value": "oauth",
@@ -25,6 +25,10 @@
                 {
                     "value": "app-certificate",
                     "label": "Certificates"
+                },
+                {
+                    "value": "app-username-password",
+                    "label": "User name / password"
                 }
             ]
         },
@@ -55,6 +59,13 @@
             "type": "PRESET",
             "parameterSetId": "app-certificate",
             "visibilityCondition": "model.auth_type == 'app-certificate'"
+        },
+        {
+            "name": "app_username_password",
+            "label": "App username password",
+            "type": "PRESET",
+            "parameterSetId": "app-username-password",
+            "visibilityCondition": "model.auth_type == 'app-username-password'"
         },
         {
             "name": "advanced_parameters",

@@ -1,10 +1,43 @@
 # Changelog
 
-## [Version 1.1.5](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.5) - Feature release - 2024-10-15
+## [Version 1.3.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.3.0) - Feature release - 2024-10-15
 
 - Update of individual list records
 
-## [Version 1.1.4](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.4) - Feature and bugfix release - 2024-07-16
+## [Version 1.2.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.2.0) - Feature release - 2025-11-05
+
+- Handles strings longer than 255 characters
+    - In append mode, check whether the SharePoint column is single or multiple lines of text, and chunk accordingly the string to be uploaded
+    - In overwrite mode, initially recreate the columns as single line, and convert to multiple lines if a column contains a string longer than 255 characters
+
+## [Version 1.1.10](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.10) - Patch release - 2025-11-04
+
+- Add legacy mode to accept percent encoded spaces ("%20") in root directory preset overwrite
+
+## [Version 1.1.9](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.9) - Bugfix release - 2025-09-23
+
+- Fix handling of username / password error message
+
+## [Version 1.1.8](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.8) - Feature and bugfix release - 2025-08-29
+
+- Add support for MSAL username / password authentication
+- Activate retry on error 429 when retrieving the form digest value
+- Failing when the "append recipe" incorrectly outputs to the targeted dataset
+
+## [Version 1.1.7](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.7) - Feature release - 2025-08-13
+
+- Enables the "Append instead of overwrite" checkbox in sync recipes for SharePoint lists
+
+## [Version 1.1.6](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.6) - Bugfix release - 2025-04-01
+
+- Fix issue with 255+ chars file paths. The new limit is 400 chars, imposed by SharePoint's API.
+
+## [Version 1.1.5](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.5) - Bugfix release - 2024-12-04
+
+- Reduce log verbosity around retry functions
+- Retry every connection in case of a HTTP error 500
+
+## [Version 1.1.4](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.4) - Feature release - 2024-07-16
 
 - Fix writing when using presets with no root folder defined
 - Limit string length to the 255 characters SharePoint limit

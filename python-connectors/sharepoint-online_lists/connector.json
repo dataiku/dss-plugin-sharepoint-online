@@ -5,7 +5,8 @@
         "icon": "icon-cloud"
     },
     "readable": true,
-    "writable": false,
+    "writable": true,
+    "supportAppend": true,
     "params": [
         {
             "name": "auth_type",
@@ -14,7 +15,7 @@
             "selectChoices": [
                 {
                     "value": "login",
-                    "label": "User name / password"
+                    "label": "User name / password (deprecated)"
                 },
                 {
                     "value": "oauth",
@@ -27,6 +28,10 @@
                 {
                     "value": "app-certificate",
                     "label": "Certificates"
+                },
+                {
+                    "value": "app-username-password",
+                    "label": "User name / password"
                 }
             ]
         },
@@ -57,6 +62,13 @@
             "type": "PRESET",
             "parameterSetId": "app-certificate",
             "visibilityCondition": "model.auth_type == 'app-certificate'"
+        },
+        {
+            "name": "app_username_password",
+            "label": "App username password",
+            "type": "PRESET",
+            "parameterSetId": "app-username-password",
+            "visibilityCondition": "model.auth_type == 'app-username-password'"
         },
         {
             "name": "sharepoint_list_title",
@@ -166,6 +178,14 @@
             "name": "attempt_session_reset_on_403",
             "label": "Attempt session reset",
             "description": "Slow, refer to documentation",
+            "type": "BOOLEAN",
+            "defaultValue": false,
+            "visibilityCondition": "model.advanced_parameters == true"
+        },
+        {
+            "name": "allow_string_recasting",
+            "label": "Allow multiple lines",
+            "description": "When writing, use 'multiple lines' columns when 256+ chars",
             "type": "BOOLEAN",
             "defaultValue": false,
             "visibilityCondition": "model.advanced_parameters == true"
