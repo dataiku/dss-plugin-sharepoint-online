@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.3.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.3.0) - Feature release - 2024-10-15
+
+- Update of individual list records
+
 ## [Version 1.2.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.2.0) - Feature release - 2025-11-05
 
 - Handles strings longer than 255 characters
@@ -38,6 +42,10 @@
 - Fix writing when using presets with no root folder defined
 - Limit string length to the 255 characters SharePoint limit
 - Fix read and write issues with file names / paths containing # or %
+
+## [Version 1.1.3](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.3) - Feature release - 2024-06-04
+
+- Add login with Azure AD app certificate
 
 ## [Version 1.1.3](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.1.3) - Feature release - 2024-06-04
 
