@@ -1,5 +1,10 @@
 # Changelog
 
+## [Version 1.3.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.3.0) - Security release - 2026-02-26
+
+- Increase the version of the package cryptography to 46.0.5 and msal to 1.34.0 in response to CVE-2026-26007
+- Python support changes in this version to 3.8, 3.9, 3.10 and 3.11. Support for python versions 3.5, 3.6 and 3.7 is dropped.
+
 ## [Version 1.2.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.2.0) - Feature release - 2025-11-05
 
 - Handles strings longer than 255 characters
