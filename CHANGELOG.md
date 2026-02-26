@@ -4,6 +4,7 @@
 
 - Increase the version of the package cryptography to 46.0.5 and msal to 1.34.0 in response to CVE-2026-26007
 - Python support changes in this version to 3.8, 3.9, 3.10 and 3.11. Support for python versions 3.5, 3.6 and 3.7 is dropped.
+- Marking Site App Permission auth method as deprecated
 
 ## [Version 1.2.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.2.0) - Feature release - 2025-11-05
 
