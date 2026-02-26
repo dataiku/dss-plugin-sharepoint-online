@@ -159,6 +159,29 @@ class SharePointClient():
                 max_retries=SharePointConstants.MAX_RETRIES,
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
             )
+        elif config.get('auth_type') == DSSConstants.AUTH_APP_BASIC:
+            logger.info("SharePointClient:app-basic")
+            login_details = config.get('app_basic')
+            self.setup_sharepoint_online_url(login_details)
+            self.setup_login_details(login_details)
+            self.apply_paths_overwrite(config)
+            self.tenant_id = login_details.get("tenant_id")
+            self.client_id = login_details.get("client_id")
+            self.sharepoint_tenant = login_details.get("sharepoint_tenant")
+            secure_token = login_details.get("secure_token", {})
+            username = secure_token.get("user")
+            password = secure_token.get("password")
+            self.sharepoint_access_token = self.get_username_password_access_token(username, password)
+            self.session.update_settings(session=SharePointSession(
+                    None,
+                    None,
+                    self.sharepoint_url,
+                    self.sharepoint_site,
+                    sharepoint_access_token=self.sharepoint_access_token
+                ),
+                max_retries=SharePointConstants.MAX_RETRIES,
+                base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
+            )
         else:
             raise SharePointClientError("The type of authentication is not selected")
         self.sharepoint_list_title = config.get("sharepoint_list_title")

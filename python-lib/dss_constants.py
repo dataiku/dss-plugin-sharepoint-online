@@ -11,6 +11,7 @@ class DSSConstants(object):
     APPLICATION_JSON_NOMETADATA = "application/json;odata=nometadata"
     AUTH_APP_CERTIFICATE = "app-certificate"
     AUTH_APP_USERNAME_PASSWORD = "app-username-password"
+    AUTH_APP_BASIC = "app-basic"
     AUTH_LOGIN = "login"
     AUTH_OAUTH = "oauth"
     AUTH_SITE_APP = "site-app-permissions"
