@@ -1,7 +1,7 @@
 {
     "meta": {
-        "label": "SharePoint Online Site App Permissions",
-        "description": "",
+        "label": "Site App Permissions (deprecated)",
+        "description": "⚠️ Deprecated",
         "icon": "icon-cloud"
     },
     "defaultDefinableInline": true,
