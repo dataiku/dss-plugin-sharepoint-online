@@ -1,4 +1,5 @@
 from common import get_value_from_path, is_request_performed, decode_retry_after_header
+from sharepoint_whitelist import WhiteList
 from sharepoint_constants import SharePointConstants
 import pytest
 
@@ -32,6 +33,42 @@ class TestCommonMethods:
         self.mock_response_http_429_date_in_past = MockResponse(429, {"Retry-After": "Wed, 21 Oct 2015 07:28:00 GMT"})
         self.mock_response_http_429_date_in_future = MockResponse(429, {"Retry-After": "Wed, 21 Oct 9999 07:28:00 GMT"})
         self.mock_response_http_429_garbage = MockResponse(429, {"Retry-After": "blablablabla"})
+        self.app_certificate = {
+            'libraries_whitelist': [
+                {
+                    '$$hashKey': 'object:540',
+                    'whitelist_rights': ['read'],
+                    'whitelist_name': 'site/Path/Shared Documents 1'
+                },
+                {
+                    '$$hashKey': 'object:540',
+                    'whitelist_rights': ['read'],
+                    'whitelist_name': '/site/Path/Shared Documents 2'
+                },
+                {
+                    '$$hashKey': 'object:540',
+                    'whitelist_rights': ['read'],
+                    'whitelist_name': 'site/Path/Shared Documents 3/'
+                },
+                {
+                    '$$hashKey': 'object:540',
+                    'whitelist_rights': ['read'],
+                    'whitelist_name': '/site/Path/Shared Documents 4/'
+                }
+            ],
+            'lists_whitelist': [
+                {
+                    '$$hashKey': 'object:540',
+                    'whitelist_rights': ['read'],
+                    'whitelist_name': 'CanRead'
+                }, {
+                    '$$hashKey': 'object:540',
+                    'whitelist_rights': ['read', 'write'],
+                    'whitelist_name': 'Can write'
+                }
+            ],
+            'activate_whitelist': True
+        }
 
     def test_get_value_from_path_long_path(self):
         key = get_value_from_path(self.dictionary_to_search, self.ok_path_1)
@@ -85,3 +122,58 @@ class TestCommonMethods:
     def test_decode_retry_after_header_no_header(self):
         seconds_before_retry = decode_retry_after_header(self.mock_response_http_429_no_header)
         assert seconds_before_retry == SharePointConstants.DEFAULT_WAIT_BEFORE_RETRY
+
+    def test_whitelist_read_start_slash_series_1(self):
+        whitelist = WhiteList(self.app_certificate)
+        assert whitelist.can_read_path("site/Path/Shared Documents 1") is True
+        assert whitelist.can_read_path("/site/Path/Shared Documents 1") is True
+        assert whitelist.can_read_path("site/Path/Shared Documents 1/subfolder") is True
+        assert whitelist.can_read_path("/site/Path/Shared Documents 1/subfolder") is True
+
+    def test_whitelist_read_start_slash_series_2(self):
+        whitelist = WhiteList(self.app_certificate)
+        assert whitelist.can_read_path("site/Path/Shared Documents 2") is True
+        assert whitelist.can_read_path("/site/Path/Shared Documents 2") is True
+        assert whitelist.can_read_path("site/Path/Shared Documents 2/subfolder") is True
+        assert whitelist.can_read_path("/site/Path/Shared Documents 2/subfolder") is True
+
+    def test_whitelist_read_start_slash_series_3(self):
+        whitelist = WhiteList(self.app_certificate)
+        assert whitelist.can_read_path("site/Path/Shared Documents 3") is True
+        assert whitelist.can_read_path("/site/Path/Shared Documents 3") is True
+        assert whitelist.can_read_path("site/Path/Shared Documents 3/subfolder") is True
+        assert whitelist.can_read_path("/site/Path/Shared Documents 3/subfolder") is True
+
+    def test_whitelist_read_start_slash_series_4(self):
+        whitelist = WhiteList(self.app_certificate)
+        assert whitelist.can_read_path("site/Path/Shared Documents 4") is True
+        assert whitelist.can_read_path("/site/Path/Shared Documents 4") is True
+        assert whitelist.can_read_path("site/Path/Shared Documents 4/subfolder") is True
+        assert whitelist.can_read_path("/site/Path/Shared Documents 4/subfolder") is True
+
+    def test_whitelist_read_start_slash_series_5(self):
+        whitelist = WhiteList(self.app_certificate)
+        assert whitelist.can_read_path("site/Path/Shared Documents 5") is False
+        assert whitelist.can_read_path("/site/Path/Shared Documents 5") is False
+        assert whitelist.can_read_path("site/Path/Shared Documents 5/subfolder") is False
+        assert whitelist.can_read_path("/site/Path/Shared Documents 5/subfolder") is False
+
+    def test_whitelist_read_casing(self):
+        whitelist = WhiteList(self.app_certificate)
+        assert whitelist.can_read_path("Site/path/shared documents 4/subFolder") is True
+
+    def test_whitelist_read_list(self):
+        whitelist = WhiteList(self.app_certificate)
+        assert whitelist.can_read_list("CanRead") is True
+
+    def test_whitelist_cannot_write_list(self):
+        whitelist = WhiteList(self.app_certificate)
+        assert whitelist.can_write_list("CanRead") is False
+
+    def test_whitelist_list_casing_cannot(self):
+        whitelist = WhiteList(self.app_certificate)
+        assert whitelist.can_write_list("canread") is False
+
+    def test_whitelist_list_casing(self):
+        whitelist = WhiteList(self.app_certificate)
+        assert whitelist.can_read_list("canread") is True
