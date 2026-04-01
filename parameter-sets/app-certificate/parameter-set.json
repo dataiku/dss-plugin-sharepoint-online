@@ -63,6 +63,74 @@
             "type": "PASSWORD",
             "description": "If required by private key",
             "mandatory": false
+        },
+        {
+            "name": "activate_whitelist",
+            "label": "Whitelists",
+            "type": "BOOLEAN",
+            "description": "Not advised: access rights should be handled at Azure app level"
+        },
+        {
+            "name": "libraries_whitelist",
+            "label": "Whitelisted libraries",
+            "type": "OBJECT_LIST",
+            "description": "",
+            "visibilityCondition": "model.activate_whitelist === true",
+            "subParams": [
+                {
+                    "name": "whitelist_name",
+                    "label": "Library name",
+                    "type": "STRING",
+                    "description": "/sites/YourSite/Shared Documents/your folder path"
+                },
+                {
+                    "name": "whitelist_rights",
+                    "label": "Access rights",
+                    "type": "MULTISELECT",
+                    "description": "",
+                    "selectChoices": [
+                        {
+                            "value": "read",
+                            "label": "Read"
+                        },
+                        {
+                            "value": "write",
+                            "label": "Write"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "lists_whitelist",
+            "label": "Whitelisted lists",
+            "type": "OBJECT_LIST",
+            "description": "",
+            "visibilityCondition": "model.activate_whitelist === true",
+            "subParams": [
+                {
+                    "name": "whitelist_name",
+                    "label": "Library name",
+                    "type": "STRING",
+                    "description": "List ID from the list's SharePoint URL"
+                },
+                {
+                    "name": "whitelist_rights",
+                    "label": "Access rights",
+                    "type": "MULTISELECT",
+                    "description": "",
+                    "selectChoices": [
+                        {
+                            "value": "read",
+                            "label": "Read"
+                        },
+                        {
+                            "value": "write",
+                            "label": "Write"
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }
