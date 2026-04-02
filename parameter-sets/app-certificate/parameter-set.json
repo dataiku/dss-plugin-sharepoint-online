@@ -116,7 +116,7 @@
             "subParams": [
                 {
                     "name": "whitelist_name",
-                    "label": "Library name",
+                    "label": "List name",
                     "type": "STRING",
                     "description": "List ID from the list's SharePoint URL"
                 },
