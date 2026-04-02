@@ -65,8 +65,8 @@
             "mandatory": false
         },
         {
-            "name": "activate_whitelist",
-            "label": "Whitelists",
+            "name": "activate_libraries_whitelist",
+            "label": "Whitelists libraries",
             "type": "BOOLEAN",
             "description": "Not advised: access rights should be handled at Azure app level"
         },
@@ -75,7 +75,7 @@
             "label": "Whitelisted libraries",
             "type": "OBJECT_LIST",
             "description": "",
-            "visibilityCondition": "model.activate_whitelist === true",
+            "visibilityCondition": "model.activate_libraries_whitelist === true",
             "subParams": [
                 {
                     "name": "whitelist_name",
@@ -102,11 +102,17 @@
             ]
         },
         {
+            "name": "activate_lists_whitelist",
+            "label": "Whitelists lists",
+            "type": "BOOLEAN",
+            "description": "Not advised: access rights should be handled at Azure app level"
+        },
+        {
             "name": "lists_whitelist",
             "label": "Whitelisted lists",
             "type": "OBJECT_LIST",
             "description": "",
-            "visibilityCondition": "model.activate_whitelist === true",
+            "visibilityCondition": "model.activate_lists_whitelist === true",
             "subParams": [
                 {
                     "name": "whitelist_name",
