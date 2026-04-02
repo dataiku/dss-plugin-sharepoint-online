@@ -67,7 +67,8 @@ class TestCommonMethods:
                     'whitelist_name': 'Can write'
                 }
             ],
-            'activate_whitelist': True
+            'activate_lists_whitelist': True,
+            'activate_libraries_whitelist': True
         }
 
     def test_get_value_from_path_long_path(self):
@@ -177,3 +178,22 @@ class TestCommonMethods:
     def test_whitelist_list_casing(self):
         whitelist = WhiteList(self.app_certificate)
         assert whitelist.can_read_list("canread") is True
+
+    def test_whitelist_list_not_lib(self):
+        local_app_certificate = self.app_certificate.copy()
+        local_app_certificate.pop("activate_libraries_whitelist", None)
+        whitelist = WhiteList(local_app_certificate)
+        assert whitelist.can_read_list("canread") is True
+        assert whitelist.can_write_list("canread") is False
+        assert whitelist.can_read_path("/site/Path/Shared Documents 5/subfolder") is True
+        assert whitelist.can_write_path("/site/Path/Shared Documents 2/subfolder") is True
+
+    def test_whitelist_lib_not_list(self):
+        local_app_certificate = self.app_certificate.copy()
+        local_app_certificate.pop("activate_lists_whitelist", None)
+        whitelist = WhiteList(local_app_certificate)
+        assert whitelist.can_read_list("random") is True
+        assert whitelist.can_write_list("random") is True
+        assert whitelist.can_read_path("/site/Path/Shared Documents 2/subfolder") is True
+        assert whitelist.can_write_path("/site/Path/Shared Documents 2/subfolder") is False
+        assert whitelist.can_read_path("/site/Path/Shared Documents 5/subfolder") is False
