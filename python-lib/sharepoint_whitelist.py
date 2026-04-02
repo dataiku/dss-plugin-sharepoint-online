@@ -10,16 +10,16 @@ class WhiteList():
         self.libraries_whitelist = {}
         self.lists_whitelist = {}
         libraries_whitelist = self.config.get("libraries_whitelist", [])
-        for library in libraries_whitelist:
-            library_path = library.get("whitelist_name", "").strip("/").lower()
-            library_rights = library.get("whitelist_rights", [])
-            self.libraries_whitelist[library_path] = library_rights
-        lists_whitelist = self.config.get("lists_whitelist", [])
-        for list_item in lists_whitelist:
-            list_name = list_item.get("whitelist_name", "").lower()
-            list_rights = list_item.get("whitelist_rights", [])
-            self.lists_whitelist[list_name] = list_rights
         if self.activate_white_list:
+            for library in libraries_whitelist:
+                library_path = library.get("whitelist_name", "").strip("/").lower()
+                library_rights = library.get("whitelist_rights", [])
+                self.libraries_whitelist[library_path] = library_rights
+            lists_whitelist = self.config.get("lists_whitelist", [])
+            for list_item in lists_whitelist:
+                list_name = list_item.get("whitelist_name", "").lower()
+                list_rights = list_item.get("whitelist_rights", [])
+                self.lists_whitelist[list_name] = list_rights
             logger.info("Whitelisting with libraries:{} and lists:{}".format(self.libraries_whitelist, self.lists_whitelist))
 
     def assert_can_read_path(self, path):

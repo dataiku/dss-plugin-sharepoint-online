@@ -62,5 +62,6 @@ def test_run_sharepoint_online_256_plus_chars_strings(user_dss_clients):
 def test_run_sharepoint_online_app_username_password_auth(user_dss_clients):
     dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="APPUSERNAMEPASSWORDAUTH")
 
+
 def test_run_sharepoint_online_whitelisting(user_dss_clients):
     dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="WHITELISTING")
