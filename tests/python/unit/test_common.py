@@ -213,16 +213,12 @@ class TestCommonMethods:
         assert whitelist.can_read_path("/site/Path/Shared Documents 5/subfolder") is False
 
     def test_whitelist_lib_no_right(self):
-        # Cannot see
-        # /site/Path/Shared Documents/subfolder/secret
         whitelist = WhiteList(self.app_certificate)
         assert whitelist.can_read_path("/site/Path/Shared Documents") is True
         assert whitelist.can_read_path("/site/Path/Shared Documents/subfolder") is True
         assert whitelist.can_read_path("/site/Path/Shared Documents/subfolder/secret") is False
 
     def test_whitelist_list_no_right(self):
-        # Cannot see
-        # /site/Path/Shared Documents/subfolder/secret
         whitelist = WhiteList(self.app_certificate)
         assert whitelist.can_read_list("Cannot see") is False
         assert whitelist.can_write_list("Cannot see") is False
