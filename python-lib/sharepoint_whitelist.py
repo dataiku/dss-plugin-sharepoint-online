@@ -67,9 +67,11 @@ class WhiteList():
             for path_size in range(len(path_to_test) + 1, 0, -1):
                 tokens_in_path = path_to_test[0:path_size]
                 path_chunk_to_test = "/".join(tokens_in_path)
-                right_for_path = rights.get(path_chunk_to_test, [])
-                if required_right in right_for_path:
-                    return True
+                right_for_path = rights.get(path_chunk_to_test, None)
+                if right_for_path is None:
+                    # No rights defined for that path, skipping
+                    continue
+                return required_right in right_for_path
             return False
         else:
             right_for_path = rights.get(path_to_test, [])
