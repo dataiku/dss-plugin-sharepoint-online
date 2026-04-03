@@ -54,6 +54,16 @@ class TestCommonMethods:
                     '$$hashKey': 'object:540',
                     'whitelist_rights': ['read'],
                     'whitelist_name': '/site/Path/Shared Documents 4/'
+                },
+                {
+                    '$$hashKey': 'object:540',
+                    'whitelist_rights': ['read'],
+                    'whitelist_name': '/site/Path/Shared Documents/'
+                },
+                {
+                    '$$hashKey': 'object:540',
+                    'whitelist_rights': [],
+                    'whitelist_name': '/site/Path/Shared Documents/subfolder/secret'
                 }
             ],
             'lists_whitelist': [
@@ -65,6 +75,10 @@ class TestCommonMethods:
                     '$$hashKey': 'object:540',
                     'whitelist_rights': ['read', 'write'],
                     'whitelist_name': 'Can write'
+                }, {
+                    '$$hashKey': 'object:540',
+                    'whitelist_rights': [],
+                    'whitelist_name': 'Cannot see'
                 }
             ],
             'activate_lists_whitelist': True,
@@ -197,3 +211,18 @@ class TestCommonMethods:
         assert whitelist.can_read_path("/site/Path/Shared Documents 2/subfolder") is True
         assert whitelist.can_write_path("/site/Path/Shared Documents 2/subfolder") is False
         assert whitelist.can_read_path("/site/Path/Shared Documents 5/subfolder") is False
+
+    def test_whitelist_lib_no_right(self):
+        # Cannot see
+        # /site/Path/Shared Documents/subfolder/secret
+        whitelist = WhiteList(self.app_certificate)
+        assert whitelist.can_read_path("/site/Path/Shared Documents") is True
+        assert whitelist.can_read_path("/site/Path/Shared Documents/subfolder") is True
+        assert whitelist.can_read_path("/site/Path/Shared Documents/subfolder/secret") is False
+
+    def test_whitelist_list_no_right(self):
+        # Cannot see
+        # /site/Path/Shared Documents/subfolder/secret
+        whitelist = WhiteList(self.app_certificate)
+        assert whitelist.can_read_list("Cannot see") is False
+        assert whitelist.can_write_list("Cannot see") is False
