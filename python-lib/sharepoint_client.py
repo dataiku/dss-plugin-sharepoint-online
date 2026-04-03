@@ -20,6 +20,7 @@ from common import (
     is_empty_path, get_lnt_path,
     format_private_key, format_certificate_thumbprint, url_encode
 )
+from sharepoint_whitelist import WhiteList
 from safe_logger import SafeLogger
 
 
@@ -50,6 +51,7 @@ class SharePointClient():
         self.column_entity_property_name = {}
         self.columns_to_format = []
         self.column_sharepoint_type = {}
+        self.whitelist = WhiteList()
 
         if config.get('auth_type') == DSSConstants.AUTH_OAUTH:
             logger.info("SharePointClient:sharepoint_oauth")
@@ -117,6 +119,7 @@ class SharePointClient():
         elif config.get('auth_type') == DSSConstants.AUTH_APP_CERTIFICATE:
             logger.info("SharePointClient:app-certificate")
             login_details = config.get('app_certificate')
+            self.whitelist = WhiteList(login_details)
             self.assert_login_details(DSSConstants.APP_CERTIFICATE_DETAILS, login_details)
             self.setup_sharepoint_online_url(login_details)
             self.setup_login_details(login_details)
@@ -1094,6 +1097,26 @@ class SharePointClient():
         if display_metadata and (column['StaticName'] in metadata_to_retrieve):
             return True
         return (not column[SharePointConstants.HIDDEN_COLUMN])
+
+    def assert_can_read_path(self, path):
+        full_path = self.get_site_path(path)
+        full_path = "/" + full_path.strip("/")
+        logger.info("Testing read access to path '{}'".format(full_path))
+        self.whitelist.assert_can_read_path(full_path)
+
+    def assert_can_write_path(self, path):
+        full_path = self.get_site_path(path)
+        full_path = "/" + full_path.strip("/")
+        logger.info("Testing write access to path '{}'".format(full_path))
+        self.whitelist.assert_can_write_path(full_path)
+
+    def assert_can_read_list(self, list_name):
+        logger.info("Testing read access to list '{}'".format(list_name))
+        self.whitelist.assert_can_read_list(list_name)
+
+    def assert_can_write_list(self, list_name):
+        logger.info("Testing write access to list '{}'".format(list_name))
+        self.whitelist.assert_can_write_list(list_name)
 
 
 class SharePointSession():

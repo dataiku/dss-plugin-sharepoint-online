@@ -50,6 +50,7 @@ class SharePointFSProvider(FSProvider):
     def stat(self, path):
         assert_valid_sharepoint_path(path)
         full_path = get_lnt_path(self.get_full_path(path))
+        self.client.assert_can_read_path(full_path)
         logger.info('stat:path="{}", full_path="{}"'.format(path, full_path))
         files = self.client.get_files(full_path)
         folders = self.client.get_folders(full_path)
@@ -94,6 +95,7 @@ class SharePointFSProvider(FSProvider):
         path = get_rel_path(path)
         full_path = get_lnt_path(self.get_full_path(path))
         logger.info('browse:path="{}", full_path="{}"'.format(path, full_path))
+        self.client.assert_can_read_path(full_path)
 
         folders = self.client.get_folders(full_path)
         files = self.client.get_files(full_path)
@@ -157,6 +159,7 @@ class SharePointFSProvider(FSProvider):
         assert_valid_sharepoint_path(path)
         full_path = get_lnt_path(self.get_full_path(path))
         logger.info('enumerate:path="{}",fullpath="{}", first_non_empty="{}"'.format(path, full_path, first_non_empty))
+        self.client.assert_can_read_path(full_path)
         path_to_item, item_name = os.path.split(full_path)
         is_file = self.client.is_file(full_path)
         if is_file:
@@ -192,6 +195,7 @@ class SharePointFSProvider(FSProvider):
         assert_valid_sharepoint_path(path)
         full_path = self.get_full_path(path)
         logger.info('delete_recursive:path={},fullpath={}'.format(path, full_path))
+        self.client.assert_can_write_path(full_path)
         assert_path_is_not_root(full_path)
         path_to_item, item_name = os.path.split(full_path.rstrip("/"))
         files = self.client.get_files(path_to_item)
@@ -220,6 +224,8 @@ class SharePointFSProvider(FSProvider):
         full_from_path = self.get_full_path(from_path)
         full_to_path = self.get_full_path(to_path)
         logger.info('move:from={},to={}'.format(full_from_path, full_to_path))
+        self.client.assert_can_read_path(full_from_path)
+        self.client.assert_can_write_path(full_to_path)
 
         self.client.move_file(full_from_path, full_to_path)
         # SP Online now returns {'odata.null': True}
@@ -229,6 +235,7 @@ class SharePointFSProvider(FSProvider):
         assert_valid_sharepoint_path(path)
         full_path = self.get_full_path(path)
         logger.info('read:full_path={}'.format(full_path))
+        self.client.assert_can_read_path(full_path)
         response = self.client.get_file_content(full_path)
         bio = BytesIO(response.content)
         shutil.copyfileobj(bio, stream)
@@ -237,6 +244,7 @@ class SharePointFSProvider(FSProvider):
         assert_valid_sharepoint_path(path)
         full_path = self.get_full_path(path)
         logger.info('write:path="{}", full_path="{}"'.format(path, full_path))
+        self.client.assert_can_write_path(full_path)
         bio = BytesIO()
         shutil.copyfileobj(stream, bio)
         bio.seek(0)

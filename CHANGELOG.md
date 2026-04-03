@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.3.1](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.3.1) - Security release - 2026-04-01
+
+- Adding optional whitelist mechanism on certificate preset
+
 ## [Version 1.3.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.3.0) - Security release - 2026-02-26
 
 - Increase the version of the package cryptography to 46.0.5 and msal to 1.34.0 in response to CVE-2026-26007

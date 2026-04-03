@@ -59,6 +59,7 @@ class SharePointListsConnector(Connector):
 
     def generate_rows(self, dataset_schema=None, dataset_partitioning=None,
                       partition_id=None, records_limit=-1):
+        self.client.assert_can_read_list(self.sharepoint_list_title)
         if self.client.column_ids == {}:
             self.client.get_read_schema()
 
@@ -114,6 +115,7 @@ class SharePointListsConnector(Connector):
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
                    partition_id=None, write_mode="OVERWRITE"):
         assert_list_title(self.sharepoint_list_title)
+        self.client.assert_can_write_list(self.sharepoint_list_title)
         if write_mode != "APPEND":
             write_mode = SharePointConstants.WRITE_MODE_CREATE
         return self.client.get_writer(dataset_schema, dataset_partitioning, partition_id, self.max_workers, self.batch_size, write_mode)
