@@ -13,7 +13,7 @@ class FreshToken():
             logger.info("No refresh method available")
             self.current_token = token_refresh_method
             self.token_refresh_method = self._default_refresh_method
-            self.token_validity = None
+            self.token_renewal_time = None
         else:
             logger.info("Using refresh method")
             self.token_refresh_method = token_refresh_method
@@ -22,25 +22,23 @@ class FreshToken():
     def _default_refresh_method(self):
         return self.current_token
 
-    def is_token_still_valid(self):
-        if self.token_validity is None:
+    def token_needs_renewal(self):
+        if self.token_renewal_time is None:
             return True
         epoch_time_now = int(time.time())
-        if (epoch_time_now > self.token_validity):
-            return False
-        return True
+        return self.token_renewal_time <= epoch_time_now
 
     def refresh_token(self):
         self.current_token = self.token_refresh_method()
         decoded_jwt = decode_jwt(self.current_token)
-        self.token_validity = decoded_jwt.get("exp", None)
-        if isinstance(self.token_validity, int):
-            self.token_validity = self.token_validity - TOKEN_VALIDITY_SAFETY_MARGIN_SECONDS
-        logger.info("The token is valid until {}".format(self.token_validity))
+        self.token_renewal_time = decoded_jwt.get("exp", None)
+        if isinstance(self.token_renewal_time, int):
+            self.token_renewal_time = self.token_renewal_time - TOKEN_VALIDITY_SAFETY_MARGIN_SECONDS
+        logger.info("The token is valid until {}".format(self.token_renewal_time))
 
     @property
     def access_token(self):
-        if not self.is_token_still_valid():
+        if not self.token_needs_renewal():
             logger.info("Token reaching its time limit, refreshing it...")
             self.refresh_token()
         return self.current_token
@@ -54,8 +52,8 @@ def decode_jwt(jwt_token):
         if len(sub_tokens) < 2:
             logger.error("JWT format is wrong")
             return {}
-        token_of_interest = sub_tokens[1]
-        padded_token = token_of_interest + "="*divmod(len(token_of_interest), 4)[1]
+        token_payload = sub_tokens[1]
+        padded_token = token_payload + "=" * (-len(token_payload) % 4)
         decoded_token = base64.urlsafe_b64decode(padded_token.encode('utf-8'))
         json_token = json.loads(decoded_token)
         return json_token
