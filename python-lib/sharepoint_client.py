@@ -66,7 +66,7 @@ class SharePointClient():
                 access_token_getter = plugin.OAuthCredentials(login_details.get("__credentials", {}).get("sharepoint_oauth"))
             else:
                 logger.info("One time access token")
-                access_token_getter = FreshToken(self.sharepoint_access_token)
+                access_token_getter = FreshToken(access_token=self.sharepoint_access_token)
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
@@ -116,7 +116,7 @@ class SharePointClient():
                     None,
                     self.sharepoint_url,
                     self.sharepoint_site,
-                    access_token_getter=FreshToken(self.get_site_app_access_token())
+                    access_token_getter=FreshToken(access_token=self.get_site_app_access_token())
                 ),
                 max_retries=SharePointConstants.MAX_RETRIES,
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
@@ -138,7 +138,7 @@ class SharePointClient():
                     None,
                     self.sharepoint_url,
                     self.sharepoint_site,
-                    access_token_getter=FreshToken(self.get_certificate_app_access_token)
+                    access_token_getter=FreshToken(token_refresh_method=self.get_certificate_app_access_token)
                 ),
                 max_retries=SharePointConstants.MAX_RETRIES,
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
@@ -159,7 +159,7 @@ class SharePointClient():
                     None,
                     self.sharepoint_url,
                     self.sharepoint_site,
-                    access_token_getter=FreshToken(self.get_username_password_access_token(username, password))
+                    access_token_getter=FreshToken(access_token=self.get_username_password_access_token(username, password))
                 ),
                 max_retries=SharePointConstants.MAX_RETRIES,
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
