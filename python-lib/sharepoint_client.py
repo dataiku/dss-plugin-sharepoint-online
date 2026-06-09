@@ -59,14 +59,14 @@ class SharePointClient():
             self.setup_login_details(login_details)
             self.apply_paths_overwrite(config)
             self.setup_sharepoint_online_url(login_details)
-            self.sharepoint_access_token = login_details['sharepoint_oauth']
+            sharepoint_access_token = login_details['sharepoint_oauth']
             if "__credentials" in login_details:
                 logger.info("Refreshable access token")
                 from dataiku.core import plugin
                 access_token_getter = plugin.OAuthCredentials(login_details.get("__credentials", {}).get("sharepoint_oauth"))
             else:
                 logger.info("One time access token")
-                access_token_getter = FreshToken(access_token=self.sharepoint_access_token)
+                access_token_getter = FreshToken(access_token=sharepoint_access_token)
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
