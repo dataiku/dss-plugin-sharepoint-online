@@ -4,7 +4,7 @@ This Dataiku DSS plugin provides a read / write connector to interact with docum
 
 Documentation: https://www.dataiku.com/product/plugins/sharepoint-online/
 
-edit by loui
+new newedit by loui
 
 ### Licence
 
