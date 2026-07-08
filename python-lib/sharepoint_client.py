@@ -981,7 +981,7 @@ class SharePointClient():
                 "private_key": self.client_certificate,
                 "passphrase": self.passphrase,
             },
-            timeout=SharePointConstants.TIMEOUT_SEC,
+            timeout=SharePointConstants.TIMEOUT_SEC
         )
         json_response = app.acquire_token_for_client(scopes=[f"{self.sharepoint_origin}/.default"])
         return json_response.get("access_token")
@@ -995,7 +995,7 @@ class SharePointClient():
             authority=self.get_msal_authority_url(),
             client_id=self.client_id,
             client_credential=None,
-            timeout=SharePointConstants.TIMEOUT_SEC,
+            timeout=SharePointConstants.TIMEOUT_SEC
         )
         result = app.acquire_token_by_username_password(
             '{}'.format(username),
