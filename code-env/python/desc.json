@@ -1,6 +1,5 @@
 {
     "acceptedPythonInterpreters": [
-        "PYTHON38",
         "PYTHON39",
         "PYTHON310",
         "PYTHON311"
