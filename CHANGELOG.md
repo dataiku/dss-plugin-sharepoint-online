@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.4.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.4.0) - Bugfix release - 2026-08-11
+
+- Upgrade `cryptography` to 50.0.0 and `msal` to 1.37.0 in response to security alerts
+
 ## [Version 1.3.2](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.3.2) - Bugfix release - 2026-07-08
 
 - Add a timeout to MSAL authentication
