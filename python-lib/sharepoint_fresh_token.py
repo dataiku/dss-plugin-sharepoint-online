@@ -30,10 +30,7 @@ class FreshToken():
 
     def refresh_token(self):
         self.current_token = self.token_refresh_method()
-        decoded_jwt = decode_jwt(self.current_token)
-        self.token_renewal_time = decoded_jwt.get("exp", None)
-        if isinstance(self.token_renewal_time, int):
-            self.token_renewal_time = self.token_renewal_time - TOKEN_VALIDITY_SAFETY_MARGIN_SECONDS
+        self.token_renewal_time = get_token_renewal_time(self.current_token)
         logger.info("The token is valid until {}".format(self.token_renewal_time))
 
     @property
@@ -42,6 +39,14 @@ class FreshToken():
             logger.info("Token reaching its time limit, refreshing it...")
             self.refresh_token()
         return self.current_token
+
+
+def get_token_renewal_time(token):
+    decoded_jwt = decode_jwt(token)
+    token_renewal_time = decoded_jwt.get("exp", None)
+    if isinstance(token_renewal_time, int):
+        token_renewal_time = token_renewal_time - TOKEN_VALIDITY_SAFETY_MARGIN_SECONDS
+    return token_renewal_time
 
 
 def decode_jwt(jwt_token):
