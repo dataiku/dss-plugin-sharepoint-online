@@ -24,7 +24,7 @@ class FreshToken():
 
     def token_needs_renewal(self):
         if self.token_renewal_time is None:
-            return True
+            return False
         epoch_time_now = int(time.time())
         return self.token_renewal_time <= epoch_time_now
 
@@ -38,7 +38,7 @@ class FreshToken():
 
     @property
     def access_token(self):
-        if not self.token_needs_renewal():
+        if self.token_needs_renewal():
             logger.info("Token reaching its time limit, refreshing it...")
             self.refresh_token()
         return self.current_token
