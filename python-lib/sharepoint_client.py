@@ -153,14 +153,14 @@ class SharePointClient():
             self.tenant_id = login_details.get("tenant_id")
             self.client_id = login_details.get("client_id")
             self.sharepoint_tenant = login_details.get("sharepoint_tenant")
-            username = login_details.get("username")
-            password = login_details.get("password")
+            self.username = login_details.get("username")
+            self.password = login_details.get("password")
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
                     self.sharepoint_url,
                     self.sharepoint_site,
-                    access_token_getter=FreshToken(access_token=self.get_username_password_access_token(username, password))
+                    access_token_getter=FreshToken(token_refresh_method=self._get_username_password_access_token)
                 ),
                 max_retries=SharePointConstants.MAX_RETRIES,
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
@@ -993,6 +993,9 @@ class SharePointClient():
 
     def get_msal_authority_url(self):
         return self.MSAL_AUTHORITY_URL_TEMPLATE.format(self.tenant_id)
+
+    def _get_username_password_access_token(self):
+        return self.get_username_password_access_token(self.username, self.password)
 
     def get_username_password_access_token(self, username, password):
         import msal
