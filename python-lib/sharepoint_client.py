@@ -32,6 +32,7 @@ class SharePointClientError(ValueError):
 
 
 class SharePointClient():
+    MSAL_AUTHORITY_URL_TEMPLATE = "https://login.microsoftonline.com/{}"
 
     def __init__(self, config, root_name_overwrite_legacy_mode=False):
         self.config = config
@@ -979,23 +980,27 @@ class SharePointClient():
         import msal
         app = msal.ConfidentialClientApplication(
             self.client_id,
-            authority=f"https://login.microsoftonline.com/{self.tenant_id}",
+            authority=self.get_msal_authority_url(),
             client_credential={
                 "thumbprint": self.client_certificate_thumbprint,
                 "private_key": self.client_certificate,
                 "passphrase": self.passphrase,
             },
+            timeout=SharePointConstants.TIMEOUT_SEC
         )
         json_response = app.acquire_token_for_client(scopes=[f"{self.sharepoint_origin}/.default"])
         return json_response.get("access_token")
 
+    def get_msal_authority_url(self):
+        return self.MSAL_AUTHORITY_URL_TEMPLATE.format(self.tenant_id)
+
     def get_username_password_access_token(self, username, password):
         import msal
-        authority_url = 'https://login.microsoftonline.com/{}'.format(self.tenant_id)
         app = msal.PublicClientApplication(
-            authority=authority_url,
+            authority=self.get_msal_authority_url(),
             client_id=self.client_id,
-            client_credential=None
+            client_credential=None,
+            timeout=SharePointConstants.TIMEOUT_SEC
         )
         result = app.acquire_token_by_username_password(
             '{}'.format(username),
