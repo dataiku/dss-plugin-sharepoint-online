@@ -9,6 +9,9 @@ TOKEN_VALIDITY_SAFETY_MARGIN_SECONDS = 60
 class FreshToken():
     def __init__(self, token_refresh_method=None, access_token=None):
         logger.info("FreshToken init")
+        if not access_token and not token_refresh_method:
+            logger.error("No valid token or token refresh method were provided")
+            raise Exception("No valid token or token refresh method were provided")
         if access_token:
             logger.info("Permanent access token provided")
             self.current_token = access_token
