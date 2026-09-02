@@ -112,12 +112,15 @@ class SharePointClient():
             self.tenant_id = login_details.get("tenant_id")
             self.client_secret = login_details.get("client_secret")
             self.client_id = login_details.get("client_id")
+            access_token = self.get_site_app_access_token()
+            if not access_token:
+                raise SharePointClientError("No valid token was returned from the site app")
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
                     self.sharepoint_url,
                     self.sharepoint_site,
-                    access_token_getter=FreshToken(access_token=self.get_site_app_access_token())
+                    access_token_getter=FreshToken(access_token=access_token)
                 ),
                 max_retries=SharePointConstants.MAX_RETRIES,
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
