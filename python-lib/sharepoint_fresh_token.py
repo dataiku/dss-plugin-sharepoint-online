@@ -33,6 +33,8 @@ class FreshToken():
 
     def refresh_token(self):
         self.current_token = self.token_refresh_method()
+        if not self.current_token:
+            raise Exception("The access token could not be refreshed")
         self.token_renewal_time = get_token_renewal_time(self.current_token)
         logger.info("The token is valid until {}".format(self.token_renewal_time))
 
