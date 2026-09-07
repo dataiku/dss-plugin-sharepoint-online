@@ -1,5 +1,10 @@
 # Changelog
 
+## [Version 1.4.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.4.0) - Security and feature release - 2026-09-07
+
+- Add access token refreshing for *Certificates* and *App username password*
+- Add access token refreshing for *Azure Single Sign On* preset on DSS 14.5+
+
 ## [Version 1.3.2](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.3.2) - Bugfix release - 2026-07-08
 
 - Add a timeout to MSAL authentication

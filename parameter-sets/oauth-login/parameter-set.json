@@ -16,7 +16,8 @@
                 "type": "OAUTH2",
                 "authorizationEndpoint": "https://login.microsoftonline.com/common/oauth2/authorize",
                 "tokenEndpoint": "https://login.microsoftonline.com/common/oauth2/token",
-                "scope": "User.Read MyFiles.Read MyFiles.Write AllSites.Read AllSites.Write Web.Read Web.Write List.Read List.Write"
+                "scope": "User.Read MyFiles.Read MyFiles.Write AllSites.Read AllSites.Write Web.Read Web.Write List.Read List.Write",
+                "refreshTokenRotation": true
             },
             "mandatory": true
         },

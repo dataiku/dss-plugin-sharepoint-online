@@ -21,6 +21,7 @@ from common import (
     format_private_key, format_certificate_thumbprint, url_encode
 )
 from safe_logger import SafeLogger
+from sharepoint_fresh_token import FreshToken
 
 
 logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)
@@ -59,13 +60,20 @@ class SharePointClient():
             self.setup_login_details(login_details)
             self.apply_paths_overwrite(config)
             self.setup_sharepoint_online_url(login_details)
-            self.sharepoint_access_token = login_details['sharepoint_oauth']
+            sharepoint_access_token = login_details['sharepoint_oauth']
+            if "__credentials" in login_details:
+                logger.info("Refreshable access token")
+                from dataiku.core import plugin
+                access_token_getter = plugin.OAuthCredentials(login_details.get("__credentials", {}).get("sharepoint_oauth"))
+            else:
+                logger.info("One time access token")
+                access_token_getter = FreshToken(access_token=sharepoint_access_token)
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
                     self.sharepoint_url,
                     self.sharepoint_site,
-                    sharepoint_access_token=self.sharepoint_access_token
+                    access_token_getter=access_token_getter
                 ),
                 max_retries=SharePointConstants.MAX_RETRIES,
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
@@ -104,13 +112,12 @@ class SharePointClient():
             self.tenant_id = login_details.get("tenant_id")
             self.client_secret = login_details.get("client_secret")
             self.client_id = login_details.get("client_id")
-            self.sharepoint_access_token = self.get_site_app_access_token()
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
                     self.sharepoint_url,
                     self.sharepoint_site,
-                    sharepoint_access_token=self.sharepoint_access_token
+                    access_token_getter=FreshToken(access_token=self.get_site_app_access_token())
                 ),
                 max_retries=SharePointConstants.MAX_RETRIES,
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
@@ -127,13 +134,12 @@ class SharePointClient():
             self.client_certificate_thumbprint = format_certificate_thumbprint(login_details.get("client_certificate_thumbprint"))
             self.passphrase = login_details.get("passphrase")
             self.client_id = login_details.get("client_id")
-            self.sharepoint_access_token = self.get_certificate_app_access_token()
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
                     self.sharepoint_url,
                     self.sharepoint_site,
-                    sharepoint_access_token=self.sharepoint_access_token
+                    access_token_getter=FreshToken(token_refresh_method=self.get_certificate_app_access_token)
                 ),
                 max_retries=SharePointConstants.MAX_RETRIES,
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
@@ -147,15 +153,14 @@ class SharePointClient():
             self.tenant_id = login_details.get("tenant_id")
             self.client_id = login_details.get("client_id")
             self.sharepoint_tenant = login_details.get("sharepoint_tenant")
-            username = login_details.get("username")
-            password = login_details.get("password")
-            self.sharepoint_access_token = self.get_username_password_access_token(username, password)
+            self.username = login_details.get("username")
+            self.password = login_details.get("password")
             self.session.update_settings(session=SharePointSession(
                     None,
                     None,
                     self.sharepoint_url,
                     self.sharepoint_site,
-                    sharepoint_access_token=self.sharepoint_access_token
+                    access_token_getter=FreshToken(token_refresh_method=self._get_username_password_access_token)
                 ),
                 max_retries=SharePointConstants.MAX_RETRIES,
                 base_retry_timer_sec=SharePointConstants.WAIT_TIME_BEFORE_RETRY_SEC
@@ -989,6 +994,9 @@ class SharePointClient():
     def get_msal_authority_url(self):
         return self.MSAL_AUTHORITY_URL_TEMPLATE.format(self.tenant_id)
 
+    def _get_username_password_access_token(self):
+        return self.get_username_password_access_token(self.username, self.password)
+
     def get_username_password_access_token(self, username, password):
         import msal
         app = msal.PublicClientApplication(
@@ -1103,12 +1111,12 @@ class SharePointClient():
 
 class SharePointSession():
 
-    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_url, sharepoint_site, sharepoint_access_token=None, max_retry=10):
+    def __init__(self, sharepoint_user_name, sharepoint_password, sharepoint_url, sharepoint_site, access_token_getter=None, max_retry=10):
         self.sharepoint_url = sharepoint_url
         self.sharepoint_site = sharepoint_site
-        self.sharepoint_access_token = sharepoint_access_token
+        self.access_token_getter = access_token_getter
         requests.adapters.DEFAULT_RETRIES = max_retry
-        self.form_digest_value = get_form_digest_value(sharepoint_url, sharepoint_site, sharepoint_access_token=self.sharepoint_access_token)
+        self.form_digest_value = get_form_digest_value(sharepoint_url, sharepoint_site, access_token_getter=self.access_token_getter)
 
     def get(self, url, headers=None, params=None):
         retries_limit = ItemsLimit(SharePointConstants.MAX_RETRIES)
@@ -1157,10 +1165,10 @@ class SharePointSession():
         logger.info("Closing SharePointSession.")
 
     def get_authorization_bearer(self):
-        return "Bearer {}".format(self.sharepoint_access_token)
+        return "Bearer {}".format(self.access_token_getter.access_token)
 
 
-def get_form_digest_value(sharepoint_url, sharepoint_site, session=None, sharepoint_access_token=None):
+def get_form_digest_value(sharepoint_url, sharepoint_site, session=None, access_token_getter=None):
     def get_contextinfo_url():
         return "https://{}/{}/_api/contextinfo".format(
             sharepoint_url, sharepoint_site
@@ -1175,8 +1183,8 @@ def get_form_digest_value(sharepoint_url, sharepoint_site, session=None, sharepo
         )
     form_digest_value = None
     try:
-        if sharepoint_access_token:
-            headers = {**DSSConstants.JSON_HEADERS, **{"Authorization": "Bearer {}".format(sharepoint_access_token)}}
+        if access_token_getter:
+            headers = {**DSSConstants.JSON_HEADERS, **{"Authorization": "Bearer {}".format(access_token_getter.access_token)}}
             response = session.post(
                 url=get_contextinfo_url(),
                 headers=headers,
