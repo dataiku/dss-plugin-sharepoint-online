@@ -6,7 +6,7 @@ import threading
 logger = SafeLogger("sharepoint-online plugin FreshToken", DSSConstants.SECRET_PARAMETERS_KEYS)
 TOKEN_VALIDITY_SAFETY_MARGIN_SECONDS = 60
 
-
+# Must have the same properties than dataiku.core.plugin.OAuthCredentials (access_token)
 class FreshToken():
     def __init__(self, token_refresh_method=None, access_token=None):
         logger.info("FreshToken init")
