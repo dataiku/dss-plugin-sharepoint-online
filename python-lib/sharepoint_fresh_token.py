@@ -1,6 +1,7 @@
 from safe_logger import SafeLogger
 from dss_constants import DSSConstants
 import time
+import threading
 
 logger = SafeLogger("sharepoint-online plugin FreshToken", DSSConstants.SECRET_PARAMETERS_KEYS)
 TOKEN_VALIDITY_SAFETY_MARGIN_SECONDS = 60
@@ -17,6 +18,7 @@ class FreshToken():
             self.current_token = access_token
             self.token_refresh_method = self._default_refresh_method
             self.token_renewal_time = None
+        self._refresh_lock = threading.Lock()
         if token_refresh_method is not None:
             logger.info("Using refresh method")
             self.token_refresh_method = token_refresh_method
@@ -40,9 +42,12 @@ class FreshToken():
 
     @property
     def access_token(self):
-        if self.token_needs_renewal():
-            logger.info("Token reaching its time limit, refreshing it...")
-            self.refresh_token()
+        if not self.token_needs_renewal():
+            return self.current_token
+        with self._refresh_lock:
+            if self.token_needs_renewal():
+                logger.info("Token reaching its time limit, refreshing it...")
+                self.refresh_token()
         return self.current_token
 
 
