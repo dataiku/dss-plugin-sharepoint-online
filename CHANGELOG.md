@@ -1,14 +1,12 @@
 # Changelog
 
-## Version 1.5.0 - Enhancement release - 2026-09-07
-
-- Added supported Python versions: 3.12, 3.13, 3.14
-- Makefile cleanup: release_info.json lines removed
-
 ## [Version 1.4.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.4.0) - Security and feature release - 2026-09-07
 
 - Add access token refreshing for *Certificates* and *App username password*
 - Add access token refreshing for *Azure Single Sign On* preset on DSS 14.5+
+- Added supported Python versions: 3.12, 3.13, 3.14
+- Makefile cleanup: release_info.json lines removed
+- Upgrade `cryptography` to 50.0.0 and `msal` to 1.37.0 in response to security alerts
 
 ## [Version 1.3.2](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.3.2) - Bugfix release - 2026-07-08
 
