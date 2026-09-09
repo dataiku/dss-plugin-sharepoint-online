@@ -4,9 +4,9 @@ from sharepoint_client import SharePointClient
 from sharepoint_constants import SharePointConstants
 from sharepoint_lists import assert_list_title
 from sharepoint_lists import column_ids_to_names, sharepoint_to_dss_date
-from common import parse_query_string_to_dict
-from safe_logger import SafeLogger
-from dss_constants import DSSConstants
+from sharepoint_common import parse_query_string_to_dict
+from sharepoint_safe_logger import SafeLogger
+from sharepoint_dss_constants import DSSConstants
 
 
 logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)

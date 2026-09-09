@@ -1,5 +1,5 @@
-from safe_logger import SafeLogger
-from dss_constants import DSSConstants
+from sharepoint_safe_logger import SafeLogger
+from sharepoint_dss_constants import DSSConstants
 import time
 import threading
 

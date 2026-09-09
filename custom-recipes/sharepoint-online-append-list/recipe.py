@@ -1,10 +1,10 @@
 import dataiku
 import pandas
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
-from safe_logger import SafeLogger
-from dss_constants import DSSConstants
+from sharepoint_safe_logger import SafeLogger
+from sharepoint_dss_constants import DSSConstants
 from sharepoint_client import SharePointClient
-from common import assert_not_forbidden_dataset_type
+from sharepoint_common import assert_not_forbidden_dataset_type
 
 
 logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)

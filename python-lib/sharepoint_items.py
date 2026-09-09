@@ -2,7 +2,7 @@ import os.path
 
 from sharepoint_constants import SharePointConstants
 from datetime import datetime
-from common import get_lnt_path, get_rel_path
+from sharepoint_common import get_rel_path
 
 
 def loop_sharepoint_items(items):

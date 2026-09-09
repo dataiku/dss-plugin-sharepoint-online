@@ -5,9 +5,9 @@ try:
     import urlparse
 except:
     import urllib.parse as urlparse
-from safe_logger import SafeLogger
+from sharepoint_safe_logger import SafeLogger
 from sharepoint_constants import SharePointConstants
-from dss_constants import DSSConstants
+from sharepoint_dss_constants import DSSConstants
 
 logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)
 

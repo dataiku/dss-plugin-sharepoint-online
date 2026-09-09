@@ -1,4 +1,4 @@
-from common import get_value_from_path, is_request_performed, decode_retry_after_header
+from sharepoint_common import get_value_from_path, is_request_performed, decode_retry_after_header
 from sharepoint_fresh_token import decode_jwt
 from sharepoint_constants import SharePointConstants
 import pytest
