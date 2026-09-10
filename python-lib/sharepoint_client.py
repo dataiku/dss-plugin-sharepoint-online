@@ -10,17 +10,17 @@ import re
 
 from xml.etree.ElementTree import Element, tostring
 from xml.dom import minidom
-from robust_session import RobustSession
+from sharepoint_robust_session import RobustSession
 from sharepoint_constants import SharePointConstants
 from sharepoint_lists import SharePointListWriter, get_dss_type
-from dss_constants import DSSConstants
-from common import (
+from sharepoint_dss_constants import DSSConstants
+from sharepoint_common import (
     is_email_address, get_value_from_path, parse_url,
     get_value_from_paths, is_request_performed, ItemsLimit,
     is_empty_path, get_lnt_path,
     format_private_key, format_certificate_thumbprint, url_encode
 )
-from safe_logger import SafeLogger
+from sharepoint_safe_logger import SafeLogger
 from sharepoint_fresh_token import FreshToken
 
 

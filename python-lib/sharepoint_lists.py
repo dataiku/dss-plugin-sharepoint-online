@@ -1,8 +1,8 @@
 import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from sharepoint_constants import SharePointConstants
-from dss_constants import DSSConstants
-from safe_logger import SafeLogger
+from sharepoint_dss_constants import DSSConstants
+from sharepoint_safe_logger import SafeLogger
 
 
 logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)

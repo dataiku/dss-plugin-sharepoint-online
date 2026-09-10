@@ -1,7 +1,7 @@
 import time
-from safe_logger import SafeLogger
-from dss_constants import DSSConstants
-from common import update_dict_in_kwargs
+from sharepoint_safe_logger import SafeLogger
+from sharepoint_dss_constants import DSSConstants
+from sharepoint_common import update_dict_in_kwargs
 
 
 logger = SafeLogger("sharepoint-online plugin", DSSConstants.SECRET_PARAMETERS_KEYS)
