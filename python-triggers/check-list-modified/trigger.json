@@ -1,0 +1,183 @@
+{
+    "meta": {
+        "label": "Check modified list",
+        "description": "Check that a SharePoint list has been modified",
+        "icon": "icon-cloud"
+    },
+    "params": [
+        {
+            "name": "auth_type",
+            "label": "Type of authentication",
+            "type": "SELECT",
+            "selectChoices": [
+                {
+                    "value": "login",
+                    "label": "User name / password (deprecated)"
+                },
+                {
+                    "value": "oauth",
+                    "label": "Azure Single Sign On"
+                },
+                {
+                    "value": "site-app-permissions",
+                    "label": "Site App Permissions"
+                },
+                {
+                    "value": "app-certificate",
+                    "label": "Certificates"
+                },
+                {
+                    "value": "app-username-password",
+                    "label": "User name / password"
+                }
+            ]
+        },
+        {
+            "name": "sharepoint_oauth",
+            "label": "Azure preset",
+            "type": "PRESET",
+            "parameterSetId": "oauth-login",
+            "visibilityCondition": "model.auth_type == 'oauth'"
+        },
+        {
+            "name": "sharepoint_sharepy",
+            "label": "SharePoint preset",
+            "type": "PRESET",
+            "parameterSetId": "sharepoint-login",
+            "visibilityCondition": "model.auth_type == 'login'"
+        },
+        {
+            "name": "site_app_permissions",
+            "label": "Site App preset",
+            "type": "PRESET",
+            "parameterSetId": "site-app-permissions",
+            "visibilityCondition": "model.auth_type == 'site-app-permissions'"
+        },
+        {
+            "name": "app_certificate",
+            "label": "Certificates",
+            "type": "PRESET",
+            "parameterSetId": "app-certificate",
+            "visibilityCondition": "model.auth_type == 'app-certificate'"
+        },
+        {
+            "name": "app_username_password",
+            "label": "App username password",
+            "type": "PRESET",
+            "parameterSetId": "app-username-password",
+            "visibilityCondition": "model.auth_type == 'app-username-password'"
+        },
+        {
+            "name": "sharepoint_list_title",
+            "label": "List title",
+            "defaultValue":  "DSS_${projectKey}_",
+            "description": "",
+            "type": "STRING",
+            "mandatory": true
+        },
+        {
+            "name": "expand_lookup",
+            "label": "Expand lookup fields",
+            "description": "",
+            "type": "BOOLEAN",
+            "defaultValue": false,
+            "visibilityCondition": false,
+            "mandatory": true
+        },
+        {
+            "name": "metadata_to_retrieve",
+            "label": "Metadata to retrieve",
+            "type": "MULTISELECT",
+            "visibilityCondition": false,
+            "selectChoices": [
+                {
+                    "value": "ID",
+                    "label": "Item's ID"
+                },
+                {
+                    "value": "Created",
+                    "label": "Creation date"
+                },
+                {
+                    "value": "Modified",
+                    "label": "Modification date"
+                },
+                {
+                    "value": "Author",
+                    "label": "Created by"
+                },
+                {
+                    "value": "Editor",
+                    "label": "Modified by"
+                }
+            ]
+        },
+        {
+            "name": "advanced_parameters",
+            "label": "Show advanced parameters",
+            "description": "",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        },
+        {
+            "name": "sharepoint_site_overwrite",
+            "label": "Site path preset overwrite",
+            "type": "STRING",
+            "description": "sites/site_name/subsite...",
+            "visibilityCondition": "model.advanced_parameters == true"
+        },
+        {
+            "name": "sharepoint_list_view_title",
+            "label": "View name",
+            "description": "Read data from a specific view",
+            "type": "STRING",
+            "defaultValue": "",
+            "visibilityCondition": "model.advanced_parameters == true"
+        },
+        {
+            "name": "write_mode",
+            "label": "Write mode",
+            "type": "SELECT",
+            "defaultValue": "create",
+            "selectChoices": [
+                {
+                    "value": "create",
+                    "label": "Create a new list"
+                },
+                {
+                    "value": "append",
+                    "label": "Append to existing list"
+                }
+            ],
+            "visibilityCondition": false
+        },
+        {
+            "name": "max_workers",
+            "label": "Max nb of workers (write mode only)",
+            "description": "More workers will speed writing but also randomize items order",
+            "visibilityCondition": "model.advanced_parameters == true",
+            "type": "INT",
+            "defaultValue": 1,
+            "minI": 1,
+            "maxI": 5
+        },
+        {
+            "name": "batch_size",
+            "label": "Batch size (write mode only)",
+            "description": "Number of items writen per batch",
+            "visibilityCondition": "model.advanced_parameters == true",
+            "type": "INT",
+            "defaultValue": 100,
+            "minI": 1,
+            "maxI": 100
+        },
+        {
+            "name": "attempt_session_reset_on_403",
+            "label": "Attempt session reset",
+            "description": "Slow, refer to documentation",
+            "type": "BOOLEAN",
+            "defaultValue": false,
+            "visibilityCondition": "model.advanced_parameters == true"
+        }
+    ]
+}
