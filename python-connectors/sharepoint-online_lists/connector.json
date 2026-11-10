@@ -4,6 +4,9 @@
         "description": "Read/write lists from/to your SharePoint Online account",
         "icon": "icon-cloud"
     },
+    "cobuild": {
+        "supported": true
+    },
     "readable": true,
     "writable": true,
     "supportAppend": true,
