@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.5.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.5.0) - Feature release - 2026-11-10
+
+- Added Cobuild support to the SharePoint Online Lists dataset
+
 ## [Version 1.4.0](https://github.com/dataiku/dss-plugin-sharepoint-online/releases/tag/v1.4.0) - Security and feature release - 2026-09-07
 
 - Add access token refreshing for *Certificates* and *App username password*
