@@ -1,7 +1,7 @@
 {
     "meta": {
         "label": "Lists",
-        "description": "Read/write lists from/to your SharePoint Online account",
+        "description": "Read lists or named List Views and write list items in SharePoint Online",
         "icon": "icon-cloud"
     },
     "cobuild": {
