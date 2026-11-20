@@ -7,7 +7,7 @@
 - Override only for an explicitly requested site change. Set `advanced_parameters=true` and copy the confirmed URL's site path: `https://tenant.sharepoint.com/sites/TeamSite` becomes `sites/TeamSite`. Preserve `sites/`, `teams/`, and subsites; ask for the full URL instead of guessing. The preset's tenant remains unchanged.
 - To read a named view, set `advanced_parameters=true` and `sharepoint_list_view_title` to its exact name. Leave the title empty to use the default view. Check the detected schema before referencing columns. DSS uses SharePoint field display titles as column names.
 - The connector automatically fetches additional pages of list rows.
-- Lookup/Person columns return IDs, display values, and potentially additional attributes. They is no equivalent to native "Display value" mode. `expand_lookup` is unused; do not set it.
+- Lookup and Person fields return JSON with IDs, display values, and optional attributes. There is no equivalent to native "Display value" mode. `expand_lookup` is unused; do not set it.
 - Exclude SharePoint-managed or read-only fields, such as `ID`, `Created`, `Modified`, `Created By` and `Modified By`, from the output data.
 - Configure append or overwrite on the producing DSS recipe, such as the Sync recipe's "Append instead of overwrite" option. Append requires an existing list and adds new items; it does not update matching items. It can also create missing columns from the input schema. Retrying an append can duplicate items.
 - Overwrite recycles the existing list and creates a new list with columns derived from the input schema. For a new list, use overwrite to create it. For an existing list, clarify ambiguous write intent before choosing overwrite; it replaces the list rather than only clearing rows.
